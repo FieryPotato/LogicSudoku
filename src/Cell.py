@@ -1,47 +1,63 @@
 import itertools
+from typing import Union
+
+from Sudoku import RANGE_SET
 
 
 class Cell:
-    def __init__(self, coordinates: tuple):
-        self.coordinates = coordinates
-        self.x = coordinates[1]
-        self.y = coordinates[0]
-        self.digit = " "
+    def __init__(self, coordinates: tuple[int, int]) -> None:
+        self.coordinates: tuple = coordinates
+        self.x: int = coordinates[1]
+        self.y: int = coordinates[0]
+        self.digit: Union[int, str] = " "
+        self.pencil_marks = RANGE_SET
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Cell({self.coordinates}: {self.digit})"
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if self.digit == other.digit:
             return True
         return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         if self.digit == other.digit:
             return False
         return True
         
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return self.digit == " "
         
     @property
-    def box(self):
+    def box(self) -> list:
         x = self.x - self.x % 3
         y = self.y - self.y % 3
         boxes = [(y+i, x+j) for i, j in itertools.product(range(3), repeat=2)]
         return boxes
         
     @property
-    def row(self):
+    def row(self) -> list:
         return [(self.y, i) for i in range(9)]
 
     @property
-    def column(self): 
+    def column(self) -> list:
         return [(i, self.x) for i in range(9)]
         
-    def fill(self, digit: int):
-        self.digit = digit if digit == " " else int(digit)
+    def fill(self, digit: Union[int, str]) -> None:
+        if digit == " ":
+            self.digit = digit
+            self.pencil_marks = RANGE_SET
+        else:
+            self.digit = int(digit)
+            self.pencil_marks = {digit}
+        return None
         
-    def clear(self):
+    def clear(self) -> None:
         self.digit = " "
+        return None
+
+    def copy(self) -> "Cell":
+        new_cell = Cell(self.coordinates)
+        new_cell.fill(self.digit)
+        return new_cell

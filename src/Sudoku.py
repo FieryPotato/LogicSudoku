@@ -1,17 +1,18 @@
 import itertools
+from typing import Generator, ItemsView, Union
 
 from Cell import Cell
 
 
-CELL_KEYS = [(j, i) for i, j in itertools.product(range(9), repeat=2)]
-RANGE_SET = {i for i in range(1, 10)}
+CELL_KEYS: list = [(j, i) for i, j in itertools.product(range(9), repeat=2)]
+RANGE_SET: set = {i for i in range(1, 10)}
 
 
 class Sudoku:
-    def __init__(self):
+    def __init__(self) -> None:
         self.cell_dict = {k: Cell(k) for k in CELL_KEYS}
 
-    def __str__(self):
+    def __str__(self) -> str:
         blank = "{}{}{}|{}{}{}|{}{}{}\n" \
                 "{}{}{}|{}{}{}|{}{}{}\n" \
                 "{}{}{}|{}{}{}|{}{}{}\n" \
@@ -26,45 +27,75 @@ class Sudoku:
         values = [self.cell_dict[k].digit for k in CELL_KEYS]
         return blank.format(*values)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if self.cell_dict == other.cell_dict:
             return True
         return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         if self.cell_dict == other.cell_dict:
             return False
         return True
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         self.cell_dict[key] = value
+        return None
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Cell:
         return self.cell_dict[item]
 
-    def __delitem__(self, key):
+    def __delitem__(self, key) -> None:
         del self.cell_dict[key]
+        return None
 
-    def items(self):
+    def __iter__(self) -> Generator:
+        """Iterate over cell objects in the sudoku in the following order of keys:
+        (0, 0), (1, 0), (2, 0), ... (8, 0), (0, 1), (1, 1), ... (8, 8)"""
+        for key in CELL_KEYS:
+            yield self[key]
+
+    @property
+    def is_complete(self) -> bool:
+        for cell in self:
+            if cell.is_empty:
+                return False
+        return True
+
+    def copy(self) -> "Sudoku":
+        new_sudoku = Sudoku()
+        for key in CELL_KEYS:
+            new_sudoku[key] = self[key].copy()
+        return new_sudoku
+
+    def items(self) -> ItemsView:
         return self.cell_dict.items()
 
-    def set_cell(self, coordinates, value):
+    def set_cell(self, coordinates, value) -> None:
         self[coordinates].fill(value)
+        return None
     
-    def get_cell(self, coordinates):
+    def get_cell(self, coordinates) -> Union[int, str]:
         return self[coordinates].digit
         
-    def is_valid(self, coordinates, digit):
-        row_digits = {self[cell].digit for cell in self[coordinates].row}
-        column_digits = {self[cell].digit for cell in self[coordinates].column}
-        box_digits = {self[cell].digit for cell in self[coordinates].box}
+    def is_valid(self, coordinates, digit) -> bool:
+        row_digits: set = {self[cell].digit for cell in self[coordinates].row}
+        column_digits: set = {self[cell].digit for cell in self[coordinates].column}
+        box_digits: set = {self[cell].digit for cell in self[coordinates].box}
         for group in (row_digits, column_digits, box_digits):
             if digit in group:
                 return False
         return True
+
+    def check_cell_pencil_marks(self, coordinates) -> None:
+        cell: Cell = self[coordinates]
+        row_digits: set = {self[c].digit for c in cell.row}
+        column_digits: set = {self[c].digit for c in cell.column}
+        box_digits: set = {self[c].digit for c in cell.box}
+        invalid_digits: set = row_digits.union(column_digits, box_digits)
+        cell.pencil_marks -= invalid_digits
         
     @classmethod
-    def from_string(cls, string):
+    def from_string(cls, string) -> "Sudoku":
         new = cls()
         for i, key in enumerate(CELL_KEYS):
             new[key].fill(string[i])
