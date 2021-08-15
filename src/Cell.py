@@ -1,7 +1,8 @@
 import itertools
 from typing import Union
 
-from Sudoku import RANGE_SET
+
+RANGE_SET = {i for i in range(1, 10)}
 
 
 class Cell:
@@ -38,19 +39,18 @@ class Cell:
         
     @property
     def row(self) -> list:
-        return [(self.y, i) for i in range(9)]
+        return [(i, self.y) for i in range(9)]
 
     @property
     def column(self) -> list:
-        return [(i, self.x) for i in range(9)]
+        return [(self.x, i) for i in range(9)]
         
     def fill(self, digit: Union[int, str]) -> None:
         if digit == " ":
-            self.digit = digit
-            self.pencil_marks = RANGE_SET
+            self.digit: str = digit
         else:
-            self.digit = int(digit)
-            self.pencil_marks = {digit}
+            self.digit: int = int(digit)
+            self.pencil_marks: set = set()
         return None
         
     def clear(self) -> None:

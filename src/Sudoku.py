@@ -1,7 +1,7 @@
 import itertools
 from typing import Generator, ItemsView, Union
 
-from Cell import Cell
+from src.Cell import Cell
 
 
 CELL_KEYS: list = [(j, i) for i, j in itertools.product(range(9), repeat=2)]
@@ -28,13 +28,15 @@ class Sudoku:
         return blank.format(*values)
 
     def __eq__(self, other) -> bool:
-        if self.cell_dict == other.cell_dict:
-            return True
+        if type(other) == self.__class__:
+            if self.cell_dict == other.cell_dict:
+                return True
         return False
 
     def __ne__(self, other) -> bool:
-        if self.cell_dict == other.cell_dict:
-            return False
+        if type(other) == self.__class__:
+            if self.cell_dict == other.cell_dict:
+                return False
         return True
 
     def __setitem__(self, key, value) -> None:
@@ -96,6 +98,8 @@ class Sudoku:
         
     @classmethod
     def from_string(cls, string) -> "Sudoku":
+        if len(string) != 81:
+            raise ValueError
         new = cls()
         for i, key in enumerate(CELL_KEYS):
             new[key].fill(string[i])
