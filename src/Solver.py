@@ -2,6 +2,9 @@ from src.Cell import Cell
 from src.Sudoku import Sudoku
 
 
+GROUPS: tuple = ("row", "column", "box")
+
+
 class Solver:
     def __init__(self, sudoku: Sudoku):
         self.sudoku = sudoku
@@ -32,32 +35,13 @@ class Solver:
 
     def cell_fill_hidden_singles(self, cell) -> None:
         for digit in cell.pencil_marks:
-            self.check_digit_in_cell_for_row_hidden_single(cell, digit)
-            self.check_digit_in_cell_for_col_hidden_single(cell, digit)
-            self.check_digit_in_cell_for_box_hidden_single(cell, digit)
+            for group in GROUPS:
+                self.check_digit_in_cell_for_group_hidden_single(digit, cell, group)
 
-    def check_digit_in_cell_for_row_hidden_single(self, cell: Cell, digit: int) -> None:
-        row_pencil_marks = [self.sudoku[c].pencil_marks for c in cell.row]
-        row_pencil_marks.remove(cell.pencil_marks)
-        for valid_set in row_pencil_marks:
-            if digit in valid_set:
-                break
-        else:
-            cell.fill(digit)
-
-    def check_digit_in_cell_for_col_hidden_single(self, cell: Cell, digit: int) -> None:
-        col_pencil_marks = [self.sudoku[c].pencil_marks for c in cell.column]
-        col_pencil_marks.remove(cell.pencil_marks)
-        for valid_set in col_pencil_marks:
-            if digit in valid_set:
-                break
-        else:
-            cell.fill(digit)
-
-    def check_digit_in_cell_for_box_hidden_single(self, cell, digit):
-        box_pencil_marks = [self.sudoku[c].pencil_marks for c in cell.box]
-        box_pencil_marks.remove(cell.pencil_marks)
-        for valid_set in box_pencil_marks:
+    def check_digit_in_cell_for_group_hidden_single(self, digit, cell, group):
+        pencil_marks = [self.sudoku[c].pencil_marks for c in getattr(cell, group)]
+        pencil_marks.remove(cell.pencil_marks)
+        for valid_set in pencil_marks:
             if digit in valid_set:
                 break
         else:
