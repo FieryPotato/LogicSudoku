@@ -14,7 +14,7 @@ UNSOLVED: str = "8 4915627" \
                 "753864192"
 
 
-class testNakedSingle(unittest.TestCase):
+class TestNakedSingle(unittest.TestCase):
     """A naked single is a cell which only contains one valid option."""
 
     def test_solver_fills_naked_singles(self) -> None:

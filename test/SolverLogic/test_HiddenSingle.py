@@ -34,7 +34,7 @@ UNSOLVED_BOX: str = "12 9 7  4" \
                     "9      48"
 
 
-class testHiddenSingle(unittest.TestCase):
+class TestHiddenSingle(unittest.TestCase):
     """A hidden single is a cell which contains a unique option in its
     row, column, or box."""
 
