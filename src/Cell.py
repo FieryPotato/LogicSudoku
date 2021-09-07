@@ -14,9 +14,12 @@ class Cell:
         return f"Cell({self.coordinates}: {self.digit})"
 
     def __eq__(self, other) -> bool:
-        if self.digit == other.digit:
-            return True
-        return False
+        for attribute in ("coordinates", "digit", "pencil_marks"):
+            if getattr(self, attribute) == getattr(other, attribute):
+                continue
+            else:
+                return False
+        return True
 
     def __ne__(self, other) -> bool:
         if self.digit == other.digit:
