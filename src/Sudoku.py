@@ -1,11 +1,10 @@
 import itertools
-from typing import Generator, ItemsView, Union
+from typing import Generator, ItemsView, Union, KeysView
 
 from src.Cell import Cell
 
 
 CELL_KEYS: list = [(j, i) for i, j in itertools.product(range(9), repeat=2)]
-RANGE_SET: set = {i for i in range(1, 10)}
 
 
 class Sudoku:
@@ -63,14 +62,11 @@ class Sudoku:
                 return False
         return True
 
-    def copy(self) -> "Sudoku":
-        new_sudoku = Sudoku()
-        for key in CELL_KEYS:
-            new_sudoku[key] = self[key].copy()
-        return new_sudoku
-
     def items(self) -> ItemsView:
         return self.cell_dict.items()
+
+    def keys(self) -> KeysView:
+        return self.cell_dict.keys()
 
     def set_cell(self, coordinates, value) -> None:
         self[coordinates].fill(value)

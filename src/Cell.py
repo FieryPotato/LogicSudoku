@@ -2,16 +2,13 @@ import itertools
 from typing import Union
 
 
-RANGE_SET = {i for i in range(1, 10)}
-
-
 class Cell:
     def __init__(self, coordinates: tuple[int, int]) -> None:
         self.coordinates: tuple = coordinates
-        self.x: int = coordinates[1]
-        self.y: int = coordinates[0]
+        self.x: int = coordinates[0]
+        self.y: int = coordinates[1]
         self.digit: Union[int, str] = " "
-        self.pencil_marks = RANGE_SET
+        self.pencil_marks = {i for i in range(1, 10)}
 
     def __repr__(self) -> str:
         return f"Cell({self.coordinates}: {self.digit})"
@@ -34,7 +31,7 @@ class Cell:
     def box(self) -> list:
         x = self.x - self.x % 3
         y = self.y - self.y % 3
-        boxes = [(y+i, x+j) for i, j in itertools.product(range(3), repeat=2)]
+        boxes = [(x+i, y+j) for i, j in itertools.product(range(3), repeat=2)]
         return boxes
         
     @property
@@ -56,8 +53,3 @@ class Cell:
     def clear(self) -> None:
         self.digit = " "
         return None
-
-    def copy(self) -> "Cell":
-        new_cell = Cell(self.coordinates)
-        new_cell.fill(self.digit)
-        return new_cell
