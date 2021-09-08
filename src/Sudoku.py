@@ -57,25 +57,33 @@ class Sudoku:
 
     @property
     def is_complete(self) -> bool:
+        """Return whether the sudoku has empty cells."""
         for cell in self:
             if cell.is_empty:
                 return False
         return True
 
     def items(self) -> ItemsView:
+        """Return an ItemsView of (key, cell) pairs in the Sudoku."""
         return self.cell_dict.items()
 
     def keys(self) -> KeysView:
+        """Return the KeysView of the sudoku in
+        (0, 0), (1, 0), (2, 0), ... (8, 0), (0, 1), (1, 1), ... (8, 8)
+        order."""
         return self.cell_dict.keys()
 
     def set_cell(self, coordinates, value) -> None:
+        """Set the chosen cell's value."""
         self[coordinates].fill(value)
         return None
     
     def get_cell(self, coordinates) -> Union[int, str]:
+        """Return the digit in input coordinates' cell."""
         return self[coordinates].digit
         
     def is_valid(self, coordinates, digit) -> bool:
+        """Return whether input digit is a valid entry in input coordinates' cell."""
         row_digits: set = {self[cell].digit for cell in self[coordinates].row}
         column_digits: set = {self[cell].digit for cell in self[coordinates].column}
         box_digits: set = {self[cell].digit for cell in self[coordinates].box}
@@ -100,3 +108,10 @@ class Sudoku:
         for i, key in enumerate(CELL_KEYS):
             new[key].fill(string[i])
         return new
+
+    def update_pencil_marks(self):
+        for key in self.keys():
+            self.check_cell_pencil_marks(key)
+
+    def box(self, i):
+        pass
