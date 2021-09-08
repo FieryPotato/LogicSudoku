@@ -81,16 +81,6 @@ class Sudoku:
     def get_cell(self, coordinates) -> Union[int, str]:
         """Return the digit in input coordinates' cell."""
         return self[coordinates].digit
-        
-    def is_valid(self, coordinates, digit) -> bool:
-        """Return whether input digit is a valid entry in input coordinates' cell."""
-        row_digits: set = {self[cell].digit for cell in self[coordinates].row}
-        column_digits: set = {self[cell].digit for cell in self[coordinates].column}
-        box_digits: set = {self[cell].digit for cell in self[coordinates].box}
-        for group in (row_digits, column_digits, box_digits):
-            if digit in group:
-                return False
-        return True
 
     def check_cell_pencil_marks(self, coordinates) -> None:
         cell: Cell = self[coordinates]
