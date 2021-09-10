@@ -1,3 +1,6 @@
+from typing import Optional
+
+from src.Cell import Cell
 from src.Sudoku import Sudoku
 
 
@@ -15,7 +18,7 @@ class Solver:
             self.fill_hidden_singles()
 
     def fill_naked_singles(self) -> None:
-        backup = None
+        backup: Optional[Sudoku] = None
         while backup != self.sudoku:
             backup = self.sudoku
             self.sudoku.update_pencil_marks()
@@ -25,7 +28,7 @@ class Solver:
         return None
 
     def fill_hidden_singles(self) -> None:
-        backup = None
+        backup: Optional[Sudoku] = None
         while backup != self.sudoku:
             backup = self.sudoku
             self.sudoku.update_pencil_marks()
@@ -47,15 +50,23 @@ class Solver:
             cell.fill(digit)
 
     def check_for_naked_pairs(self) -> None:
-        backup = None
+        backup: Optional[Sudoku] = None
         while backup != self.sudoku:
             backup = self.sudoku
             self.sudoku.update_pencil_marks()
-            # self.check_box_for_naked_pairs()
+            self.check_box_for_naked_pairs()
 
     def check_box_for_naked_pairs(self) -> None:
         for key, cell in self.sudoku.items():
             if len(cell.pencil_marks) == 2:
-                # group_minus_cell =
-                pass
+                group: list[Cell] = [self.sudoku[c] for c in cell.box]
+                group.remove(cell)
+                for c in group:
+                    if c.pencil_marks == cell.pencil_marks:
+                        group.remove(c)
+                        for remainder in group:
+                            for digit in cell.pencil_marks:
+                                if digit in remainder.pencil_marks:
+                                    remainder.pencil_marks.remove(digit)
+
 
