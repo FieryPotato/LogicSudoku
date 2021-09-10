@@ -93,6 +93,10 @@ class Sudoku:
         return True
 
     @property
+    def is_valid(self) -> int:
+        return verify(self)
+
+    @property
     def boxes(self) -> Iterator[list[Cell]]:
         """Generate boxes in the sudoku for iteration."""
         yield from [self.box(i) for i in range(9)]
@@ -129,11 +133,14 @@ class Sudoku:
     @classmethod
     def from_string(cls, string) -> "Sudoku":
         """Return a sudoku whose cells in order appear in an 81-character string."""
-        if len(string) != 81:
-            raise ValueError
+        if len(string) < 81:
+            raise ValueError("Your sudoku contains fewer than 81 digits.")
+        elif len(string) > 81:
+            raise ValueError("Your sudoku contains more than 81 digits.")
         new = cls()
         for i, key in enumerate(CELL_KEYS):
-            new[key].fill(string[i])
+            digit = string[i]
+            new[key].fill(digit)
         return new
 
     def update_pencil_marks(self) -> None:

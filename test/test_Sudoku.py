@@ -16,6 +16,11 @@ class TestSudokuErrors(unittest.TestCase):
             invalid_str: str = " " * 80
             Sudoku.from_string(invalid_str)
 
+    def test_creating_sudoku_with_invalid_string_digits(self) -> None:
+        with self.assertRaises(ValueError):
+            invalid_str: str = "a" * 81
+            Sudoku.from_string(invalid_str)
+
 
 class TestSudokuBuiltins(unittest.TestCase):
     def test_changing_pencil_marks_causes_sudoku_equality_to_fail(self) -> None:

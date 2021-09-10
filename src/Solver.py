@@ -21,19 +21,19 @@ class Solver:
         backup: Optional[Sudoku] = None
         while backup != self.sudoku:
             backup = self.sudoku
-            self.sudoku.update_pencil_marks()
             for key, cell in self.sudoku.items():
                 if len(cell.pencil_marks) == 1:
                     cell.fill(*cell.pencil_marks)
+            self.sudoku.update_pencil_marks()
         return None
 
     def fill_hidden_singles(self) -> None:
         backup: Optional[Sudoku] = None
         while backup != self.sudoku:
             backup = self.sudoku
-            self.sudoku.update_pencil_marks()
             for key, cell in self.sudoku.items():
                 self.cell_fill_hidden_singles(cell)
+            self.sudoku.update_pencil_marks()
 
     def cell_fill_hidden_singles(self, cell) -> None:
         for digit in cell.pencil_marks:
@@ -53,20 +53,19 @@ class Solver:
         backup: Optional[Sudoku] = None
         while backup != self.sudoku:
             backup = self.sudoku
-            self.sudoku.update_pencil_marks()
-            self.check_box_for_naked_pairs()
+            for cell in self.sudoku:
+                groups = "row", "box"
+                for group in groups:
+                    self.check_cell_in_group_for_naked_pairs(cell, group)
 
-    def check_box_for_naked_pairs(self) -> None:
-        for key, cell in self.sudoku.items():
-            if len(cell.pencil_marks) == 2:
-                group: list[Cell] = [self.sudoku[c] for c in cell.box]
-                group.remove(cell)
-                for c in group:
-                    if c.pencil_marks == cell.pencil_marks:
-                        group.remove(c)
-                        for remainder in group:
-                            for digit in cell.pencil_marks:
-                                if digit in remainder.pencil_marks:
-                                    remainder.pencil_marks.remove(digit)
-
-
+    def check_cell_in_group_for_naked_pairs(self, cell, group_type) -> None:
+        if len(cell.pencil_marks) == 2:
+            group: list[Cell] = [self.sudoku[c] for c in getattr(cell, group_type)]
+            group.remove(cell)
+            for c in group:
+                if c.pencil_marks == cell.pencil_marks:
+                    group.remove(c)
+                    for remainder in group:
+                        for digit in cell.pencil_marks:
+                            if digit in remainder.pencil_marks:
+                                remainder.pencil_marks.remove(digit)
