@@ -59,11 +59,12 @@ class TestSudokuProperties(unittest.TestCase):
                  (6, 7), (7, 7), (8, 7),
                  (6, 8), (7, 8), (8, 8)]}
     box_keys = [box_list for box_list in boxes.values()]
+    rows = [[(j, i) for j in range(9)] for i in range(9)]
 
     def setUp(self) -> None:
         self.sudoku: Sudoku = Sudoku()
 
-    def test_sudoku_boxes_individually(self) -> None:
+    def test_boxes_individually(self) -> None:
         for i, expected_keys in enumerate(self.box_keys):
             actual_keys: list[tuple[int, int]] = [cell.coordinates for cell in self.sudoku.box(i)]
             self.assertEqual(expected_keys, actual_keys)
@@ -72,12 +73,15 @@ class TestSudokuProperties(unittest.TestCase):
         actual_boxes: list = [[cell.coordinates for cell in box] for box in self.sudoku.boxes]
         self.assertEqual(self.box_keys, actual_boxes)
 
-    def test_sudoku_rows_individually(self) -> None:
-        rows = [[(j, i) for j in range(9)] for i in range(9)]
-
-        for i, expected_keys in enumerate(rows):
+    def test_rows_individually(self) -> None:
+        for i, expected_keys in enumerate(self.rows):
             actual_keys: list[tuple[int, int]] = [cell.coordinates for cell in self.sudoku.row(i)]
             self.assertEqual(expected_keys, actual_keys)
+
+    def test_rows_property(self) -> None:
+        row_keys = [row for row in self.rows]
+        actual_rows: list = [[cell.coordinates for cell in row] for row in self.sudoku.rows]
+        self.assertEqual(row_keys, actual_rows)
 
 
 if __name__ == '__main__':

@@ -93,6 +93,11 @@ class Sudoku:
         return True
 
     @property
+    def rows(self) -> Iterator[list[Cell]]:
+        """Generate rows in the sudoku for iteration."""
+        yield from [self.row(i) for i in range(9)]
+
+    @property
     def boxes(self) -> Iterator[list[Cell]]:
         """Generate boxes in the sudoku for iteration."""
         yield from [self.box(i) for i in range(9)]
