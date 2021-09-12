@@ -70,7 +70,7 @@ class TestSudokuProperties(unittest.TestCase):
 
     def test_boxes_property(self) -> None:
         sudoku: Sudoku = Sudoku()
-        actual_boxes: list = [box for box in sudoku.boxes]
+        actual_boxes: list = [[cell.coordinates for cell in box] for box in sudoku.boxes]
         self.assertEqual(self.box_keys, actual_boxes)
 
 
