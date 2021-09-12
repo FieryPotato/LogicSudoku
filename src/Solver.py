@@ -16,6 +16,7 @@ class Solver:
         while not self.sudoku.is_complete:
             self.fill_naked_singles()
             self.fill_hidden_singles()
+            self.check_for_naked_pairs()
 
     def fill_naked_singles(self) -> None:
         backup: Optional[Sudoku] = None
@@ -65,7 +66,11 @@ class Solver:
             for c in group:
                 if c.pencil_marks == cell.pencil_marks:
                     group.remove(c)
-                    for remainder in group:
-                        for digit in cell.pencil_marks:
-                            if digit in remainder.pencil_marks:
-                                remainder.pencil_marks.remove(digit)
+                    clear_pencil_marks_from_group(group, cell)
+
+
+def clear_pencil_marks_from_group(group, cell):
+    for remainder in group:
+        for digit in cell.pencil_marks:
+            if digit in remainder.pencil_marks:
+                remainder.pencil_marks.remove(digit)
