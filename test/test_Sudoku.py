@@ -32,45 +32,45 @@ class TestSudokuBuiltins(unittest.TestCase):
 
 
 class TestSudokuProperties(unittest.TestCase):
-    b_1 = [(0, 0), (1, 0), (2, 0),
-           (0, 1), (1, 1), (2, 1),
-           (0, 2), (1, 2), (2, 2)]
-    b_2 = [(3, 0), (4, 0), (5, 0),
-           (3, 1), (4, 1), (5, 1),
-           (3, 2), (4, 2), (5, 2)]
-    b_3 = [(6, 0), (7, 0), (8, 0),
-           (6, 1), (7, 1), (8, 1),
-           (6, 2), (7, 2), (8, 2)]
-    b_4 = [(0, 3), (1, 3), (2, 3),
-           (0, 4), (1, 4), (2, 4),
-           (0, 5), (1, 5), (2, 5)]
-    b_5 = [(3, 3), (4, 3), (5, 3),
-           (3, 4), (4, 4), (5, 4),
-           (3, 5), (4, 5), (5, 5)]
-    b_6 = [(6, 3), (7, 3), (8, 3),
-           (6, 4), (7, 4), (8, 4),
-           (6, 5), (7, 5), (8, 5)]
-    b_7 = [(0, 6), (1, 6), (2, 6),
-           (0, 7), (1, 7), (2, 7),
-           (0, 8), (1, 8), (2, 8)]
-    b_8 = [(3, 6), (4, 6), (5, 6),
-           (3, 7), (4, 7), (5, 7),
-           (3, 8), (4, 8), (5, 8)]
-    b_9 = [(6, 6), (7, 6), (8, 6),
-           (6, 7), (7, 7), (8, 7),
-           (6, 8), (7, 8), (8, 8)]
-    box_keys = [b_1, b_2, b_3, b_4, b_5, b_6, b_7, b_8, b_9]
+    boxes = {1: [(0, 0), (1, 0), (2, 0),
+                 (0, 1), (1, 1), (2, 1),
+                 (0, 2), (1, 2), (2, 2)],
+             2: [(3, 0), (4, 0), (5, 0),
+                 (3, 1), (4, 1), (5, 1),
+                 (3, 2), (4, 2), (5, 2)],
+             3: [(6, 0), (7, 0), (8, 0),
+                 (6, 1), (7, 1), (8, 1),
+                 (6, 2), (7, 2), (8, 2)],
+             4: [(0, 3), (1, 3), (2, 3),
+                 (0, 4), (1, 4), (2, 4),
+                 (0, 5), (1, 5), (2, 5)],
+             5: [(3, 3), (4, 3), (5, 3),
+                 (3, 4), (4, 4), (5, 4),
+                 (3, 5), (4, 5), (5, 5)],
+             6: [(6, 3), (7, 3), (8, 3),
+                 (6, 4), (7, 4), (8, 4),
+                 (6, 5), (7, 5), (8, 5)],
+             7: [(0, 6), (1, 6), (2, 6),
+                 (0, 7), (1, 7), (2, 7),
+                 (0, 8), (1, 8), (2, 8)],
+             8: [(3, 6), (4, 6), (5, 6),
+                 (3, 7), (4, 7), (5, 7),
+                 (3, 8), (4, 8), (5, 8)],
+             9: [(6, 6), (7, 6), (8, 6),
+                 (6, 7), (7, 7), (8, 7),
+                 (6, 8), (7, 8), (8, 8)]}
+    box_keys = [box_list for box_list in boxes.values()]
+
+    def setUp(self) -> None:
+        self.sudoku: Sudoku = Sudoku()
 
     def test_sudoku_boxes_individually(self) -> None:
-        sudoku: Sudoku = Sudoku()
-
         for i, expected_keys in enumerate(self.box_keys):
-            actual_keys: list[tuple[int, int]] = [cell.coordinates for cell in sudoku.box(i)]
+            actual_keys: list[tuple[int, int]] = [cell.coordinates for cell in self.sudoku.box(i)]
             self.assertEqual(expected_keys, actual_keys)
 
     def test_boxes_property(self) -> None:
-        sudoku: Sudoku = Sudoku()
-        actual_boxes: list = [[cell.coordinates for cell in box] for box in sudoku.boxes]
+        actual_boxes: list = [[cell.coordinates for cell in box] for box in self.sudoku.boxes]
         self.assertEqual(self.box_keys, actual_boxes)
 
 
