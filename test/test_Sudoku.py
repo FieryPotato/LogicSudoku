@@ -60,6 +60,7 @@ class TestSudokuProperties(unittest.TestCase):
                  (6, 8), (7, 8), (8, 8)]}
     box_keys = [box_list for box_list in boxes.values()]
     rows = [[(j, i) for j in range(9)] for i in range(9)]
+    columns = [[(i, j) for j in range(9)] for i in range(9)]
 
     def setUp(self) -> None:
         self.sudoku: Sudoku = Sudoku()
@@ -82,6 +83,11 @@ class TestSudokuProperties(unittest.TestCase):
         row_keys = [row for row in self.rows]
         actual_rows: list = [[cell.coordinates for cell in row] for row in self.sudoku.rows]
         self.assertEqual(row_keys, actual_rows)
+
+    def test_columns_individually(self) -> None:
+        for i, expected_keys in enumerate(self.columns):
+            actual_keys: list[tuple[int, int]] = [cell.coordinates for cell in self.sudoku.column(i)]
+            self.assertEqual(expected_keys, actual_keys)
 
 
 if __name__ == '__main__':

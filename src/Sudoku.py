@@ -150,10 +150,14 @@ class Sudoku:
         for key in self.keys():
             self.check_cell_pencil_marks(key)
 
-    def box(self, i) -> list[Cell]:
-        """Return the list of cells in box i of the Sudoku."""
-        return [self[cell] for cell in BOX_MAP[i]]
+    def box(self, b) -> list[Cell]:
+        """Return the list of cells in box b of the Sudoku."""
+        return [self[cell] for cell in BOX_MAP[b]]
 
     def row(self, r) -> list[Cell]:
-        """Return the list of cell in row i of the Sudoku."""
+        """Return the list of cells in row r of the Sudoku."""
         return [self[key] for key in [(c, r) for c in range(9)]]
+
+    def column(self, c) -> list[Cell]:
+        """Return the list of cells in column c """
+        return [self[key] for key in [(c, r) for r in range(9)]]
