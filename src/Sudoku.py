@@ -166,3 +166,4 @@ class Sudoku:
     def column(self, c) -> list[Cell]:
         """Return the list of cells in column c """
         return [self[key] for key in [(c, r) for r in range(9)]]
+
