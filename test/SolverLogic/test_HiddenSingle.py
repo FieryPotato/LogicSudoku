@@ -56,6 +56,5 @@ class TestHiddenSingle(unittest.TestCase):
         solver.fill_hidden_singles()
         self.assertEqual(1, solver.sudoku[(4, 1)].digit)
 
-
 if __name__ == '__main__':
     unittest.main()
