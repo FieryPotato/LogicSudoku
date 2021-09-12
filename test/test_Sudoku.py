@@ -1,7 +1,6 @@
 import unittest
 from copy import deepcopy
 
-from src.Cell import Cell
 from src.Sudoku import Sudoku
 
 
@@ -72,6 +71,13 @@ class TestSudokuProperties(unittest.TestCase):
     def test_boxes_property(self) -> None:
         actual_boxes: list = [[cell.coordinates for cell in box] for box in self.sudoku.boxes]
         self.assertEqual(self.box_keys, actual_boxes)
+
+    def test_sudoku_rows_individually(self) -> None:
+        rows = [[(j, i) for j in range(9)] for i in range(9)]
+
+        for i, expected_keys in enumerate(rows):
+            actual_keys: list[tuple[int, int]] = [cell.coordinates for cell in self.sudoku.row(i)]
+            self.assertEqual(expected_keys, actual_keys)
 
 
 if __name__ == '__main__':

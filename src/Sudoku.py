@@ -93,10 +93,6 @@ class Sudoku:
         return True
 
     @property
-    def is_valid(self) -> int:
-        return verify(self)
-
-    @property
     def boxes(self) -> Iterator[list[Cell]]:
         """Generate boxes in the sudoku for iteration."""
         yield from [self.box(i) for i in range(9)]
@@ -152,3 +148,7 @@ class Sudoku:
     def box(self, i) -> list[Cell]:
         """Return the list of cells in box i of the Sudoku."""
         return [self[cell] for cell in BOX_MAP[i]]
+
+    def row(self, r) -> list[Cell]:
+        """Return the list of cell in row i of the Sudoku."""
+        return [self[key] for key in [(c, r) for c in range(9)]]
