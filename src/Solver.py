@@ -4,9 +4,6 @@ from src.Cell import Cell
 from src.Sudoku import Sudoku
 
 
-GROUPS: tuple = ("row", "column", "box")
-
-
 class Solver:
     def __init__(self, sudoku: Sudoku):
         sudoku.update_pencil_marks()
@@ -38,7 +35,7 @@ class Solver:
 
     def cell_fill_hidden_singles(self, cell) -> None:
         for digit in cell.pencil_marks:
-            for group in GROUPS:
+            for group in "row", "column", "box":
                 self.check_digit_in_cell_for_group_hidden_single(digit, cell, group)
 
     def check_digit_in_cell_for_group_hidden_single(self, digit, cell, group) -> None:
@@ -70,34 +67,24 @@ class Solver:
 
     def check_for_locked_candidates(self) -> None:
         for digit in range(1, 10):
-            self.check_rows_for_locked_candidates(digit)
-            self.check_cols_for_locked_candidates(digit)
+            for group in "rows", "columns":
+                self.check_digit_for_locked_candidates_in_group(digit, group)
 
-    def check_rows_for_locked_candidates(self, digit):
-        for row in self.sudoku.rows:
-            candidate_cells: list[Cell] = [cell for cell in row if digit in cell.pencil_marks]
+    def check_digit_for_locked_candidates_in_group(self, digit, group) -> None:
+        for g in getattr(self.sudoku, group):
+            candidate_cells: list[Cell] = [cell for cell in g if digit in cell.pencil_marks]
             if len(candidate_cells) <= 3:
                 box_numbers = [cell.box_num for cell in candidate_cells]
                 if len(set(box_numbers)) == 1:
-                    box_number = candidate_cells[0].box_num
-                    locked_box = self.sudoku.box(box_number)
-                    locked_cells = [cell for cell in locked_box if cell not in candidate_cells]
-                    for remainder in locked_cells:
-                        if digit in remainder.pencil_marks:
-                            remainder.pencil_marks.remove(digit)
+                    self.clear_pencil_marks_from_locked_candidate_cells(candidate_cells, digit)
 
-    def check_cols_for_locked_candidates(self, digit):
-        for column in self.sudoku.columns:
-            candidate_cells: list[Cell] = [cell for cell in column if digit in cell.pencil_marks]
-            if len(candidate_cells) <= 3:
-                box_numbers = [cell.box_num for cell in candidate_cells]
-                if len(set(box_numbers)) == 1:
-                    box_number = candidate_cells[0].box_num
-                    locked_box = self.sudoku.box(box_number)
-                    locked_cells = [cell for cell in locked_box if cell not in candidate_cells]
-                    for remainder in locked_cells:
-                        if digit in remainder.pencil_marks:
-                            remainder.pencil_marks.remove(digit)
+    def clear_pencil_marks_from_locked_candidate_cells(self, cells, digit):
+        box_number = cells[0].box_num
+        locked_box = self.sudoku.box(box_number)
+        locked_cells = [cell for cell in locked_box if cell not in cells]
+        for remainder in locked_cells:
+            if digit in remainder.pencil_marks:
+                remainder.pencil_marks.remove(digit)
 
 
 def clear_pencil_marks_from_naked_single_group(group, cell):
