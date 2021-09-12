@@ -71,10 +71,24 @@ class Solver:
     def check_for_locked_candidates(self) -> None:
         for digit in range(1, 10):
             self.check_rows_for_locked_candidates(digit)
+            self.check_cols_for_locked_candidates(digit)
 
     def check_rows_for_locked_candidates(self, digit):
         for row in self.sudoku.rows:
             candidate_cells: list[Cell] = [cell for cell in row if digit in cell.pencil_marks]
+            if len(candidate_cells) <= 3:
+                box_numbers = [cell.box_num for cell in candidate_cells]
+                if len(set(box_numbers)) == 1:
+                    box_number = candidate_cells[0].box_num
+                    locked_box = self.sudoku.box(box_number)
+                    locked_cells = [cell for cell in locked_box if cell not in candidate_cells]
+                    for remainder in locked_cells:
+                        if digit in remainder.pencil_marks:
+                            remainder.pencil_marks.remove(digit)
+
+    def check_cols_for_locked_candidates(self, digit):
+        for column in self.sudoku.columns:
+            candidate_cells: list[Cell] = [cell for cell in column if digit in cell.pencil_marks]
             if len(candidate_cells) <= 3:
                 box_numbers = [cell.box_num for cell in candidate_cells]
                 if len(set(box_numbers)) == 1:
