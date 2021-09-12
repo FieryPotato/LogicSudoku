@@ -54,7 +54,7 @@ class Solver:
         while backup != self.sudoku:
             backup = self.sudoku
             for cell in self.sudoku:
-                groups = "row", "box"
+                groups = "row", "box", "column"
                 for group in groups:
                     self.check_cell_in_group_for_naked_pairs(cell, group)
 

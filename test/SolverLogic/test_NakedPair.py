@@ -24,6 +24,16 @@ UNSOLVED_BOX: str = " 91      " \
                     "31   6 8 " \
                     " 7    653"
 
+UNSOLVED_COL: str = " 24  31  " \
+                    " 7   26  " \
+                    "13   4   " \
+                    "     9725" \
+                    "   721   " \
+                    "7 25 6 1 " \
+                    "     7 89" \
+                    "  96 5 71" \
+                    "  7  83  "
+
 
 class TestNakedPair(unittest.TestCase):
     def test_solver_clears_pencil_marks_for_naked_pairs_in_box(self) -> None:
@@ -55,6 +65,21 @@ class TestNakedPair(unittest.TestCase):
         for key in naked_pair:
             pencil_marks = sudoku[key].pencil_marks
             self.assertTrue(3 in pencil_marks and 9 in pencil_marks and len(pencil_marks) == 2)
+
+    def test_solver_clears_pencil_marks_for_naked_pairs_in_col(self) -> None:
+        sudoku: Sudoku = Sudoku.from_string(UNSOLVED_COL)
+        solver: Solver = Solver(sudoku)
+        keys_to_change: tuple = ((7, 4), (7, 8))
+        naked_pair: tuple = ((7, 0), (7, 2))
+
+        solver.check_for_naked_pairs()
+
+        for key in keys_to_change:
+            pencil_marks = sudoku[key].pencil_marks
+            self.assertFalse(5 in pencil_marks or 9 in pencil_marks)
+        for key in naked_pair:
+            pencil_marks = sudoku[key].pencil_marks
+            self.assertTrue(5 in pencil_marks and 9 in pencil_marks and len(pencil_marks) == 2)
 
 
 if __name__ == '__main__':
