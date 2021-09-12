@@ -89,6 +89,11 @@ class TestSudokuProperties(unittest.TestCase):
             actual_keys: list[tuple[int, int]] = [cell.coordinates for cell in self.sudoku.column(i)]
             self.assertEqual(expected_keys, actual_keys)
 
+    def tesT_columns_property(self) -> None:
+        col_keys = [col for col in self.columns]
+        actual_cols: list = [[cell.coordinates for cell in column] for column in self.sudoku.columns]
+        self.assertEqual((col_keys, actual_cols))
+
 
 if __name__ == '__main__':
     unittest.main()
