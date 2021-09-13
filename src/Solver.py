@@ -78,13 +78,26 @@ class Solver:
                 if len(set(box_numbers)) == 1:
                     self.clear_pencil_marks_from_locked_candidate_cells(candidate_cells, digit)
 
-    def clear_pencil_marks_from_locked_candidate_cells(self, cells, digit):
+    def clear_pencil_marks_from_locked_candidate_cells(self, cells, digit) -> None:
         box_number = cells[0].box_num
         locked_box = self.sudoku.box(box_number)
         locked_cells = [cell for cell in locked_box if cell not in cells]
         for remainder in locked_cells:
             if digit in remainder.pencil_marks:
                 remainder.pencil_marks.remove(digit)
+
+    def check_for_pointing_tuple(self) -> None:
+        for digit in range(1, 10):
+            for box in self.sudoku.boxes:
+                possibles = [cell for cell in box if digit in cell.pencil_marks]
+                rows = set(c.y for c in possibles)
+                if len(rows) == 1:
+                    pointed_group = self.sudoku.row(list(rows)[0])
+                    for cell in pointed_group:
+                        if cell not in possibles and digit in cell.pencil_marks:
+                            cell.pencil_marks.remove(digit)
+
+
 
 
 def clear_pencil_marks_from_naked_single_group(group, cell):
