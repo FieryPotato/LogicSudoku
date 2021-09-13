@@ -91,11 +91,20 @@ class Solver:
             for box in self.sudoku.boxes:
                 possibles = [cell for cell in box if digit in cell.pencil_marks]
                 rows = set(c.y for c in possibles)
+                columns = set(c.x for c in possibles)
+
                 if len(rows) == 1:
                     pointed_group = self.sudoku.row(list(rows)[0])
                     for cell in pointed_group:
                         if cell not in possibles and digit in cell.pencil_marks:
                             cell.pencil_marks.remove(digit)
+
+                elif len(columns) == 1:
+                    pointed_group = self.sudoku.column(list(columns)[0])
+                    for cell in pointed_group:
+                        if cell not in possibles and digit in cell.pencil_marks:
+                            cell.pencil_marks.remove(digit)
+
 
 
 
