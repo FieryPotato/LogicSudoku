@@ -120,8 +120,7 @@ class Sudoku:
     def set_cell(self, coordinates, value) -> None:
         """Set the chosen cell's value."""
         self[coordinates].fill(value)
-        return None
-    
+
     def get_cell(self, coordinates) -> Union[int, str]:
         """Return the digit in input coordinates' cell."""
         return self[coordinates].digit
@@ -130,11 +129,15 @@ class Sudoku:
         """Clear pencil marks from a cell if the pencil mark appears
         in the cell's row, column, or box."""
         cell: Cell = self[coordinates]
-        row_digits: set = {self[c].digit for c in cell.row}
-        column_digits: set = {self[c].digit for c in cell.column}
-        box_digits: set = {self[c].digit for c in cell.box}
-        invalid_digits: set = row_digits.union(column_digits, box_digits)
-        cell.pencil_marks -= invalid_digits
+        if cell.is_empty:
+            row_digits: set = {self[c].digit for c in cell.row}
+            column_digits: set = {self[c].digit for c in cell.column}
+            box_digits: set = {self[c].digit for c in cell.box}
+            invalid_digits: set = row_digits.union(column_digits, box_digits)
+            cell.pencil_marks -= invalid_digits
+        else:
+            cell.pencil_marks = {}
+
         
     @classmethod
     def from_string(cls, string) -> "Sudoku":
