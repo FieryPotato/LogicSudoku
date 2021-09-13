@@ -136,7 +136,7 @@ class Sudoku:
             invalid_digits: set = row_digits.union(column_digits, box_digits)
             cell.pencil_marks -= invalid_digits
         else:
-            cell.pencil_marks = {}
+            cell.pencil_marks = set()
 
         
     @classmethod
