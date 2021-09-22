@@ -113,7 +113,7 @@ class Solver:
             for c in group:
                 if c.pencil_marks == cell.pencil_marks:
                     group.remove(c)
-                    self.clear_pencil_marks_from_naked_single_group(group, cell)
+                    _clear_pencil_marks_from_naked_single_group(group, cell)
         return None
 
     def check_digit_for_locked_candidates_in_group(self, digit, group) -> None:
@@ -134,10 +134,10 @@ class Solver:
                 remainder.pencil_marks.remove(digit)
         return None
 
-    @staticmethod
-    def clear_pencil_marks_from_naked_single_group(group, cell) -> None:
-        for remainder in group:
-            for digit in cell.pencil_marks:
-                if digit in remainder.pencil_marks:
-                    remainder.pencil_marks.remove(digit)
-        return None
+
+def _clear_pencil_marks_from_naked_single_group(group, cell) -> None:
+    for remainder in group:
+        for digit in cell.pencil_marks:
+            if digit in remainder.pencil_marks:
+                remainder.pencil_marks.remove(digit)
+    return None
