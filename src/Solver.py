@@ -6,22 +6,37 @@ from src.Sudoku import Sudoku
 
 
 class Solver:
+
     def __init__(self, sudoku: Sudoku):
         sudoku.update_pencil_marks()
         self.sudoku = sudoku
         self.is_solved = self.sudoku.is_complete
+        self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles, self.check_for_naked_pairs,
+                           self.check_for_locked_candidates, self.check_for_pointing_tuple)
+        # lambda: True is only here to make self.levels a tuple of
+        # callables until I write self.try_intermediate_logic
+        self.levels = (self.try_easy_logic, lambda: True)
 
     def main(self):
         if not self.is_solved:
             backup = None
             while backup != self.sudoku:
                 backup = deepcopy(self.sudoku)
-                self.fill_naked_singles()
-                self.fill_hidden_singles()
-                self.check_for_naked_pairs()
-                self.check_for_locked_candidates()
-                self.check_for_pointing_tuple()
+                for level in self.levels:
+                    level()
+                    if backup != self.sudoku:
+                        break
             self.is_solved = self.sudoku.is_complete
+
+    def try_easy_logic(self) -> bool:
+        backup: Optional[Sudoku] = None
+        while backup != self.sudoku:
+            backup = deepcopy(self.sudoku)
+            for strategy in self.easy_logic:
+                strategy()
+                if backup != self.sudoku:
+                    break
+        return self.sudoku.is_complete
 
     def fill_naked_singles(self) -> None:
         backup: Optional[Sudoku] = None
@@ -40,11 +55,13 @@ class Solver:
             for key, cell in self.sudoku.items():
                 self.cell_fill_hidden_singles(cell)
             self.sudoku.update_pencil_marks()
+        return None
 
     def cell_fill_hidden_singles(self, cell) -> None:
         for digit in cell.pencil_marks:
             for group in "row", "column", "box":
                 self.check_digit_in_cell_for_group_hidden_single(digit, cell, group)
+        return None
 
     def check_for_naked_pairs(self) -> None:
         backup: Optional[Sudoku] = None
@@ -54,11 +71,13 @@ class Solver:
                 groups = "row", "box", "column"
                 for group in groups:
                     self.check_cell_in_group_for_naked_pairs(cell, group)
+        return None
 
     def check_for_locked_candidates(self) -> None:
         for digit in range(1, 10):
             for group in "rows", "columns":
                 self.check_digit_for_locked_candidates_in_group(digit, group)
+        return None
 
     def check_for_pointing_tuple(self) -> None:
         for digit in range(1, 10):
@@ -75,6 +94,7 @@ class Solver:
                 for cell in pointed_group:
                     if cell not in possibles and digit in cell.pencil_marks:
                         cell.pencil_marks.remove(digit)
+        return None
 
     def check_digit_in_cell_for_group_hidden_single(self, digit, cell, group) -> None:
         pencil_marks = [self.sudoku[c].pencil_marks for c in getattr(cell, group)]
@@ -84,6 +104,7 @@ class Solver:
                 break
         else:
             cell.fill(digit)
+        return None
 
     def check_cell_in_group_for_naked_pairs(self, cell, group_type) -> None:
         if len(cell.pencil_marks) == 2:
@@ -92,7 +113,8 @@ class Solver:
             for c in group:
                 if c.pencil_marks == cell.pencil_marks:
                     group.remove(c)
-                    clear_pencil_marks_from_naked_single_group(group, cell)
+                    self.clear_pencil_marks_from_naked_single_group(group, cell)
+        return None
 
     def check_digit_for_locked_candidates_in_group(self, digit, group) -> None:
         for g in getattr(self.sudoku, group):
@@ -101,6 +123,7 @@ class Solver:
                 box_numbers = [cell.box_num for cell in candidate_cells]
                 if len(set(box_numbers)) == 1:
                     self.clear_pencil_marks_from_locked_candidate_cells(candidate_cells, digit)
+        return None
 
     def clear_pencil_marks_from_locked_candidate_cells(self, cells, digit) -> None:
         box_number = cells[0].box_num
@@ -109,10 +132,12 @@ class Solver:
         for remainder in locked_cells:
             if digit in remainder.pencil_marks:
                 remainder.pencil_marks.remove(digit)
+        return None
 
-
-def clear_pencil_marks_from_naked_single_group(group, cell):
-    for remainder in group:
-        for digit in cell.pencil_marks:
-            if digit in remainder.pencil_marks:
-                remainder.pencil_marks.remove(digit)
+    @staticmethod
+    def clear_pencil_marks_from_naked_single_group(group, cell) -> None:
+        for remainder in group:
+            for digit in cell.pencil_marks:
+                if digit in remainder.pencil_marks:
+                    remainder.pencil_marks.remove(digit)
+        return None
