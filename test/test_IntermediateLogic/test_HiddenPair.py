@@ -14,6 +14,16 @@ UNSOLVED_ROW = "      456" \
                "     42  " \
                " 4    6  "
 
+UNSOLVED_COL = "   8697  " \
+               " 7 34568 " \
+               "6 8271 3 " \
+               "   483  5" \
+               "    57  8" \
+               "8  6 2 4 " \
+               " 235 84 6" \
+               "184726   " \
+               "  6 348  "
+
 UNSOLVED_BOX = "6  1  27 " \
                "   9  6  " \
                "3  276  4" \
@@ -26,17 +36,6 @@ UNSOLVED_BOX = "6  1  27 " \
 
 
 class TestHiddenPair(unittest.TestCase):
-    def test_solver_clears_pencil_marks_in_box(self) -> None:
-        sudoku: Sudoku = Sudoku.from_string(UNSOLVED_BOX)
-        solver: Solver = Solver(sudoku)
-        hidden_pair: tuple = ((5, 3), (5, 5))
-
-        solver.check_for_hidden_pairs()
-
-        for key in hidden_pair:
-            pencil_marks = sudoku[key].pencil_marks
-            self.assertTrue({1, 9} == pencil_marks)
-
     def test_solver_clears_pencil_marks_in_row(self) -> None:
         sudoku: Sudoku = Sudoku.from_string(UNSOLVED_ROW)
         solver: Solver = Solver(sudoku)
@@ -47,6 +46,28 @@ class TestHiddenPair(unittest.TestCase):
         for key in hidden_pair:
             pencil_marks = sudoku[key].pencil_marks
             self.assertTrue({2, 6} == pencil_marks)
+
+    def test_solver_clears_pencil_marks_in_col(self) -> None:
+        sudoku: Sudoku = Sudoku.from_string(UNSOLVED_COL)
+        solver: Solver = Solver(sudoku)
+        hidden_pair: tuple = ((0, 0), (0, 4))
+
+        solver.check_for_hidden_pairs()
+
+        for key in hidden_pair:
+            pencil_marks = sudoku[key].pencil_marks
+            self.assertTrue({3, 4} == pencil_marks)
+
+    def test_solver_clears_pencil_marks_in_box(self) -> None:
+        sudoku: Sudoku = Sudoku.from_string(UNSOLVED_BOX)
+        solver: Solver = Solver(sudoku)
+        hidden_pair: tuple = ((5, 3), (5, 5))
+
+        solver.check_for_hidden_pairs()
+
+        for key in hidden_pair:
+            pencil_marks = sudoku[key].pencil_marks
+            self.assertTrue({1, 9} == pencil_marks)
 
 
 if __name__ == '__main__':
