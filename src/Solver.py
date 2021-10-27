@@ -1,3 +1,4 @@
+import itertools
 from typing import Optional
 from copy import deepcopy
 
@@ -11,9 +12,10 @@ class Solver:
         sudoku.update_pencil_marks()
         self.sudoku = sudoku
         self.is_solved = self.sudoku.is_complete
-        self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles, self.check_for_naked_pairs,
-                           self.check_for_locked_candidates, self.check_for_pointing_tuple)
-        # lambda: True is only here to make self.levels a tuple of
+        self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles,
+                           self.check_for_naked_pairs, self.check_for_locked_candidates,
+                           self.check_for_pointing_tuple)
+        # "lambda: True" is only here to make self.levels a tuple of
         # callables until I write self.try_intermediate_logic
         self.levels = (self.try_easy_logic, lambda: True)
 
@@ -132,6 +134,37 @@ class Solver:
         for remainder in locked_cells:
             if digit in remainder.pencil_marks:
                 remainder.pencil_marks.remove(digit)
+        return None
+
+    def check_for_hidden_pairs(self) -> None:
+        backup: Optional[Sudoku] = None
+        while backup != self.sudoku:
+            backup = deepcopy(self.sudoku)
+            groups = "box",
+            for group_type in groups:
+                for index in range(9):
+                    self.check_group_for_hidden_pairs(group_type, index)
+        return None
+
+    def check_group_for_hidden_pairs(self, group_type: str, index: int) -> None:
+        group: list[Cell]
+        if group_type == "row":
+            group = self.sudoku.row(index)
+        elif group_type == "column":
+            group = self.sudoku.column(index)
+        elif group_type == "box":
+            group = self.sudoku.box(index)
+        for possible_a, possible_b in itertools.combinations(range(1, 10), 2):
+            possible_cells = [cell for cell in group
+                              if possible_a in cell.pencil_marks and possible_b in cell.pencil_marks]
+            if len(possible_cells) == 2:
+                for cell in [c for c in group if c not in possible_cells]:
+                    if cell.pencil_marks.intersection({possible_a, possible_b}):
+                        break
+                else:
+                    for cell in possible_cells:
+                        cell.pencil_marks = {possible_a, possible_b}
+                    break
         return None
 
 
