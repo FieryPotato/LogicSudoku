@@ -3,6 +3,17 @@ import unittest
 from src.Solver import Solver
 from src.Sudoku import Sudoku
 
+
+UNSOLVED_ROW = "      456" \
+               "5 734   2" \
+               " 942 5 8 " \
+               "4 95     " \
+               "  16 254 " \
+               "  54 7   " \
+               "95 1   34" \
+               "     42  " \
+               " 4    6  "
+
 UNSOLVED_BOX = "6  1  27 " \
                "   9  6  " \
                "3  276  4" \
@@ -24,7 +35,18 @@ class TestHiddenPair(unittest.TestCase):
 
         for key in hidden_pair:
             pencil_marks = sudoku[key].pencil_marks
-            self.assertTrue(1 in pencil_marks and 9 in pencil_marks and len(pencil_marks) == 2)
+            self.assertTrue({1, 9} == pencil_marks)
+
+    def test_solver_clears_pencil_marks_in_row(self) -> None:
+        sudoku: Sudoku = Sudoku.from_string(UNSOLVED_ROW)
+        solver: Solver = Solver(sudoku)
+        hidden_pair: tuple = ((1, 3), (7, 3))
+
+        solver.check_for_hidden_pairs()
+
+        for key in hidden_pair:
+            pencil_marks = sudoku[key].pencil_marks
+            self.assertTrue({2, 6} == pencil_marks)
 
 
 if __name__ == '__main__':

@@ -140,7 +140,7 @@ class Solver:
         backup: Optional[Sudoku] = None
         while backup != self.sudoku:
             backup = deepcopy(self.sudoku)
-            groups = "box",
+            groups = "row", "box"
             for group_type in groups:
                 for index in range(9):
                     self.check_group_for_hidden_pairs(group_type, index)
