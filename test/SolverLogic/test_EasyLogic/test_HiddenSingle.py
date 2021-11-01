@@ -41,19 +41,19 @@ class TestHiddenSingle(unittest.TestCase):
     def test_solver_fills_hidden_singles_in_row(self) -> None:
         sudoku: Sudoku = Sudoku.from_string(UNSOLVED_ROW)
         solver: Solver = Solver(sudoku)
-        solver.fill_hidden_singles()
+        self.assertTrue(solver.fill_hidden_singles())
         self.assertEqual(3, solver.sudoku[(3, 8)].digit)
 
     def test_solver_fills_hidden_singles_in_col(self) -> None:
         sudoku: Sudoku = Sudoku.from_string(UNSOLVED_COL)
         solver: Solver = Solver(sudoku)
-        solver.fill_hidden_singles()
+        self.assertTrue(solver.fill_hidden_singles())
         self.assertEqual(9, solver.sudoku[(1, 2)].digit)
 
     def test_solver_fills_hidden_singles_in_box(self) -> None:
         sudoku: Sudoku = Sudoku.from_string(UNSOLVED_BOX)
         solver: Solver = Solver(sudoku)
-        solver.fill_hidden_singles()
+        self.assertTrue(solver.fill_hidden_singles())
         self.assertEqual(1, solver.sudoku[(4, 1)].digit)
 
 if __name__ == '__main__':

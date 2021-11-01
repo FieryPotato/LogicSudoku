@@ -31,7 +31,7 @@ class TestPointingTuple(unittest.TestCase):
         keys_to_change = ((3, 5), (4, 5))
         pointing_tuple = ((1, 5), (2, 5))
 
-        solver.check_for_pointing_tuple()
+        self.assertTrue(solver.check_for_pointing_tuple())
 
         for key in keys_to_change:
             self.assertFalse(7 in sudoku[key].pencil_marks)
@@ -44,7 +44,7 @@ class TestPointingTuple(unittest.TestCase):
         keys_to_change = ((0, 3), (0, 4), (0, 8))
         pointing_tuple = ((0, 1), (0, 2))
 
-        solver.check_for_pointing_tuple()
+        self.assertTrue(solver.check_for_pointing_tuple())
 
         for key in keys_to_change:
             self.assertFalse(1 in sudoku[key].pencil_marks)

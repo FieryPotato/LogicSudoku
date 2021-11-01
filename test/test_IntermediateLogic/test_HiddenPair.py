@@ -41,7 +41,7 @@ class TestHiddenPair(unittest.TestCase):
         solver: Solver = Solver(sudoku)
         hidden_pair: tuple = ((1, 3), (7, 3))
 
-        solver.check_for_hidden_pairs()
+        self.assertTrue(solver.check_for_hidden_pairs())
 
         for key in hidden_pair:
             pencil_marks = sudoku[key].pencil_marks
@@ -52,7 +52,7 @@ class TestHiddenPair(unittest.TestCase):
         solver: Solver = Solver(sudoku)
         hidden_pair: tuple = ((0, 0), (0, 4))
 
-        solver.check_for_hidden_pairs()
+        self.assertTrue(solver.check_for_hidden_pairs())
 
         for key in hidden_pair:
             pencil_marks = sudoku[key].pencil_marks
@@ -63,7 +63,7 @@ class TestHiddenPair(unittest.TestCase):
         solver: Solver = Solver(sudoku)
         hidden_pair: tuple = ((5, 3), (5, 5))
 
-        solver.check_for_hidden_pairs()
+        self.assertTrue(solver.check_for_hidden_pairs())
 
         for key in hidden_pair:
             pencil_marks = sudoku[key].pencil_marks

@@ -77,6 +77,24 @@ class Solver:
                             operated = True
         return operated
 
+    def check_for_naked_tuples(self) -> bool:
+        operated = False
+        for size in range(2, 5):
+            for row in self.sudoku.rows:
+                for group in itertools.combinations(row, r=size):
+                    if len(pencil_marks := set(tuple(cell.pencil_marks) for cell in group)) == 1:
+                        if len(tuple_options := pencil_marks.pop()) == size:
+                            non_members: set = (set([cell.coordinates for cell in row])
+                                                - set([cell.coordinates for cell in group]))
+                            for coordinates in non_members:
+                                cell = self.sudoku[coordinates]
+                                if cell.pencil_marks.intersection(tuple_options):
+                                    cell.pencil_marks -= set(tuple_options)
+                                    operated = True
+                            if operated:
+                                return True
+        return False
+
     def check_for_locked_candidates(self) -> bool:
         operated = False
         for digit in range(1, 10):

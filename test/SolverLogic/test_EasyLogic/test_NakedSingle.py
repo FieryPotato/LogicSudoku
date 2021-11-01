@@ -20,7 +20,7 @@ class TestNakedSingle(unittest.TestCase):
     def test_solver_fills_naked_singles(self) -> None:
         sudoku: Sudoku = Sudoku.from_string(UNSOLVED)
         solver: Solver = Solver(sudoku)
-        solver.fill_naked_singles()
+        self.assertTrue(solver.fill_naked_singles())
         self.assertEqual(3, solver.sudoku[(1, 0)].digit)
 
 
