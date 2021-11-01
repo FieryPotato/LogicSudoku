@@ -15,8 +15,6 @@ class Solver:
                            self.check_for_naked_pairs, self.check_for_locked_candidates,
                            self.check_for_pointing_tuple)
         self.intermediate_logic = self.check_for_hidden_pairs,
-        # "lambda: True" is only here to make self.levels a tuple of
-        # callables until I write self.try_intermediate_logic
         self.levels = (self.try_easy_logic, self.try_intermediate_logic)
 
     def main(self):
@@ -81,11 +79,17 @@ class Solver:
         operated = False
         for size in range(2, 5):
             for row in self.sudoku.rows:
-                for group in itertools.combinations(row, r=size):
-                    if len(pencil_marks := set(tuple(cell.pencil_marks) for cell in group)) == 1:
-                        if len(tuple_options := pencil_marks.pop()) == size:
+                for test_tuple in itertools.combinations(row, r=size):
+                    for cell in test_tuple:
+                        if not cell.is_empty:
+                            break
+                    else:
+                        tuple_options = set()
+                        for cell in test_tuple:
+                            tuple_options = tuple_options.union(cell.pencil_marks)
+                        if len(tuple_options) == size:
                             non_members: set = (set([cell.coordinates for cell in row])
-                                                - set([cell.coordinates for cell in group]))
+                                                - set([cell.coordinates for cell in test_tuple]))
                             for coordinates in non_members:
                                 cell = self.sudoku[coordinates]
                                 if cell.pencil_marks.intersection(tuple_options):
