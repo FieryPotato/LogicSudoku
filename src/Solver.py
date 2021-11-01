@@ -1,5 +1,4 @@
 import itertools
-from typing import Optional
 from copy import deepcopy
 
 from src.Cell import Cell
@@ -15,9 +14,10 @@ class Solver:
         self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles,
                            self.check_for_naked_pairs, self.check_for_locked_candidates,
                            self.check_for_pointing_tuple)
+        self.intermediate_logic = self.check_for_hidden_pairs,
         # "lambda: True" is only here to make self.levels a tuple of
         # callables until I write self.try_intermediate_logic
-        self.levels = (self.try_easy_logic, lambda: True)
+        self.levels = (self.try_easy_logic, self.try_intermediate_logic)
 
     def main(self):
         if not self.is_solved:
@@ -31,6 +31,12 @@ class Solver:
 
     def try_easy_logic(self) -> bool:
         for strategy in self.easy_logic:
+            if strategy():
+                return True
+        return False
+
+    def try_intermediate_logic(self) -> bool:
+        for strategy in self.intermediate_logic:
             if strategy():
                 return True
         return False
@@ -51,39 +57,50 @@ class Solver:
 
     def cell_fill_hidden_singles(self, cell) -> bool:
         for digit in cell.pencil_marks:
-            for group in "row", "column", "box":
-                if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group):
+            for group_type in "row", "column", "box":
+                if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group_type):
                     return True
         return False
 
     def check_for_naked_pairs(self) -> bool:
+        operated = False
         for cell in self.sudoku:
             groups = "row", "box", "column"
-            for group in groups:
-                if self.check_cell_in_group_for_naked_pairs(cell, group):
-                    return True
-        return False
+            for group_type in groups:
+                if len(cell.pencil_marks) == 2:
+                    group: list[Cell] = [self.sudoku[c] for c in getattr(cell, group_type)]
+                    group.remove(cell)
+                    for c in group:
+                        if c.pencil_marks == cell.pencil_marks:
+                            group.remove(c)
+                            self.clear_pencil_marks_from_naked_pair_group(group, cell)
+                            operated = True
+        return operated
 
     def check_for_locked_candidates(self) -> bool:
         operated = False
         for digit in range(1, 10):
             for group_type in "rows", "columns":
-                group_list = getattr(self.sudoku, group_type)
+                group_list: list[list[Cell]] = getattr(self.sudoku, group_type)
                 for group in group_list:
                     possible_cells: list[Cell] = [cell for cell in group if digit in cell.pencil_marks]
                     if len(set([cell.box_num for cell in possible_cells])) == 1:
-                        locked_box = set([cell.coordinates for cell in self.sudoku.box(possible_cells[0].box_num)])
+                        locked_box = set([cell.coordinates
+                                          for cell in self.sudoku.box(possible_cells[0].box_num)])
                         for coordinates in locked_box - set(c.coordinates for c in possible_cells):
-                            cell = self.sudoku[coordinates]
-                            if digit in cell.pencil_marks:
-                                if group_type == "rows":
-                                    if cell.y != group[0].y:
-                                        cell.pencil_marks.remove(digit)
-                                elif group_type == "columns":
-                                    if cell.x != group[0].x:
-                                        cell.pencil_marks.remove(digit)
-                                operated = True
+                            self.eliminate_locked_candidate_pencil_marks(coordinates, digit, group, group_type)
+                            operated = True
         return operated
+
+    def eliminate_locked_candidate_pencil_marks(self, coordinates, digit, group, group_type):
+        cell = self.sudoku[coordinates]
+        if digit in cell.pencil_marks:
+            if group_type == "rows":
+                if cell.y != group[0].y:
+                    cell.pencil_marks.remove(digit)
+            elif group_type == "columns":
+                if cell.x != group[0].x:
+                    cell.pencil_marks.remove(digit)
 
     def check_for_pointing_tuple(self) -> bool:
         operated = False
@@ -115,25 +132,14 @@ class Solver:
             return True
         return False
 
-    def check_cell_in_group_for_naked_pairs(self, cell, group_type) -> bool:
-        operated = False
-        if len(cell.pencil_marks) == 2:
-            group: list[Cell] = [self.sudoku[c] for c in getattr(cell, group_type)]
-            group.remove(cell)
-            for c in group:
-                if c.pencil_marks == cell.pencil_marks:
-                    group.remove(c)
-                    self.clear_pencil_marks_from_naked_pair_group(group, cell)
-                    operated = True
-        return operated
-
     def check_for_hidden_pairs(self) -> bool:
+        operated = False
         for index in range(9):
             groups = self.sudoku.row(index), self.sudoku.column(index), self.sudoku.box(index)
             for group in groups:
                 if self.check_group_for_hidden_pairs(group):
-                    return True
-        return False
+                    operated = True
+        return operated
 
     def check_group_for_hidden_pairs(self, group: list[Cell]) -> bool:
         for possible_a, possible_b in itertools.combinations(range(1, 10), 2):

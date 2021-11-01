@@ -92,3 +92,10 @@ class Cell:
     def clear(self) -> None:
         self.digit = " "
         return None
+
+    def has_same_options_as(self, other: "Cell") -> bool:
+        return self.pencil_marks == other.pencil_marks
+
+    @property
+    def number_of_options(self) -> int:
+        return len(self.pencil_marks)
