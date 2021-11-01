@@ -1,0 +1,35 @@
+import unittest
+
+from src.Solver import Solver
+from src.Sudoku import Sudoku
+
+ROW_PAIR: str = " 2   7  8" \
+                "7  2  49 " \
+                "    45721" \
+                "     12  " \
+                "9 7624  5" \
+                "  2      " \
+                "6 315287 " \
+                " 7 486  2" \
+                "2 87   6 "
+
+
+class TestNakedRowTuples(unittest.TestCase):
+    def test_solver_clears_naked_pairs_in_row(self):
+        sudoku: Sudoku = Sudoku.from_string(ROW_PAIR)
+        solver: Solver = Solver(sudoku)
+        keys_to_change: tuple = ((1, 8), (6, 8), (8, 8))
+        naked_pair: tuple = ((4, 8), (5, 8))
+
+        self.assertTrue(solver.check_for_naked_tuples())
+
+        for key in keys_to_change:
+            pencil_marks = sudoku[key].pencil_marks
+            self.assertFalse(3 in pencil_marks or 9 in pencil_marks)
+        for key in naked_pair:
+            pencil_marks = sudoku[key].pencil_marks
+            self.assertTrue(3 in pencil_marks and 9 in pencil_marks and len(pencil_marks) == 2)
+
+
+if __name__ == '__main__':
+    unittest.main()
