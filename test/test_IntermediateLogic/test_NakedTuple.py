@@ -53,6 +53,16 @@ COL_TRIPLE: str = "   2571  " \
                   "   742863" \
                   "  2563   "
 
+COL_QUADRUPLE: str = " 5  9    " \
+                     " 1654    " \
+                     " 49 7 516" \
+                     "     7 5 " \
+                     "  5   82 " \
+                     " 3145  6 " \
+                     "59    27 " \
+                     "     56  " \
+                     "   73   5"
+
 
 class TestNakedRowTuples(unittest.TestCase):
     def test_solver_clears_naked_pairs_in_row(self):
@@ -142,6 +152,26 @@ class TestNakedColumnTuples(unittest.TestCase):
         triple_options = {4, 6, 8}
 
         # eliminate naked triple in row 9
+        solver.check_for_naked_tuples()
+        self.assertTrue(solver.check_for_naked_tuples())
+
+        for key in keys_to_change:
+            pencil_marks = sudoku[key].pencil_marks
+            for digit in pencil_marks:
+                self.assertFalse(digit in triple_options)
+        for key in naked_triple:
+            pencil_marks = sudoku[key].pencil_marks
+            for digit in pencil_marks:
+                self.assertTrue(digit in triple_options)
+
+    def test_solver_clears_naked_quadruples_in_column(self):
+        sudoku: Sudoku = Sudoku.from_string(COL_QUADRUPLE)
+        solver: Solver = Solver(sudoku)
+        keys_to_change: tuple = ((0, 3), (0, 4), (0, 7), (0, 8))
+        naked_triple: tuple = ((0, 0), (0, 1), (0, 2), (0, 5))
+        triple_options = {2, 3, 7, 8}
+
+        solver.check_for_naked_tuples()
         solver.check_for_naked_tuples()
         self.assertTrue(solver.check_for_naked_tuples())
 
