@@ -78,7 +78,7 @@ class Solver:
     def check_for_naked_tuples(self) -> bool:
         operated = False
         for size in range(2, 5):
-            for group_type in "rows", "columns":
+            for group_type in "rows", "columns", "boxes":
                 for group in getattr(self.sudoku, group_type):
                     empty_cells = [cell for cell in group if cell.is_empty]
                     for test_tuple in itertools.combinations(empty_cells, r=size):
