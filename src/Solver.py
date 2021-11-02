@@ -78,22 +78,23 @@ class Solver:
     def check_for_naked_tuples(self) -> bool:
         operated = False
         for size in range(2, 5):
-            for row in self.sudoku.rows:
-                empty_cells = [cell for cell in row if cell.is_empty]
-                for test_tuple in itertools.combinations(empty_cells, r=size):
-                    tuple_options = set()
-                    for cell in test_tuple:
-                        tuple_options = tuple_options.union(cell.pencil_marks)
-                    if len(tuple_options) == size:
-                        non_members: set = (set([cell.coordinates for cell in row])
-                                            - set([cell.coordinates for cell in test_tuple]))
-                        for coordinates in non_members:
-                            cell = self.sudoku[coordinates]
-                            if cell.pencil_marks.intersection(tuple_options):
-                                cell.pencil_marks -= set(tuple_options)
-                                operated = True
-                        if operated:
-                            return True
+            for group_type in "rows", "columns":
+                for group in getattr(self.sudoku, group_type):
+                    empty_cells = [cell for cell in group if cell.is_empty]
+                    for test_tuple in itertools.combinations(empty_cells, r=size):
+                        tuple_options = set()
+                        for cell in test_tuple:
+                            tuple_options = tuple_options.union(cell.pencil_marks)
+                        if len(tuple_options) == size:
+                            non_members: set = (set([cell.coordinates for cell in group])
+                                                - set([cell.coordinates for cell in test_tuple]))
+                            for coordinates in non_members:
+                                cell = self.sudoku[coordinates]
+                                if cell.pencil_marks.intersection(tuple_options):
+                                    cell.pencil_marks -= set(tuple_options)
+                                    operated = True
+                            if operated:
+                                return True
         return False
 
     def check_for_locked_candidates(self) -> bool:
