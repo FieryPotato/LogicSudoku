@@ -142,6 +142,8 @@ class TestNakedRowTuples(unittest.TestCase):
         naked_quadruple: tuple = ((5, 2), (6, 2), (7, 2), (8, 2))
         quadruple_options: set = {1, 3, 8, 9}
 
+        solver.check_for_naked_tuples()
+        solver.check_for_naked_tuples()
         self.assertTrue(solver.check_for_naked_tuples())
 
         for key in keys_to_change:
@@ -201,6 +203,8 @@ class TestNakedColumnTuples(unittest.TestCase):
         naked_quadruple: tuple = ((0, 0), (0, 1), (0, 2), (0, 5))
         quadruple_options = {2, 3, 7, 8}
 
+        solver.check_for_naked_tuples()
+        solver.check_for_naked_tuples()
         solver.check_for_naked_tuples()
         solver.check_for_naked_tuples()
         self.assertTrue(solver.check_for_naked_tuples())
