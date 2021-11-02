@@ -83,6 +83,16 @@ BOX_TRIPLE: str = " 31   2  " \
                   "1  2     " \
                   "  9   17 "
 
+BOX_QUADRUPLE: str = " 63 4   8" \
+                     " 29 834  " \
+                     "4 82    3" \
+                     "  2   5 4" \
+                     "9 6   8 7" \
+                     "  1     9" \
+                     "615478  2" \
+                     "29436 78 " \
+                     "387 92 4 "
+
 
 class TestNakedRowTuples(unittest.TestCase):
     def test_solver_clears_naked_pairs_in_row(self):
@@ -188,7 +198,7 @@ class TestNakedColumnTuples(unittest.TestCase):
         sudoku: Sudoku = Sudoku.from_string(COL_QUADRUPLE)
         solver: Solver = Solver(sudoku)
         keys_to_change: tuple = ((0, 3), (0, 4), (0, 7), (0, 8))
-        naked_triple: tuple = ((0, 0), (0, 1), (0, 2), (0, 5))
+        naked_quadruple: tuple = ((0, 0), (0, 1), (0, 2), (0, 5))
         quadruple_options = {2, 3, 7, 8}
 
         solver.check_for_naked_tuples()
@@ -199,7 +209,7 @@ class TestNakedColumnTuples(unittest.TestCase):
             pencil_marks = sudoku[key].pencil_marks
             for digit in pencil_marks:
                 self.assertFalse(digit in quadruple_options)
-        for key in naked_triple:
+        for key in naked_quadruple:
             pencil_marks = sudoku[key].pencil_marks
             for digit in pencil_marks:
                 self.assertTrue(digit in quadruple_options)
@@ -242,6 +252,24 @@ class TestNakedColumnTuples(unittest.TestCase):
             for digit in pencil_marks:
                 self.assertTrue(digit in triple_options)
 
+    def test_solver_clears_naked_quadruples_in_box(self):
+        sudoku: Sudoku = Sudoku.from_string(BOX_QUADRUPLE)
+        solver: Solver = Solver(sudoku)
+        keys_to_change: tuple = ((3, 3), (5, 3), (5, 4), (3, 5), (5, 5))
+        quadruple: tuple = ((4, 3), (3, 4), (4, 4), (4, 5))
+        quadruple_options = {1, 2, 3, 5}
+
+        solver.check_for_naked_tuples()
+        self.assertTrue(solver.check_for_naked_tuples())
+
+        for key in keys_to_change:
+            pencil_marks = sudoku[key].pencil_marks
+            for digit in pencil_marks:
+                self.assertFalse(digit in quadruple_options)
+        for key in quadruple:
+            pencil_marks = sudoku[key].pencil_marks
+            for digit in pencil_marks:
+                self.assertTrue(digit in quadruple_options)
 
 
 if __name__ == '__main__':
