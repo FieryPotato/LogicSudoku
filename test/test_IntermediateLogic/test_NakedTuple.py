@@ -225,7 +225,7 @@ class TestNakedColumnTuples(unittest.TestCase):
         naked_pair: tuple = ((1, 3), (1, 4))
         pair_options = {4, 5}
 
-        self.assertTrue(solver.check_for_naked_pairs())
+        self.assertTrue(solver.check_for_naked_tuples())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
