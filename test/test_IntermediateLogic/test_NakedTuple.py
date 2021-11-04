@@ -218,6 +218,8 @@ class TestNakedColumnTuples(unittest.TestCase):
             for digit in pencil_marks:
                 self.assertTrue(digit in quadruple_options)
 
+
+class TestNakedBoxTuples(unittest.TestCase):
     def test_solver_clears_naked_pairs_in_box(self):
         sudoku: Sudoku = Sudoku.from_string(BOX_PAIR)
         solver: Solver = Solver(sudoku)
