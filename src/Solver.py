@@ -12,7 +12,7 @@ class Solver:
         self.sudoku = sudoku
         self.is_solved = self.sudoku.is_complete
         self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles,
-                           self.check_for_naked_pairs, self.check_for_locked_candidates,
+                           self.check_for_naked_tuples, self.check_for_locked_candidates,
                            self.check_for_pointing_tuple)
         self.intermediate_logic = self.check_for_hidden_pairs,
         self.levels = (self.try_easy_logic, self.try_intermediate_logic)
@@ -59,21 +59,6 @@ class Solver:
                 if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group_type):
                     return True
         return False
-
-    def check_for_naked_pairs(self) -> bool:
-        operated = False
-        for cell in self.sudoku:
-            groups = "row", "box", "column"
-            for group_type in groups:
-                if len(cell.pencil_marks) == 2:
-                    group: list[Cell] = [self.sudoku[c] for c in getattr(cell, group_type)]
-                    group.remove(cell)
-                    for c in group:
-                        if c.pencil_marks == cell.pencil_marks:
-                            group.remove(c)
-                            self.clear_pencil_marks_from_naked_pair_group(group, cell)
-                            operated = True
-        return operated
 
     def check_for_naked_tuples(self) -> bool:
         operated = False
@@ -174,10 +159,3 @@ class Solver:
                         cell.pencil_marks = {possible_a, possible_b}
                     return True
         return False
-
-    def clear_pencil_marks_from_naked_pair_group(self, group, cell) -> None:
-        for remainder in group:
-            for digit in cell.pencil_marks:
-                if digit in remainder.pencil_marks:
-                    remainder.pencil_marks.remove(digit)
-        return None
