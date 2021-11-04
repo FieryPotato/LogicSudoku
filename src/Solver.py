@@ -164,6 +164,48 @@ class Solver:
                             return operated
         return False
 
+    def check_for_xwings(self) -> bool:
+        operated = False
+        for digit in range(1, 10):
+            for first_row in range(9):
+                candidates = []
+                for cell in self.sudoku.row(first_row):
+                    if digit in cell.pencil_marks:
+                        candidates.append(cell)
+                if len(candidates) == 2:
+                    first_candidates = [cell for cell in candidates]
+                    for second_row in range(first_row + 1, 9):
+                        candidates = []
+                        for cell in self.sudoku.row(second_row):
+                            if digit in cell.pencil_marks:
+                                candidates.append(cell)
+                        if len(candidates) == 2:
+                            second_candidates = [cell for cell in candidates]
+                            candidates = first_candidates + second_candidates
+                            if first_candidates[0].x == second_candidates[0].x:
+                                if first_candidates[1].x == second_candidates[1].x:
+                                    first_column = first_candidates[0].column
+                                    second_column = first_candidates[1].column
+                                    for cell in [self.sudoku[key] for key in first_column if self.sudoku[key] not in candidates]:
+                                        if digit in cell.pencil_marks:
+                                            cell.pencil_marks.remove(digit)
+                                            operated = True
+                                    for cell in [self.sudoku[key] for key in second_column if self.sudoku[key] not in candidates]:
+                                        if digit in cell.pencil_marks:
+                                            cell.pencil_marks.remove(digit)
+                                            operated = True
+                if operated:
+                    return True
+        return False
+
+
+
+
+
+
+
+
+
 
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
     """Return true if any options are in cell.pencil_marks."""

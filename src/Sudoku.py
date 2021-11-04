@@ -93,6 +93,21 @@ class Sudoku:
         return True
 
     @property
+    def is_legal(self) -> bool:
+        """Return false if the sudoku has any duplicate digits in rows,
+        columns, or boxes."""
+        present_digits = set()
+        for group_type in "rows", "columns", "boxes":
+            for group in getattr(self, group_type):
+                for cell in group:
+                    if not cell.is_empty:
+                        if cell.digit in present_digits:
+                            return False
+                        present_digits.add(cell.digit)
+                present_digits.clear()
+        return True
+
+    @property
     def rows(self) -> Iterator[list[Cell]]:
         """Generate rows in the sudoku for iteration."""
         yield from [self.row(i) for i in range(9)]
@@ -138,7 +153,6 @@ class Sudoku:
         else:
             cell.pencil_marks = set()
 
-        
     @classmethod
     def from_string(cls, string) -> "Sudoku":
         """Return a sudoku whose cells in order appear in an 81-character string."""
@@ -150,6 +164,8 @@ class Sudoku:
         for i, key in enumerate(CELL_KEYS):
             digit = string[i]
             new[key].fill(digit)
+        if not new.is_legal:
+            raise ValueError("Your sudoku contains a duplicate.")
         return new
 
     def update_pencil_marks(self) -> None:
