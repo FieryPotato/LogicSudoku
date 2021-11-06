@@ -1,4 +1,5 @@
 import itertools
+from collections import Iterable
 from copy import deepcopy
 
 from src.Cell import Cell
@@ -159,3 +160,54 @@ class Solver:
                         cell.pencil_marks = {possible_a, possible_b}
                     return True
         return False
+
+    def check_for_hidden_tuples(self) -> bool:
+        operated = False
+        for size in range(2, 4):
+            for group_type in "rows", "columns", "boxes":
+                for group in getattr(self.sudoku, group_type):
+                    for possible_options in itertools.combinations(range(1, 10), r=size):
+                        possible_cells = [cell for cell in group
+                                          if options_in_cell_min(possible_options, cell)]
+                        if len(possible_cells) == size:
+                            if set(possible_options) <= overlapping_elements(
+                                    *[cell.pencil_marks for cell in possible_cells]
+                            ):
+                                group_minus_possibles = [c for c in group if c not in possible_cells]
+                                for cell in group_minus_possibles:
+                                    if cell.pencil_marks.intersection(set(possible_options)):
+                                        break
+                                else:
+                                    for cell in possible_cells:
+                                        for option in tuple(cell.pencil_marks):
+                                            if option not in possible_options:
+                                                cell.pencil_marks.remove(option)
+                                                operated = True
+                        if operated:
+                            return operated
+        return False
+
+
+def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
+    """Return true if any options are in cell.pencil_marks."""
+
+    for option in options:
+        if option in cell.pencil_marks:
+            return True
+    return False
+
+
+def overlapping_elements(*args: set) -> set:
+    """Return a set containing all elements shared by two or more of args."""
+
+    all_digits = []
+    for digit_set in args:
+        all_digits.extend(digit for digit in digit_set)
+    check_set = set()
+    overlap = set()
+    for digit in all_digits:
+        if digit in check_set:
+            overlap.add(digit,)
+        check_set.add(digit,)
+    return overlap
+
