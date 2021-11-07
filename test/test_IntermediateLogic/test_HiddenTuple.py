@@ -43,6 +43,16 @@ ROW_TRIPLE = "  2 1 8 6" \
              "6 45987  " \
              "  8 4    "
 
+COL_TRIPLE = "2453 61 7" \
+             "7834   6 " \
+             "1967  3  " \
+             "43   7   " \
+             "82  3    " \
+             "65 9   23" \
+             "  8  34 6" \
+             "  4    3 " \
+             "3621   75"
+
 
 class TestHiddenTupleRow(unittest.TestCase):
     def test_solver_clears_pairs(self):
@@ -88,6 +98,25 @@ class TestHiddenTupleColumn(unittest.TestCase):
 
         for key in pair:
             self.assertEqual(options, sudoku[key].pencil_marks)
+
+    def test_solver_clears_triples(self):
+        sudoku = Sudoku.from_string(COL_TRIPLE)
+        solver = Solver(sudoku)
+        triple = ((4, 3), (4, 6), (4, 7))
+        options = {2, 6, 7}
+        cells_to_clear = {(4, 1), (4, 2)}
+
+        for key in cells_to_clear:
+            for digit in options:
+                if digit in (cell := sudoku[key].pencil_marks):
+                    cell.remove(digit)
+
+        self.assertTrue(solver.check_for_hidden_tuples())
+
+        for key in triple:
+            pencil_marks = sudoku[key].pencil_marks
+            for digit in pencil_marks:
+                self.assertTrue(digit in options)
 
 
 class TestHiddenTupleBox(unittest.TestCase):
