@@ -64,26 +64,29 @@ class Solver:
         return False
 
     def check_for_naked_tuples(self) -> bool:
-        operated = False
-        for size in range(2, 5):
-            for group_type in RCB:
-                for group in getattr(self.sudoku, group_type):
-                    empty_cells = [cell for cell in group if cell.is_empty]
-                    for test_tuple in itertools.combinations(empty_cells, r=size):
-                        tuple_options = set()
-                        for cell in test_tuple:
-                            tuple_options = tuple_options.union(cell.pencil_marks)
-                        if len(tuple_options) == size:
-                            non_members: set = (set([cell.coordinates for cell in group])
-                                                - set([cell.coordinates for cell in test_tuple]))
-                            for coordinates in non_members:
-                                cell = self.sudoku[coordinates]
-                                if cell.pencil_marks.intersection(tuple_options):
-                                    cell.pencil_marks -= set(tuple_options)
-                                    operated = True
-                            if operated:
-                                return True
+        for size, group_type in itertools.product(range(2, 5), RCB):
+            for group in getattr(self.sudoku, group_type):
+                empty_cells = [cell for cell in group if cell.is_empty]
+                candidate_cells = itertools.combinations(empty_cells, r=size)
+                for test_tuple in candidate_cells:
+                    tuple_options = set()
+                    for cell in test_tuple:
+                        tuple_options = tuple_options.union(cell.pencil_marks)
+                    if len(tuple_options) == size:
+                        if self.clear_naked_tuples(group, test_tuple, tuple_options):
+                            return True
         return False
+
+    def clear_naked_tuples(self, group, test_tuple, tuple_options):
+        operated = False
+        non_members: set = (set([cell.coordinates for cell in group])
+                            - set([cell.coordinates for cell in test_tuple]))
+        for coordinates in non_members:
+            cell = self.sudoku[coordinates]
+            if cell.pencil_marks.intersection(tuple_options):
+                cell.pencil_marks -= set(tuple_options)
+                operated = True
+        return operated
 
     def check_for_locked_candidates(self) -> bool:
         operated = False
