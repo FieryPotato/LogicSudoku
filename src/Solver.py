@@ -5,9 +5,11 @@ from copy import deepcopy
 from src.Cell import Cell
 from src.Sudoku import Sudoku
 
+RC = "rows", "columns"
+RCB = tuple(RC + ("boxes",))
+
 
 class Solver:
-
     def __init__(self, sudoku: Sudoku):
         sudoku.update_pencil_marks()
         self.sudoku = sudoku
@@ -64,7 +66,7 @@ class Solver:
     def check_for_naked_tuples(self) -> bool:
         operated = False
         for size in range(2, 5):
-            for group_type in "rows", "columns", "boxes":
+            for group_type in RCB:
                 for group in getattr(self.sudoku, group_type):
                     empty_cells = [cell for cell in group if cell.is_empty]
                     for test_tuple in itertools.combinations(empty_cells, r=size):
@@ -86,7 +88,7 @@ class Solver:
     def check_for_locked_candidates(self) -> bool:
         operated = False
         for digit in range(1, 10):
-            for group_type in "rows", "columns":
+            for group_type in RC:
                 group_list: list[list[Cell]] = getattr(self.sudoku, group_type)
                 for group in group_list:
                     possible_cells: list[Cell] = [cell for cell in group if digit in cell.pencil_marks]
@@ -139,34 +141,37 @@ class Solver:
         return False
 
     def check_for_hidden_tuples(self) -> bool:
-        operated = False
-        for size in range(2, 5):
-            for group_type in "rows", "columns", "boxes":
-                for group in getattr(self.sudoku, group_type):
-                    for possible_options in itertools.combinations(range(1, 10), r=size):
-                        possible_cells = [cell for cell in group
-                                          if options_in_cell_min(possible_options, cell)]
-                        if len(possible_cells) == size:
-                            if set(possible_options) <= overlapping_elements(
-                                    *[cell.pencil_marks for cell in possible_cells]
-                            ):
-                                group_minus_possibles = [c for c in group if c not in possible_cells]
-                                for cell in group_minus_possibles:
-                                    if cell.pencil_marks.intersection(set(possible_options)):
-                                        break
-                                else:
-                                    for cell in possible_cells:
-                                        for option in tuple(cell.pencil_marks):
-                                            if option not in possible_options:
-                                                cell.pencil_marks.remove(option)
-                                                operated = True
-                        if operated:
-                            return operated
+        checked_sizes = range(2, 5)
+        for size, group_type in itertools.product(checked_sizes, RCB):
+            group_list: list = getattr(self.sudoku, group_type)
+            checked_options = itertools.combinations(range(1, 10), r=size)
+            for group, possible_options in itertools.product(group_list, checked_options):
+                possible_cells = [cell for cell in group if
+                                  options_in_cell_min(possible_options, cell)]
+                if len(possible_cells) == size:
+                    if (set(possible_options) <= overlapping_elements(
+                            *[cell.pencil_marks for cell in possible_cells])):
+                        if self.clear_hidden_tuples(group, possible_cells, possible_options):
+                            return True
         return False
+
+    def clear_hidden_tuples(self, group, possible_cells, possible_options) -> bool:
+        operated = False
+        group_minus_possibles = [c for c in group if c not in possible_cells]
+        for cell in group_minus_possibles:
+            if cell.pencil_marks.intersection(set(possible_options)):
+                break
+        else:
+            for cell in possible_cells:
+                for option in tuple(cell.pencil_marks):
+                    if option not in possible_options:
+                        cell.pencil_marks.remove(option)
+                        operated = True
+        return operated
 
     def check_for_xwings(self) -> bool:
         operated = False
-        for group_type in "rows", "columns":
+        for group_type in RC:
             for digit in range(1, 10):
                 for first_group in range(9):
                     candidates = []
@@ -229,14 +234,6 @@ class Solver:
         return False
 
 
-
-
-
-
-
-
-
-
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
     """Return true if any options are in cell.pencil_marks."""
 
@@ -256,7 +253,6 @@ def overlapping_elements(*args: set) -> set:
     overlap = set()
     for digit in all_digits:
         if digit in check_set:
-            overlap.add(digit,)
-        check_set.add(digit,)
+            overlap.add(digit, )
+        check_set.add(digit, )
     return overlap
-
