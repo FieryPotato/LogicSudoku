@@ -63,6 +63,36 @@ BOX_TRIPLE = " 8 654 7 " \
              "2  41 9 8" \
              " 1 539 6 "
 
+ROW_QUADRUPLE = " 6 15 7  " \
+                " 897 45  " \
+                "57 86   3" \
+                "4    68  " \
+                "         " \
+                " 973  4 5" \
+                "9 8   651" \
+                "   6 8927" \
+                "7 6  53  "
+
+COL_QUADRUPLE = " 148  2  " \
+                " 98      " \
+                "2753 6 81" \
+                "86   5 3 " \
+                "      5 8" \
+                " 5 2  614" \
+                "5 61   7 " \
+                "   7  165" \
+                "1 7  38  "
+
+BOX_QUADRUPLE = "   34    " \
+                "   5 6 2 " \
+                "      9 7" \
+                " 594  2  " \
+                "2       6" \
+                "8  1 275 " \
+                "9 6      " \
+                "18 6     " \
+                "   983  2"
+
 
 class TestHiddenTupleRow(unittest.TestCase):
     def test_solver_clears_pairs(self):
@@ -96,6 +126,19 @@ class TestHiddenTupleRow(unittest.TestCase):
             for digit in pencil_marks:
                 self.assertTrue(digit in options)
 
+    def test_solver_clears_quadruples(self):
+        sudoku = Sudoku.from_string(ROW_QUADRUPLE)
+        solver = Solver(sudoku)
+        quadruple = ((0, 4), (3, 4), (4, 4), (8, 4))
+        options = {4, 6, 8, 9}
+
+        self.assertTrue(solver.check_for_hidden_tuples())
+
+        for key in quadruple:
+            for digit in options:
+                if digit in (cell := sudoku[key].pencil_marks):
+                    cell.remove(digit)
+
 
 class TestHiddenTupleColumn(unittest.TestCase):
     def test_solver_clears_pairs(self):
@@ -128,6 +171,19 @@ class TestHiddenTupleColumn(unittest.TestCase):
             for digit in pencil_marks:
                 self.assertTrue(digit in options)
 
+    def test_solver_clears_quadruples(self):
+        sudoku = Sudoku.from_string(COL_QUADRUPLE)
+        solver = Solver(sudoku)
+        quadruple = ((4, 0), (4, 4), (4, 5), (4, 8))
+        options = {3, 5, 6, 7}
+
+        self.assertTrue(solver.check_for_hidden_tuples())
+
+        for key in quadruple:
+            for digit in options:
+                if digit in (cell := sudoku[key].pencil_marks):
+                    cell.remove(digit)
+
 
 class TestHiddenTupleBox(unittest.TestCase):
     def test_solver_clears_pairs(self):
@@ -150,6 +206,23 @@ class TestHiddenTupleBox(unittest.TestCase):
         self.assertTrue(solver.check_for_hidden_tuples())
 
         for key in triple:
+            pencil_marks = sudoku[key].pencil_marks
+            for digit in pencil_marks:
+                self.assertTrue(digit in options)
+
+    def test_solver_clears_quadruples(self):
+        sudoku = Sudoku.from_string(BOX_QUADRUPLE)
+        solver = Solver(sudoku)
+        quadruple = ((1, 0), (2, 0), (1, 1), (2, 1))
+        options = {1, 2, 8, 9}
+
+        solver.check_for_hidden_tuples()
+        solver.check_for_hidden_tuples()
+        solver.check_for_hidden_tuples()
+        solver.check_for_hidden_tuples()
+        self.assertTrue(solver.check_for_hidden_tuples())
+
+        for key in quadruple:
             pencil_marks = sudoku[key].pencil_marks
             for digit in pencil_marks:
                 self.assertTrue(digit in options)

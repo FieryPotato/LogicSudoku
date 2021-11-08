@@ -15,7 +15,7 @@ class Solver:
         self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles,
                            self.check_for_naked_tuples, self.check_for_locked_candidates,
                            self.check_for_pointing_tuple)
-        self.intermediate_logic = self.check_for_hidden_pairs,
+        self.intermediate_logic = tuple()
         self.levels = (self.try_easy_logic, self.try_intermediate_logic)
 
     def main(self):
@@ -138,32 +138,9 @@ class Solver:
             return True
         return False
 
-    def check_for_hidden_pairs(self) -> bool:
-        operated = False
-        for index in range(9):
-            groups = self.sudoku.row(index), self.sudoku.column(index), self.sudoku.box(index)
-            for group in groups:
-                if self.check_group_for_hidden_pairs(group):
-                    operated = True
-        return operated
-
-    def check_group_for_hidden_pairs(self, group: list[Cell]) -> bool:
-        for possible_a, possible_b in itertools.combinations(range(1, 10), 2):
-            possible_cells = [cell for cell in group
-                              if possible_a in cell.pencil_marks and possible_b in cell.pencil_marks]
-            if len(possible_cells) == 2:
-                for cell in [c for c in group if c not in possible_cells]:
-                    if cell.pencil_marks.intersection({possible_a, possible_b}):
-                        break
-                else:
-                    for cell in possible_cells:
-                        cell.pencil_marks = {possible_a, possible_b}
-                    return True
-        return False
-
     def check_for_hidden_tuples(self) -> bool:
         operated = False
-        for size in range(2, 4):
+        for size in range(2, 5):
             for group_type in "rows", "columns", "boxes":
                 for group in getattr(self.sudoku, group_type):
                     for possible_options in itertools.combinations(range(1, 10), r=size):
