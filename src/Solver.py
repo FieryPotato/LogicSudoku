@@ -17,7 +17,7 @@ class Solver:
         self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles,
                            self.check_for_naked_tuples, self.check_for_locked_candidates,
                            self.check_for_pointing_tuple)
-        self.intermediate_logic = tuple()
+        self.intermediate_logic = self.check_for_hidden_tuples, self.check_for_xwings
         self.levels = (self.try_easy_logic, self.try_intermediate_logic)
 
     def main(self):
