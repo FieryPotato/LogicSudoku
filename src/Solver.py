@@ -166,36 +166,66 @@ class Solver:
 
     def check_for_xwings(self) -> bool:
         operated = False
-        for digit in range(1, 10):
-            for first_row in range(9):
-                candidates = []
-                for cell in self.sudoku.row(first_row):
-                    if digit in cell.pencil_marks:
-                        candidates.append(cell)
-                if len(candidates) == 2:
-                    first_candidates = [cell for cell in candidates]
-                    for second_row in range(first_row + 1, 9):
-                        candidates = []
-                        for cell in self.sudoku.row(second_row):
+        for group_type in "rows", "columns":
+            for digit in range(1, 10):
+                for first_group in range(9):
+                    candidates = []
+                    if group_type == "rows":
+                        for cell in self.sudoku.row(first_group):
                             if digit in cell.pencil_marks:
                                 candidates.append(cell)
-                        if len(candidates) == 2:
-                            second_candidates = [cell for cell in candidates]
-                            candidates = first_candidates + second_candidates
-                            if first_candidates[0].x == second_candidates[0].x:
-                                if first_candidates[1].x == second_candidates[1].x:
-                                    first_column = first_candidates[0].column
-                                    second_column = first_candidates[1].column
-                                    for cell in [self.sudoku[key] for key in first_column if self.sudoku[key] not in candidates]:
-                                        if digit in cell.pencil_marks:
-                                            cell.pencil_marks.remove(digit)
-                                            operated = True
-                                    for cell in [self.sudoku[key] for key in second_column if self.sudoku[key] not in candidates]:
-                                        if digit in cell.pencil_marks:
-                                            cell.pencil_marks.remove(digit)
-                                            operated = True
-                if operated:
-                    return True
+                    elif group_type == "columns":
+                        for cell in self.sudoku.column(first_group):
+                            if digit in cell.pencil_marks:
+                                candidates.append(cell)
+                    if len(candidates) == 2:
+                        first_candidates = [cell for cell in candidates]
+                        for second_group in range(first_group + 1, 9):
+                            candidates = []
+                            if group_type == "rows":
+                                for cell in self.sudoku.row(second_group):
+                                    if digit in cell.pencil_marks:
+                                        candidates.append(cell)
+                            elif group_type == "columns":
+                                for cell in self.sudoku.column(second_group):
+                                    if digit in cell.pencil_marks:
+                                        candidates.append(cell)
+                            if len(candidates) == 2:
+                                second_candidates = [cell for cell in candidates]
+                                candidates = first_candidates + second_candidates
+                                if group_type == "rows":
+                                    if first_candidates[0].x == second_candidates[0].x:
+                                        if first_candidates[1].x == second_candidates[1].x:
+                                            first_column = first_candidates[0].column
+                                            second_column = first_candidates[1].column
+                                            for cell in [self.sudoku[key] for key in first_column
+                                                         if self.sudoku[key] not in candidates]:
+                                                if digit in cell.pencil_marks:
+                                                    cell.pencil_marks.remove(digit)
+                                                    operated = True
+                                            for cell in [self.sudoku[key] for key in second_column if
+                                                         self.sudoku[key] not in candidates]:
+                                                if digit in cell.pencil_marks:
+                                                    cell.pencil_marks.remove(digit)
+                                                    operated = True
+                                elif group_type == "columns":
+                                    if first_candidates[0].y == second_candidates[0].y:
+                                        if first_candidates[1].y == second_candidates[1].y:
+                                            first_row = first_candidates[0].row
+                                            second_row = first_candidates[1].row
+                                            for cell in [self.sudoku[key] for key in first_row if
+                                                         self.sudoku[key] not in candidates]:
+                                                if digit in cell.pencil_marks:
+                                                    cell.pencil_marks.remove(digit)
+                                                    operated = True
+                                            for cell in [self.sudoku[key] for key in second_row if
+                                                         self.sudoku[key] not in candidates]:
+                                                if digit in cell.pencil_marks:
+                                                    cell.pencil_marks.remove(digit)
+                                                    operated = True
+
+                    if operated:
+                        return True
         return False
 
 

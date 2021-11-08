@@ -14,6 +14,16 @@ UNSOLVED_ROW = "8    2 3 " \
                "   2  68 " \
                " 32 8    "
 
+UNSOLVED_COLUMN = "29  6  45" \
+                  "645  9  2" \
+                  "  125496 " \
+                  "16 92 45 " \
+                  " 245 16 9" \
+                  " 59 462 1" \
+                  "932675814" \
+                  "416398527" \
+                  "5  412396"
+
 
 class TestXWing(unittest.TestCase):
     def test_solver_clears_cells_in_columns(self):
@@ -21,6 +31,17 @@ class TestXWing(unittest.TestCase):
         solver = Solver(sudoku)
         keys_to_clear = {(0, 3), (3, 0), (3, 6)}
         cleared_digit = 6
+
+        self.assertTrue(solver.check_for_xwings())
+
+        for key in keys_to_clear:
+            self.assertFalse(cleared_digit in sudoku[key].pencil_marks)
+
+    def test_solver_clears_cells_in_rows(self):
+        sudoku = Sudoku.from_string(UNSOLVED_COLUMN)
+        solver = Solver(sudoku)
+        keys_to_clear = {(8, 3)}
+        cleared_digit = 3
 
         self.assertTrue(solver.check_for_xwings())
 
