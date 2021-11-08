@@ -57,10 +57,9 @@ class Solver:
                 return True
 
     def cell_fill_hidden_singles(self, cell) -> bool:
-        for digit in cell.pencil_marks:
-            for group_type in "row", "column", "box":
-                if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group_type):
-                    return True
+        for digit, group_type in itertools.product(cell.pencil_marks, RCB):
+            if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group_type):
+                return True
         return False
 
     def check_for_naked_tuples(self) -> bool:
