@@ -6,7 +6,10 @@ from src.Cell import Cell
 from src.Sudoku import Sudoku
 
 RC = "rows", "columns"
+RC_cell = "row", "column"
 RCB = tuple(RC + ("boxes",))
+RCB_cell = tuple(RC_cell + ("box",))
+
 
 
 class Solver:
@@ -55,9 +58,10 @@ class Solver:
             if self.cell_fill_hidden_singles(cell):
                 self.sudoku.update_pencil_marks()
                 return True
+        return False
 
     def cell_fill_hidden_singles(self, cell) -> bool:
-        for digit, group_type in itertools.product(cell.pencil_marks, RCB):
+        for digit, group_type in itertools.product(cell.pencil_marks, RCB_cell):
             if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group_type):
                 return True
         return False
@@ -89,28 +93,29 @@ class Solver:
 
     def check_for_locked_candidates(self) -> bool:
         operated = False
-        for digit in range(1, 10):
-            for group_type in RC:
-                group_list: list[list[Cell]] = getattr(self.sudoku, group_type)
-                for group in group_list:
-                    possible_cells: list[Cell] = [cell for cell in group if digit in cell.pencil_marks]
-                    if len(set([cell.box_num for cell in possible_cells])) == 1:
-                        locked_box = set([cell.coordinates
-                                          for cell in self.sudoku.box(possible_cells[0].box_num)])
-                        for coordinates in locked_box - set(c.coordinates for c in possible_cells):
-                            self.eliminate_locked_candidate_pencil_marks(coordinates, digit, group, group_type)
-                            operated = True
+        for digit, group_type in itertools.product(range(1, 10), RC):
+            for group in getattr(self.sudoku, group_type):
+                possible_cells: list[Cell] = [cell for cell in group if digit in cell.pencil_marks]
+                if len(set([cell.box_num for cell in possible_cells])) == 1:
+                    if self.clear_locked_candidate(digit, group, group_type, possible_cells):
+                        operated = True
         return operated
 
-    def eliminate_locked_candidate_pencil_marks(self, coordinates, digit, group, group_type):
-        cell = self.sudoku[coordinates]
-        if digit in cell.pencil_marks:
-            if group_type == "rows":
-                if cell.y != group[0].y:
-                    cell.pencil_marks.remove(digit)
-            elif group_type == "columns":
-                if cell.x != group[0].x:
-                    cell.pencil_marks.remove(digit)
+    def clear_locked_candidate(self, digit, group, group_type, possible_cells) -> bool:
+        operated = False
+        locked_box = set([cell.coordinates
+                          for cell in self.sudoku.box(possible_cells[0].box_num)])
+        for coordinates in locked_box - set(c.coordinates for c in possible_cells):
+            cell = self.sudoku[coordinates]
+            if digit in cell.pencil_marks:
+                if group_type == "rows":
+                    if cell.y != group[0].y:
+                        cell.pencil_marks.remove(digit)
+                elif group_type == "columns":
+                    if cell.x != group[0].x:
+                        cell.pencil_marks.remove(digit)
+                operated = True
+        return operated
 
     def check_for_pointing_tuple(self) -> bool:
         operated = False
@@ -152,11 +157,11 @@ class Solver:
                 if len(possible_cells) == size:
                     if (set(possible_options) <= overlapping_elements(
                             *[cell.pencil_marks for cell in possible_cells])):
-                        if self.clear_hidden_tuples(group, possible_cells, possible_options):
+                        if self.clear_hidden_tuple(group, possible_cells, possible_options):
                             return True
         return False
 
-    def clear_hidden_tuples(self, group, possible_cells, possible_options) -> bool:
+    def clear_hidden_tuple(self, group, possible_cells, possible_options) -> bool:
         operated = False
         group_minus_possibles = [c for c in group if c not in possible_cells]
         for cell in group_minus_possibles:
@@ -171,68 +176,58 @@ class Solver:
         return operated
 
     def check_for_xwings(self) -> bool:
-        operated = False
-        for group_type in RC:
-            for digit in range(1, 10):
-                for first_group in range(9):
-                    candidates = []
-                    if group_type == "rows":
-                        for cell in self.sudoku.row(first_group):
-                            if digit in cell.pencil_marks:
-                                candidates.append(cell)
-                    elif group_type == "columns":
-                        for cell in self.sudoku.column(first_group):
-                            if digit in cell.pencil_marks:
-                                candidates.append(cell)
-                    if len(candidates) == 2:
-                        first_candidates = [cell for cell in candidates]
-                        for second_group in range(first_group + 1, 9):
-                            candidates = []
-                            if group_type == "rows":
-                                for cell in self.sudoku.row(second_group):
-                                    if digit in cell.pencil_marks:
-                                        candidates.append(cell)
-                            elif group_type == "columns":
-                                for cell in self.sudoku.column(second_group):
-                                    if digit in cell.pencil_marks:
-                                        candidates.append(cell)
-                            if len(candidates) == 2:
-                                second_candidates = [cell for cell in candidates]
-                                candidates = first_candidates + second_candidates
-                                if group_type == "rows":
-                                    if first_candidates[0].x == second_candidates[0].x:
-                                        if first_candidates[1].x == second_candidates[1].x:
-                                            first_column = first_candidates[0].column
-                                            second_column = first_candidates[1].column
-                                            for cell in [self.sudoku[key] for key in first_column
-                                                         if self.sudoku[key] not in candidates]:
-                                                if digit in cell.pencil_marks:
-                                                    cell.pencil_marks.remove(digit)
-                                                    operated = True
-                                            for cell in [self.sudoku[key] for key in second_column if
-                                                         self.sudoku[key] not in candidates]:
-                                                if digit in cell.pencil_marks:
-                                                    cell.pencil_marks.remove(digit)
-                                                    operated = True
-                                elif group_type == "columns":
-                                    if first_candidates[0].y == second_candidates[0].y:
-                                        if first_candidates[1].y == second_candidates[1].y:
-                                            first_row = first_candidates[0].row
-                                            second_row = first_candidates[1].row
-                                            for cell in [self.sudoku[key] for key in first_row if
-                                                         self.sudoku[key] not in candidates]:
-                                                if digit in cell.pencil_marks:
-                                                    cell.pencil_marks.remove(digit)
-                                                    operated = True
-                                            for cell in [self.sudoku[key] for key in second_row if
-                                                         self.sudoku[key] not in candidates]:
-                                                if digit in cell.pencil_marks:
-                                                    cell.pencil_marks.remove(digit)
-                                                    operated = True
+        size = 2
 
-                    if operated:
-                        return True
+        for group_type, digit in itertools.product(RC, range(1, 10)):
+            for indices in itertools.combinations(range(9), r=size):
+                candidates: list[list[Cell]] = [self.cells_in_group_with_digit_in_pm(digit, index, group_type) for index
+                                                in indices]
+
+                if min([len(x) == len(y) == size for x, y in itertools.combinations(candidates, r=2)]):
+                    candidate_cells = [cell for candidate in candidates for cell in candidate]  # candidates flattened
+                    cross_groups = [group for group in zip(*candidates)]
+                    check_group, check_param = self.param_group_values_for_xwing(group_type)
+
+                    if _cells_in_groups_share_param(cross_groups, check_param):
+                        groups = [getattr(cell, check_group) for cell in candidates[0]]
+                        if self.clear_xwings(candidate_cells, digit, groups):
+                            return True
         return False
+
+    def clear_xwings(self, candidate_cells, digit, groups) -> bool:
+        operated = False
+        for group in groups:
+            for cell in [self.sudoku[key] for key in group
+                         if self.sudoku[key] not in candidate_cells]:
+                if digit in cell.pencil_marks:
+                    cell.pencil_marks.remove(digit)
+                    operated = True
+        return operated
+
+    def param_group_values_for_xwing(self, group_type) -> tuple[str, str]:
+        if group_type == "rows":
+            check_param = "x"
+            check_group = "column"
+        elif group_type == "columns":
+            check_param = "y"
+            check_group = "row"
+        return check_group, check_param
+
+    def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
+        """
+        Return a list of cells in the group with input digit in its pencil marks.
+        :param digit: a digit from 1 to 9
+        :param group_index: a digit from 1 to 9
+        :param group_type: "rows", "columns", or "boxes"
+        :return: list
+        """
+        if group_type == "rows":
+            group = self.sudoku.row(group_index)
+        elif group_type == "columns":
+            group = self.sudoku.column(group_index)
+        elif group_type == "boxes":
+            group = self.sudoku.box(group_index)
+        return [cell for cell in group if digit in cell.pencil_marks]
 
 
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
@@ -245,7 +240,9 @@ def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
 
 
 def overlapping_elements(*args: set) -> set:
-    """Return a set containing all elements shared by two or more of args."""
+    """Return a set containing all elements shared by two or more of args.
+    *args should all be sets.
+    """
 
     all_digits = []
     for digit_set in args:
@@ -257,3 +254,11 @@ def overlapping_elements(*args: set) -> set:
             overlap.add(digit, )
         check_set.add(digit, )
     return overlap
+
+
+def _cells_in_groups_share_param(groups: Iterable[Iterable[Cell]], check_param: str) -> bool:
+    for group in groups:
+        if not min([getattr(cell_a, check_param) == getattr(cell_b, check_param)
+                    for cell_a, cell_b in itertools.combinations(group, r=2)]):
+            return False
+    return True
