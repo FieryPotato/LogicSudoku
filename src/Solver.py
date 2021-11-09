@@ -11,7 +11,6 @@ RCB = tuple(RC + ("boxes",))
 RCB_cell = tuple(RC_cell + ("box",))
 
 
-
 class Solver:
     def __init__(self, sudoku: Sudoku):
         sudoku.update_pencil_marks()
@@ -161,7 +160,8 @@ class Solver:
                             return True
         return False
 
-    def clear_hidden_tuple(self, group, possible_cells, possible_options) -> bool:
+    @staticmethod
+    def clear_hidden_tuple(group, possible_cells, possible_options) -> bool:
         operated = False
         group_minus_possibles = [c for c in group if c not in possible_cells]
         for cell in group_minus_possibles:
@@ -186,7 +186,7 @@ class Solver:
                 if min([len(x) == len(y) == size for x, y in itertools.combinations(candidates, r=2)]):
                     candidate_cells = [cell for candidate in candidates for cell in candidate]  # candidates flattened
                     cross_groups = [group for group in zip(*candidates)]
-                    check_group, check_param = self.param_group_values_for_xwing(group_type)
+                    check_group, check_param = _param_group_values_for_xwing(group_type)
 
                     if _cells_in_groups_share_param(cross_groups, check_param):
                         groups = [getattr(cell, check_group) for cell in candidates[0]]
@@ -204,15 +204,6 @@ class Solver:
                     operated = True
         return operated
 
-    def param_group_values_for_xwing(self, group_type) -> tuple[str, str]:
-        if group_type == "rows":
-            check_param = "x"
-            check_group = "column"
-        elif group_type == "columns":
-            check_param = "y"
-            check_group = "row"
-        return check_group, check_param
-
     def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
         """
         Return a list of cells in the group with input digit in its pencil marks.
@@ -221,6 +212,7 @@ class Solver:
         :param group_type: "rows", "columns", or "boxes"
         :return: list
         """
+        group = None
         if group_type == "rows":
             group = self.sudoku.row(group_index)
         elif group_type == "columns":
@@ -241,8 +233,7 @@ def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
 
 def overlapping_elements(*args: set) -> set:
     """Return a set containing all elements shared by two or more of args.
-    *args should all be sets.
-    """
+    *args should all be sets."""
 
     all_digits = []
     for digit_set in args:
@@ -257,8 +248,20 @@ def overlapping_elements(*args: set) -> set:
 
 
 def _cells_in_groups_share_param(groups: Iterable[Iterable[Cell]], check_param: str) -> bool:
+    """Return True if all cells share check_param with the other cells in their subgroup."""
     for group in groups:
         if not min([getattr(cell_a, check_param) == getattr(cell_b, check_param)
                     for cell_a, cell_b in itertools.combinations(group, r=2)]):
             return False
     return True
+
+
+def _param_group_values_for_xwing(group_type) -> tuple[str, str]:
+    check_param, check_group = None, None
+    if group_type == "rows":
+        check_param = "x"
+        check_group = "column"
+    elif group_type == "columns":
+        check_param = "y"
+        check_group = "row"
+    return check_group, check_param
