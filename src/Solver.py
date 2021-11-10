@@ -1,6 +1,7 @@
 import itertools
 from collections import Iterable
 from copy import deepcopy
+from typing import Union, Any, Optional
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -222,10 +223,34 @@ class Solver:
         return [cell for cell in group if digit in cell.pencil_marks]
 
     def check_for_ywings(self) -> bool:
-        # All groupings of three cells where each cell has exactly 2 options
-        # and those options overlap with each other by exactly 1, and there
-        # are three unique numbers in those pencil marks.
-        triples: list[tuple[Cell, Cell, Cell]] = [
+        triples = self.find_strongly_connected_triples()
+        ywings = self.find_valid_ywings(triples)
+        if not ywings:
+            return False
+        for ywing in ywings:
+            if self.clear_ywing(ywing):
+                return True
+        return False
+
+    def clear_ywing(self, ywing) -> bool:
+        operated = False
+        wing_a, wing_b = ywing
+        cleared_digit: int = wing_a.pencil_marks.intersection(wing_b.pencil_marks).pop()
+        affected_cells = [cell for cell in self.sudoku
+                          if (cell.sees(wing_a) and cell.sees(wing_b))]
+        for cell in affected_cells:
+            if cleared_digit in cell.pencil_marks:
+                cell.pencil_marks.remove(cleared_digit)
+                operated = True
+        return operated
+
+    def find_strongly_connected_triples(self) -> list[tuple[Cell, Cell, Cell]]:
+        """Return a list of tuples of cells in self.sudoku which meet
+        the following criteria:
+        - all cells have 2 options;
+        - each cell hase 1 and only 1 overlapping option with each other cell;
+        - the cells together have a total of 3 unique options between them."""
+        return [
             (a, b, c)
             for a, b, c in itertools.combinations(self.sudoku, r=3)
             if ((len(a.pencil_marks) == len(b.pencil_marks) == len(c.pencil_marks) == 2)
@@ -235,34 +260,21 @@ class Solver:
                 and (len(a.pencil_marks.union(b.pencil_marks, c.pencil_marks)) == 3))
         ]
 
-        # Find valid triples in format [axis, [wing_1, wing_2]]
+    @staticmethod
+    def find_valid_ywings(triples) -> list[Optional[list[Cell, Cell]]]:
+        """Return either an empty list or a list containing pairs of
+        cells which are the wings of ywings."""
         ywings = []
         for a, b, c in triples:
             if a.sees(b):
                 if a.sees(c):
                     if not b.sees(c):
-                        ywings.append([a, [b, c]])
+                        ywings.append([b, c])
                 elif b.sees(c):
-                    ywings.append([b, [a, c]])
+                    ywings.append([a, c])
             elif a.sees(c) and b.sees(c):
-                ywings.append([c, [a, b]])
-
-        # Cut off search if no cells have the right form.
-        if not ywings:
-            return False
-
-        # Clear pencil marks in affected cells.
-        operated = False
-        for axis, wings in ywings:
-            cleared_digit: int = wings[0].pencil_marks.intersection(wings[1].pencil_marks).pop()
-            affected_cells = [cell for cell in self.sudoku
-                              if (cell.sees(wings[0]) and cell.sees(wings[1]))]
-            for cell in affected_cells:
-                if cleared_digit in cell.pencil_marks:
-                    cell.pencil_marks.remove(cleared_digit)
-                    operated = True
-
-        return operated
+                ywings.append([a, b])
+        return ywings
 
 
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:

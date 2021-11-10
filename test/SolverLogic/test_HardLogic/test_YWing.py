@@ -15,7 +15,7 @@ from src.Sudoku import Sudoku
 from src.Solver import Solver
 
 
-UNSOLVED_1 = " 78 2  9 " \
+UNSOLVED = " 78 2  9 " \
              " 29 876  " \
              "461953872" \
              "74  68   " \
@@ -28,7 +28,7 @@ UNSOLVED_1 = " 78 2  9 " \
 
 class TestYWing(unittest.TestCase):
     def test_solver_clears_ywings(self):
-        sudoku = Sudoku.from_string(UNSOLVED_1)
+        sudoku = Sudoku.from_string(UNSOLVED)
         solver = Solver(sudoku)
         cleared_cells = {(6, 0), (0, 1)}
         cleared_digit = 5
