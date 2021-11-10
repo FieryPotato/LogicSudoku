@@ -1,3 +1,9 @@
+"""
+If the only places for a digit in a row or column share a box, the other
+cells in that box cannot contain that digit.
+"""
+
+
 import unittest
 
 from src.Solver import Solver

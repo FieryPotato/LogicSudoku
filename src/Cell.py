@@ -61,27 +61,32 @@ class Cell:
         return self.digit == " "
 
     @property
-    def box(self) -> list:
+    def box(self) -> list[tuple[int, int]]:
+        """Return a list containing the keys of other cells in the same box."""
         x = self.x - self.x % 3
         y = self.y - self.y % 3
         boxes = [(x + i, y + j) for i, j in itertools.product(range(3), repeat=2)]
         return boxes
 
     @property
-    def row(self) -> list:
+    def row(self) -> list[tuple[int, int]]:
+        """Return a list containing the keys of other cells in the same row."""
         return [(i, self.y) for i in range(9)]
 
     @property
-    def column(self) -> list:
+    def column(self) -> list[tuple[int, int]]:
+        """Return a list containing the keys of other cells in the same column."""
         return [(self.x, i) for i in range(9)]
 
     @property
     def box_num(self) -> int:
+        """Return this cell's ordinal box number."""
         for key, box in BOX_MAP.items():
             if self.coordinates in box:
                 return key
 
     def fill(self, digit: Union[int, str]) -> None:
+        """Fill the cell with digit and updates pencil_marks."""
         if digit == " ":
             self.digit: str = digit
         else:
@@ -90,12 +95,31 @@ class Cell:
         return None
 
     def clear(self) -> None:
+        """Empty the cell."""
         self.digit = " "
         return None
 
     def has_same_options_as(self, other: "Cell") -> bool:
+        """Return whether this cell's pencil_marks are identical to other's."""
         return self.pencil_marks == other.pencil_marks
 
     @property
     def number_of_options(self) -> int:
+        """Return the number of pencil_marks."""
         return len(self.pencil_marks)
+
+    @property
+    def visible_cells(self) -> set[tuple[int, int]]:
+        """Return a set containing keys of each cell visible from this
+        one (not including itself)."""
+        keys = set()
+        for group in self.row, self.column, self.box:
+            keys.update(group)
+        keys.remove(self.coordinates)
+        return keys
+
+    def sees(self, other: "Cell") -> bool:
+        """Return True if self sees other in row, column, or box."""
+        return max(self.x == other.x,
+                   self.y == other.y,
+                   self.box_num == other.box_num)

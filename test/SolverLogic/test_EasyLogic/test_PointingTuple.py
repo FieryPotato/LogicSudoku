@@ -1,3 +1,10 @@
+"""
+If a digits possible positions in a box all occur in the same row or
+column, that digit can be eliminated from pencil marks of all other
+cells in that row or column.
+"""
+
+
 import unittest
 
 from src.Solver import Solver

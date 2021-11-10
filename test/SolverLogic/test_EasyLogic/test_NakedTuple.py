@@ -1,3 +1,11 @@
+"""
+If two, three, or four cells in a row, column, or box can only contain
+that many identical digits (i.e. if there are two cells in a row with
+the same two options, or three cells with three options, etc.) then
+those digits can be eliminated from the pencil marks of the other cells
+in that row, column, or box.
+"""
+
 import unittest
 
 from src.Solver import Solver

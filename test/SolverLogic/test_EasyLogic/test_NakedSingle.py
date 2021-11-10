@@ -1,3 +1,8 @@
+"""
+A naked single is a cell which only contains one valid option.
+"""
+
+
 import unittest
 
 from src.Solver import Solver
@@ -15,8 +20,6 @@ UNSOLVED: str = "8 4915627" \
 
 
 class TestNakedSingle(unittest.TestCase):
-    """A naked single is a cell which only contains one valid option."""
-
     def test_solver_fills_naked_singles(self) -> None:
         sudoku: Sudoku = Sudoku.from_string(UNSOLVED)
         solver: Solver = Solver(sudoku)

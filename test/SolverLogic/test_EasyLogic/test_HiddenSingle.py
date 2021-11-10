@@ -1,3 +1,9 @@
+"""
+If only one cell in a row, column, or box can contain a given digit,
+that digit can be written into the cell.
+"""
+
+
 import unittest
 
 from src.Solver import Solver

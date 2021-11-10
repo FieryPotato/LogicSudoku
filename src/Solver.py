@@ -221,6 +221,49 @@ class Solver:
             group = self.sudoku.box(group_index)
         return [cell for cell in group if digit in cell.pencil_marks]
 
+    def check_for_ywings(self) -> bool:
+        # All groupings of three cells where each cell has exactly 2 options
+        # and those options overlap with each other by exactly 1, and there
+        # are three unique numbers in those pencil marks.
+        triples: list[tuple[Cell, Cell, Cell]] = [
+            (a, b, c)
+            for a, b, c in itertools.combinations(self.sudoku, r=3)
+            if ((len(a.pencil_marks) == len(b.pencil_marks) == len(c.pencil_marks) == 2)
+                and (len(a.pencil_marks.intersection(b.pencil_marks)) ==
+                     len(a.pencil_marks.intersection(c.pencil_marks)) ==
+                     len(b.pencil_marks.intersection(c.pencil_marks)) == 1)
+                and (len(a.pencil_marks.union(b.pencil_marks, c.pencil_marks)) == 3))
+        ]
+
+        # Find valid triples in format [axis, [wing_1, wing_2]]
+        ywings = []
+        for a, b, c in triples:
+            if a.sees(b):
+                if a.sees(c):
+                    if not b.sees(c):
+                        ywings.append([a, [b, c]])
+                elif b.sees(c):
+                    ywings.append([b, [a, c]])
+            elif a.sees(c) and b.sees(c):
+                ywings.append([c, [a, b]])
+
+        # Cut off search if no cells have the right form.
+        if not ywings:
+            return False
+
+        # Clear pencil marks in affected cells.
+        operated = False
+        for axis, wings in ywings:
+            cleared_digit: int = wings[0].pencil_marks.intersection(wings[1].pencil_marks).pop()
+            affected_cells = [cell for cell in self.sudoku
+                              if (cell.sees(wings[0]) and cell.sees(wings[1]))]
+            for cell in affected_cells:
+                if cleared_digit in cell.pencil_marks:
+                    cell.pencil_marks.remove(cleared_digit)
+                    operated = True
+
+        return operated
+
 
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
     """Return true if any options are in cell.pencil_marks."""
