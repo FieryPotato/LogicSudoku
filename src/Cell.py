@@ -39,6 +39,7 @@ class Cell:
         self.y: int = coordinates[1]
         self.digit: Union[int, str] = " "
         self.pencil_marks = {i for i in range(1, 10)}
+        self.started_empty = True
 
     def __repr__(self) -> str:
         return f"Cell({self.coordinates}: {self.digit})"

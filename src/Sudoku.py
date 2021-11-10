@@ -163,7 +163,9 @@ class Sudoku:
         new = cls()
         for i, key in enumerate(CELL_KEYS):
             digit = string[i]
-            new[key].fill(digit)
+            cell = new[key]
+            cell.fill(digit)
+            cell.started_empty = False
         if not new.is_legal:
             raise ValueError("Your sudoku contains a duplicate.")
         return new
