@@ -251,8 +251,7 @@ class Solver:
         - each cell hase 1 and only 1 overlapping option with each other cell;
         - the cells together have a total of 3 unique options between them."""
         return [
-            (a, b, c)
-            for a, b, c in itertools.combinations(self.sudoku, r=3)
+            (a, b, c) for a, b, c in itertools.combinations(self.sudoku, r=3)
             if ((len(a.pencil_marks) == len(b.pencil_marks) == len(c.pencil_marks) == 2)
                 and (len(a.pencil_marks.intersection(b.pencil_marks)) ==
                      len(a.pencil_marks.intersection(c.pencil_marks)) ==
@@ -275,6 +274,51 @@ class Solver:
             elif a.sees(c) and b.sees(c):
                 ywings.append([a, b])
         return ywings
+
+    def check_for_avoidable_rectangles(self) -> bool:
+        operated = False
+        for quad in itertools.combinations(self.sudoku, r=4):
+            a, b, c, d = quad
+
+            # there are exactly three non-empty cells
+            if len([cell for cell in quad if not cell.is_empty]) == 3:
+
+                # the four cells sit in exactly two boxes
+                if len({cell.box_num for cell in quad}) == 2:
+
+                    # the cells all started empty
+                    if min([cell.started_empty for cell in quad]):
+
+                        # cells are arranged in a rectangle
+                        if (a.y == b.y and c.y == d.y
+                                and a.x == c.x and b.x == d.x
+                                and a.x != d.x and a.y != d.y):
+
+                            # cells across from each other share a digit
+                            if a.digit == d.digit:
+                                if b.is_empty and not c.is_empty:
+                                    if c.digit in b.pencil_marks:
+                                        b.pencil_marks.remove(c.digit)
+                                        operated = True
+
+                                elif c.is_empty and not b.is_empty:
+                                    if b.digit in c.pencil_marks:
+                                        c.pencil_marks.remove(b.digit)
+                                        operated = True
+
+                            elif b.digit == c.digit:
+                                if a.is_empty and not d.is_empty:
+                                    if d.digit in a.pencil_marks:
+                                        a.pencil_marks.remove(d.digit)
+                                        operated = True
+
+                                elif d.is_empty and not a.is_empty:
+                                    if a.digit in d.pencil_marks:
+                                        d.pencil_marks.remove(a.digit)
+                                        operated = True
+            if operated:
+                return True
+        return False
 
 
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
