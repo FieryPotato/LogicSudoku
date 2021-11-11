@@ -276,52 +276,47 @@ class Solver:
         return ywings
 
     def check_for_avoidable_rectangles(self) -> bool:
-        for quad in self.rectangles():
+        for quad in self.potential_avoidable_rectangles():
             if self.clear_avoidable_rectangle(*quad):
                 return True
         return False
 
-    def rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
+    def potential_avoidable_rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
         for quad in itertools.combinations(self.sudoku, r=4):
-            a, b, c, d = quad
-            if (a.y == b.y and c.y == d.y
-                    and a.x == c.x and b.x == d.x
-                    and a.x != d.x and a.y != d.y):
-                if min([cell.started_empty for cell in quad]):
-                    if len([cell for cell in quad if not cell.is_empty]) == 3:
-                        if len({cell.box_num for cell in quad}) == 2:
-                            yield quad
+            top_left, top_right, bot_left, bot_right = quad
+            # if cells are arranged rectangularly
+            if (top_left.y == top_right.y and bot_left.y == bot_right.y
+                    and top_left.x == bot_left.x and top_right.x == bot_right.x
+                    and top_left.x != bot_right.x and top_left.y != bot_right.y):
 
-    @staticmethod
-    def clear_avoidable_rectangle(top_left, top_right, bot_left, bot_right) -> bool:
+                if min([cell.started_empty for cell in quad]):
+                    if len({cell.box_num for cell in quad}) == 2:
+                        if len([cell for cell in quad if cell.is_empty]) == 1:
+                            yield top_left, top_right, bot_left, bot_right
+
+    def clear_avoidable_rectangle(self, top_left, top_right, bot_left, bot_right) -> bool:
         if top_left.digit == bot_right.digit:
             if top_right.is_empty and not bot_left.is_empty:
                 if bot_left.digit in top_right.pencil_marks:
                     top_right.pencil_marks.remove(bot_left.digit)
                     return True
-
             elif bot_left.is_empty and not top_right.is_empty:
                 if top_right.digit in bot_left.pencil_marks:
                     bot_left.pencil_marks.remove(top_right.digit)
                     return True
-
         elif top_right.digit == bot_left.digit:
             if top_left.is_empty and not bot_right.is_empty:
                 if bot_right.digit in top_left.pencil_marks:
                     top_left.pencil_marks.remove(bot_right.digit)
                     return True
-
             elif bot_right.is_empty and not top_left.is_empty:
                 if top_left.digit in bot_right.pencil_marks:
                     bot_right.pencil_marks.remove(top_left.digit)
                     return True
-
         return False
-
 
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
     """Return true if any options are in cell.pencil_marks."""
-
     for option in options:
         if option in cell.pencil_marks:
             return True
