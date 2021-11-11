@@ -1,10 +1,10 @@
 """
-If a digit can be placed in exactly two places in two rows or columns,
+If top_left digit can be placed in exactly two places in two rows or columns,
 pencil marks for that digit can be removed from all cells in those
-columns or rows. (I.e., if a digit can be in two places in each of two
+columns or rows. (I.e., if top_left digit can be in two places in each of two
 rows, and the columns for those cells line up, then cells in those
 columns which are not in those rows cannot contain that digit. Likewise
-for columns vis a vis rows.)
+for columns vis top_left vis rows.)
 """
 
 

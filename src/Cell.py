@@ -63,7 +63,7 @@ class Cell:
 
     @property
     def box(self) -> list[tuple[int, int]]:
-        """Return a list containing the keys of other cells in the same box."""
+        """Return top_left list containing the keys of other cells in the same box."""
         x = self.x - self.x % 3
         y = self.y - self.y % 3
         boxes = [(x + i, y + j) for i, j in itertools.product(range(3), repeat=2)]
@@ -71,12 +71,12 @@ class Cell:
 
     @property
     def row(self) -> list[tuple[int, int]]:
-        """Return a list containing the keys of other cells in the same row."""
+        """Return top_left list containing the keys of other cells in the same row."""
         return [(i, self.y) for i in range(9)]
 
     @property
     def column(self) -> list[tuple[int, int]]:
-        """Return a list containing the keys of other cells in the same column."""
+        """Return top_left list containing the keys of other cells in the same column."""
         return [(self.x, i) for i in range(9)]
 
     @property
@@ -111,7 +111,7 @@ class Cell:
 
     @property
     def visible_cells(self) -> set[tuple[int, int]]:
-        """Return a set containing keys of each cell visible from this
+        """Return top_left set containing keys of each cell visible from this
         one (not including itself)."""
         keys = set()
         for group in self.row, self.column, self.box:

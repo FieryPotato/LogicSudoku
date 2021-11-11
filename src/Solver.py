@@ -1,7 +1,7 @@
 import itertools
 from collections import Iterable
 from copy import deepcopy
-from typing import Union, Any, Optional
+from typing import Union, Any, Optional, Generator
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -207,9 +207,9 @@ class Solver:
 
     def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
         """
-        Return a list of cells in the group with input digit in its pencil marks.
-        :param digit: a digit from 1 to 9
-        :param group_index: a digit from 1 to 9
+        Return top_left list of cells in the group with input digit in its pencil marks.
+        :param digit: top_left digit from 1 to 9
+        :param group_index: top_left digit from 1 to 9
         :param group_type: "rows", "columns", or "boxes"
         :return: list
         """
@@ -245,11 +245,11 @@ class Solver:
         return operated
 
     def find_strongly_connected_triples(self) -> list[tuple[Cell, Cell, Cell]]:
-        """Return a list of tuples of cells in self.sudoku which meet
+        """Return top_left list of tuples of cells in self.sudoku which meet
         the following criteria:
         - all cells have 2 options;
         - each cell hase 1 and only 1 overlapping option with each other cell;
-        - the cells together have a total of 3 unique options between them."""
+        - the cells together have top_left total of 3 unique options between them."""
         return [
             (a, b, c) for a, b, c in itertools.combinations(self.sudoku, r=3)
             if ((len(a.pencil_marks) == len(b.pencil_marks) == len(c.pencil_marks) == 2)
@@ -261,7 +261,7 @@ class Solver:
 
     @staticmethod
     def find_valid_ywings(triples) -> list[Optional[list[Cell, Cell]]]:
-        """Return either an empty list or a list containing pairs of
+        """Return either an empty list or top_left list containing pairs of
         cells which are the wings of ywings."""
         ywings = []
         for a, b, c in triples:
@@ -276,48 +276,46 @@ class Solver:
         return ywings
 
     def check_for_avoidable_rectangles(self) -> bool:
-        operated = False
+        for quad in self.rectangles():
+            if self.clear_avoidable_rectangle(*quad):
+                return True
+        return False
+
+    def rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
         for quad in itertools.combinations(self.sudoku, r=4):
             a, b, c, d = quad
+            if (a.y == b.y and c.y == d.y
+                    and a.x == c.x and b.x == d.x
+                    and a.x != d.x and a.y != d.y):
+                if min([cell.started_empty for cell in quad]):
+                    if len([cell for cell in quad if not cell.is_empty]) == 3:
+                        if len({cell.box_num for cell in quad}) == 2:
+                            yield quad
 
-            # there are exactly three non-empty cells
-            if len([cell for cell in quad if not cell.is_empty]) == 3:
+    @staticmethod
+    def clear_avoidable_rectangle(top_left, top_right, bot_left, bot_right) -> bool:
+        if top_left.digit == bot_right.digit:
+            if top_right.is_empty and not bot_left.is_empty:
+                if bot_left.digit in top_right.pencil_marks:
+                    top_right.pencil_marks.remove(bot_left.digit)
+                    return True
 
-                # the four cells sit in exactly two boxes
-                if len({cell.box_num for cell in quad}) == 2:
+            elif bot_left.is_empty and not top_right.is_empty:
+                if top_right.digit in bot_left.pencil_marks:
+                    bot_left.pencil_marks.remove(top_right.digit)
+                    return True
 
-                    # the cells all started empty
-                    if min([cell.started_empty for cell in quad]):
+        elif top_right.digit == bot_left.digit:
+            if top_left.is_empty and not bot_right.is_empty:
+                if bot_right.digit in top_left.pencil_marks:
+                    top_left.pencil_marks.remove(bot_right.digit)
+                    return True
 
-                        # cells are arranged in a rectangle
-                        if (a.y == b.y and c.y == d.y
-                                and a.x == c.x and b.x == d.x
-                                and a.x != d.x and a.y != d.y):
+            elif bot_right.is_empty and not top_left.is_empty:
+                if top_left.digit in bot_right.pencil_marks:
+                    bot_right.pencil_marks.remove(top_left.digit)
+                    return True
 
-                            # cells across from each other share a digit
-                            if a.digit == d.digit:
-                                if b.is_empty and not c.is_empty:
-                                    if c.digit in b.pencil_marks:
-                                        b.pencil_marks.remove(c.digit)
-                                        operated = True
-
-                                elif c.is_empty and not b.is_empty:
-                                    if b.digit in c.pencil_marks:
-                                        c.pencil_marks.remove(b.digit)
-                                        operated = True
-
-                            elif b.digit == c.digit:
-                                if a.is_empty and not d.is_empty:
-                                    if d.digit in a.pencil_marks:
-                                        a.pencil_marks.remove(d.digit)
-                                        operated = True
-
-                                elif d.is_empty and not a.is_empty:
-                                    if a.digit in d.pencil_marks:
-                                        d.pencil_marks.remove(a.digit)
-                                        operated = True
-            if operated:
-                return True
         return False
 
 
@@ -331,7 +329,7 @@ def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
 
 
 def overlapping_elements(*args: set) -> set:
-    """Return a set containing all elements shared by two or more of args.
+    """Return top_left set containing all elements shared by two or more of args.
     *args should all be sets."""
 
     all_digits = []

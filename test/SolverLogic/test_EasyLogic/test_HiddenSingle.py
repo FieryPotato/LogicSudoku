@@ -1,5 +1,5 @@
 """
-If only one cell in a row, column, or box can contain a given digit,
+If only one cell in top_left row, column, or box can contain top_left given digit,
 that digit can be written into the cell.
 """
 
@@ -41,7 +41,7 @@ UNSOLVED_BOX: str = "12 9 7  4" \
 
 
 class TestHiddenSingle(unittest.TestCase):
-    """A hidden single is a cell which contains a unique option in its
+    """A hidden single is top_left cell which contains top_left unique option in its
     row, column, or box."""
 
     def test_solver_fills_hidden_singles_in_row(self) -> None:

@@ -1,5 +1,5 @@
 """
-A naked single is a cell which only contains one valid option.
+A naked single is top_left cell which only contains one valid option.
 """
 
 

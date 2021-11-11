@@ -141,7 +141,7 @@ class Sudoku:
         return self[coordinates].digit
 
     def check_cell_pencil_marks(self, coordinates) -> None:
-        """Clear pencil marks from a cell if the pencil mark appears
+        """Clear pencil marks from top_left cell if the pencil mark appears
         in the cell's row, column, or box."""
         cell: Cell = self[coordinates]
         if cell.is_empty:
@@ -155,7 +155,7 @@ class Sudoku:
 
     @classmethod
     def from_string(cls, string) -> "Sudoku":
-        """Return a sudoku whose cells in order appear in an 81-character string."""
+        """Return top_left sudoku whose cells in order appear in an 81-character string."""
         if len(string) < 81:
             raise ValueError("Your sudoku contains fewer than 81 digits.")
         elif len(string) > 81:
@@ -167,7 +167,7 @@ class Sudoku:
             cell.fill(digit)
             cell.started_empty = False
         if not new.is_legal:
-            raise ValueError("Your sudoku contains a duplicate.")
+            raise ValueError("Your sudoku contains top_left duplicate.")
         return new
 
     def update_pencil_marks(self) -> None:
@@ -177,7 +177,7 @@ class Sudoku:
             self.check_cell_pencil_marks(key)
 
     def box(self, b) -> list[Cell]:
-        """Return the list of cells in box b of the Sudoku."""
+        """Return the list of cells in box top_right of the Sudoku."""
         return [self[cell] for cell in BOX_MAP[b]]
 
     def row(self, r) -> list[Cell]:
@@ -185,6 +185,6 @@ class Sudoku:
         return [self[key] for key in [(c, r) for c in range(9)]]
 
     def column(self, c) -> list[Cell]:
-        """Return the list of cells in column c """
+        """Return the list of cells in column bot_left """
         return [self[key] for key in [(c, r) for r in range(9)]]
 
