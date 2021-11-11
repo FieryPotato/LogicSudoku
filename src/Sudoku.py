@@ -75,7 +75,7 @@ class Sudoku:
         return self.cell_dict[item]
 
     def __delitem__(self, key) -> None:
-        del self.cell_dict[key]
+        self.cell_dict[key].clear()
         return None
 
     def __iter__(self) -> Iterator[Cell]:
@@ -135,6 +135,7 @@ class Sudoku:
     def set_cell(self, coordinates, value) -> None:
         """Set the chosen cell's value."""
         self[coordinates].fill(value)
+        return None
 
     def get_cell(self, coordinates) -> Union[int, str]:
         """Return the digit in input coordinates' cell."""

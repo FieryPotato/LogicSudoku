@@ -1,7 +1,7 @@
 import itertools
 from collections import Iterable
 from copy import deepcopy
-from typing import Union, Any, Optional, Generator
+from typing import Optional, Generator
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -161,21 +161,6 @@ class Solver:
                             return True
         return False
 
-    @staticmethod
-    def clear_hidden_tuple(group, possible_cells, possible_options) -> bool:
-        operated = False
-        group_minus_possibles = [c for c in group if c not in possible_cells]
-        for cell in group_minus_possibles:
-            if cell.pencil_marks.intersection(set(possible_options)):
-                break
-        else:
-            for cell in possible_cells:
-                for option in tuple(cell.pencil_marks):
-                    if option not in possible_options:
-                        cell.pencil_marks.remove(option)
-                        operated = True
-        return operated
-
     def check_for_xwings(self) -> bool:
         size = 2
 
@@ -259,6 +244,25 @@ class Solver:
                 and (len(a.pencil_marks.union(b.pencil_marks, c.pencil_marks)) == 3))
         ]
 
+    def potential_avoidable_rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
+        for quad in itertools.combinations(self.sudoku, r=4):
+            top_left, top_right, bot_left, bot_right = quad
+            # if cells are arranged in a rectangle
+            if (top_left.y == top_right.y and bot_left.y == bot_right.y
+                    and top_left.x == bot_left.x and top_right.x == bot_right.x
+                    and top_left.x != bot_right.x and top_left.y != bot_right.y):
+
+                if min([cell.started_empty for cell in quad]):
+                    if len({cell.box_num for cell in quad}) == 2:
+                        if len([cell for cell in quad if cell.is_empty]) == 1:
+                            yield top_left, top_right, bot_left, bot_right
+
+    def check_for_avoidable_rectangles(self) -> bool:
+        for quad in self.potential_avoidable_rectangles():
+            if self.clear_avoidable_rectangle(*quad):
+                return True
+        return False
+
     @staticmethod
     def find_valid_ywings(triples) -> list[Optional[list[Cell, Cell]]]:
         """Return either an empty list or top_left list containing pairs of
@@ -275,26 +279,8 @@ class Solver:
                 ywings.append([a, b])
         return ywings
 
-    def check_for_avoidable_rectangles(self) -> bool:
-        for quad in self.potential_avoidable_rectangles():
-            if self.clear_avoidable_rectangle(*quad):
-                return True
-        return False
-
-    def potential_avoidable_rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
-        for quad in itertools.combinations(self.sudoku, r=4):
-            top_left, top_right, bot_left, bot_right = quad
-            # if cells are arranged rectangularly
-            if (top_left.y == top_right.y and bot_left.y == bot_right.y
-                    and top_left.x == bot_left.x and top_right.x == bot_right.x
-                    and top_left.x != bot_right.x and top_left.y != bot_right.y):
-
-                if min([cell.started_empty for cell in quad]):
-                    if len({cell.box_num for cell in quad}) == 2:
-                        if len([cell for cell in quad if cell.is_empty]) == 1:
-                            yield top_left, top_right, bot_left, bot_right
-
-    def clear_avoidable_rectangle(self, top_left, top_right, bot_left, bot_right) -> bool:
+    @staticmethod
+    def clear_avoidable_rectangle(top_left, top_right, bot_left, bot_right) -> bool:
         if top_left.digit == bot_right.digit:
             if top_right.is_empty and not bot_left.is_empty:
                 if bot_left.digit in top_right.pencil_marks:
@@ -314,6 +300,22 @@ class Solver:
                     bot_right.pencil_marks.remove(top_left.digit)
                     return True
         return False
+
+    @staticmethod
+    def clear_hidden_tuple(group, possible_cells, possible_options) -> bool:
+        operated = False
+        group_minus_possibles = [c for c in group if c not in possible_cells]
+        for cell in group_minus_possibles:
+            if cell.pencil_marks.intersection(set(possible_options)):
+                break
+        else:
+            for cell in possible_cells:
+                for option in tuple(cell.pencil_marks):
+                    if option not in possible_options:
+                        cell.pencil_marks.remove(option)
+                        operated = True
+        return operated
+
 
 def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
     """Return true if any options are in cell.pencil_marks."""
