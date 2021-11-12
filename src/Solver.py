@@ -17,11 +17,13 @@ class Solver:
         sudoku.update_pencil_marks()
         self.sudoku = sudoku
         self.is_solved = self.sudoku.is_complete
-        self.easy_logic = (self.fill_naked_singles, self.fill_hidden_singles,
-                           self.check_for_naked_tuples, self.check_for_locked_candidates,
-                           self.check_for_pointing_tuple)
+        self.basic_logic = self.fill_naked_singles, self.fill_hidden_singles
+        self.easy_logic = self.check_for_naked_tuples, self.check_for_locked_candidates, self.check_for_pointing_tuple
         self.intermediate_logic = self.check_for_hidden_tuples, self.check_for_xwings
-        self.levels = (self.try_easy_logic, self.try_intermediate_logic)
+        self.hard_logic = self.check_for_ywings, self.check_for_avoidable_rectangles
+        self.brutal_logic = ()
+        self.galaxy_brain_logic = ()
+        self.levels = self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic, self.try_hard_logic
 
     def main(self):
         if not self.is_solved:
@@ -33,6 +35,12 @@ class Solver:
                         break
             self.is_solved = self.sudoku.is_complete
 
+    def try_basic_logic(self) -> bool:
+        for strategy in self.basic_logic:
+            if strategy():
+                return True
+        return False
+
     def try_easy_logic(self) -> bool:
         for strategy in self.easy_logic:
             if strategy():
@@ -41,6 +49,12 @@ class Solver:
 
     def try_intermediate_logic(self) -> bool:
         for strategy in self.intermediate_logic:
+            if strategy():
+                return True
+        return False
+
+    def try_hard_logic(self) -> bool:
+        for strategy in self.hard_logic:
             if strategy():
                 return True
         return False
@@ -153,9 +167,9 @@ class Solver:
             checked_options = itertools.combinations(range(1, 10), r=size)
             for group, possible_options in itertools.product(group_list, checked_options):
                 possible_cells = [cell for cell in group if
-                                  options_in_cell_min(possible_options, cell)]
+                                  _options_in_cell_min(possible_options, cell)]
                 if len(possible_cells) == size:
-                    if (set(possible_options) <= overlapping_elements(
+                    if (set(possible_options) <= _overlapping_elements(
                             *[cell.pencil_marks for cell in possible_cells])):
                         if self.clear_hidden_tuple(group, possible_cells, possible_options):
                             return True
@@ -317,7 +331,7 @@ class Solver:
         return operated
 
 
-def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
+def _options_in_cell_min(options: Iterable, cell: Cell) -> bool:
     """Return true if any options are in cell.pencil_marks."""
     for option in options:
         if option in cell.pencil_marks:
@@ -325,7 +339,7 @@ def options_in_cell_min(options: Iterable, cell: Cell) -> bool:
     return False
 
 
-def overlapping_elements(*args: set) -> set:
+def _overlapping_elements(*args: set) -> set:
     """Return top_left set containing all elements shared by two or more of args.
     *args should all be sets."""
 

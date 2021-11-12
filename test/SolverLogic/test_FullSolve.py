@@ -43,6 +43,26 @@ INTERMEDIATE_SOLVED = "381297645" \
                       "428169357" \
                       "193475268"
 
+HARD_UNSOLVED = " 9  8   1" \
+                "78       " \
+                " 2 3  84 " \
+                "  6    2 " \
+                "    5    " \
+                " 4 6  9  " \
+                "  4  2 8 " \
+                "        9" \
+                "85  7  63"
+
+HARD_SOLVED = "493287651" \
+              "781546392" \
+              "625391847" \
+              "936718524" \
+              "218459736" \
+              "547623918" \
+              "374962185" \
+              "162835479" \
+              "859174263"
+
 
 class TestFullSolve(unittest.TestCase):
     def test_easy_solve(self):
@@ -56,6 +76,14 @@ class TestFullSolve(unittest.TestCase):
     def test_intermediate_solve(self):
         unsolved = Sudoku.from_string(INTERMEDIATE_UNSOLVED)
         solved = Sudoku.from_string(INTERMEDIATE_SOLVED)
+        solver = Solver(unsolved)
+        solver.main()
+        self.assertTrue(solver.is_solved)
+        self.assertEqual(solved, solver.sudoku)
+
+    def test_hard_solve(self):
+        unsolved = Sudoku.from_string(HARD_UNSOLVED)
+        solved = Sudoku.from_string(HARD_SOLVED)
         solver = Solver(unsolved)
         solver.main()
         self.assertTrue(solver.is_solved)
