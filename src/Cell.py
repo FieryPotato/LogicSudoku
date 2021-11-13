@@ -46,16 +46,15 @@ class Cell:
 
     def __eq__(self, other) -> bool:
         for attribute in ("coordinates", "digit", "pencil_marks"):
-            if getattr(self, attribute) == getattr(other, attribute):
-                continue
-            else:
+            if getattr(self, attribute) != getattr(other, attribute):
                 return False
         return True
 
     def __ne__(self, other) -> bool:
-        if self.digit == other.digit:
-            return False
-        return True
+        for attribute in ("coordinates", "digit", "pencil_marks"):
+            if getattr(self, attribute) != getattr(other, attribute):
+                return True
+        return False
 
     @property
     def is_empty(self) -> bool:

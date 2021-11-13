@@ -1,7 +1,7 @@
 import itertools
 from collections import Iterable
 from copy import deepcopy
-from typing import Optional, Generator
+from typing import Optional, Generator, Union, Any
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -21,7 +21,7 @@ class Solver:
         self.easy_logic = self.check_for_naked_tuples, self.check_for_locked_candidates, self.check_for_pointing_tuple
         self.intermediate_logic = self.check_for_hidden_tuples, self.check_for_xwings
         self.hard_logic = self.check_for_ywings, self.check_for_avoidable_rectangles
-        self.brutal_logic = ()
+        self.brutal_logic = self.check_for_xyzwings,
         self.galaxy_brain_logic = ()
         self.levels = self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic, self.try_hard_logic
 
@@ -206,9 +206,9 @@ class Solver:
 
     def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
         """
-        Return top_left list of cells in the group with input digit in its pencil marks.
-        :param digit: top_left digit from 1 to 9
-        :param group_index: top_left digit from 1 to 9
+        Return a list of cells in the group with input digit in its pencil marks.
+        :param digit: a digit from 1 to 9
+        :param group_index: a digit from 1 to 9
         :param group_type: "rows", "columns", or "boxes"
         :return: list
         """
@@ -222,7 +222,7 @@ class Solver:
         return [cell for cell in group if digit in cell.pencil_marks]
 
     def check_for_ywings(self) -> bool:
-        triples = self.find_strongly_connected_triples()
+        triples = self.find_ywing_triples()
         ywings = self.find_valid_ywings(triples)
         if not ywings:
             return False
@@ -243,12 +243,16 @@ class Solver:
                 operated = True
         return operated
 
-    def find_strongly_connected_triples(self) -> list[tuple[Cell, Cell, Cell]]:
-        """Return top_left list of tuples of cells in self.sudoku which meet
+    def find_ywing_triples(self) -> list[tuple[Cell, Cell, Cell]]:
+        """
+        Return a list of tuples of cells in self.sudoku which meet
         the following criteria:
+
         - all cells have 2 options;
         - each cell hase 1 and only 1 overlapping option with each other cell;
-        - the cells together have top_left total of 3 unique options between them."""
+        - the cells together have a total of 3 unique options between them.
+        """
+
         return [
             (a, b, c) for a, b, c in itertools.combinations(self.sudoku, r=3)
             if ((len(a.pencil_marks) == len(b.pencil_marks) == len(c.pencil_marks) == 2)
@@ -277,9 +281,74 @@ class Solver:
                 return True
         return False
 
+    def check_for_xyzwings(self) -> bool:
+        possibles = self.find_xyzwings()
+        for possible in possibles:
+            if self.clear_xyzwing(*possible):
+                return True
+        return False
+
+    def clear_xyzwing(self, targets, digit):
+        operated = False
+        for cell in targets:
+            if digit in (pencil_marks := cell.pencil_marks):
+                pencil_marks.remove(digit)
+                operated = True
+        return operated
+
+    def find_xyzwings(self) -> Union[tuple[list[Cell], int], Any]:
+        """Return a pair of lists of cells a and b which satisfy the following:
+
+        - there are three cells in b;
+        - the size of two cells is b's pencil marks is 2, and the other 3
+        - the size of the union of pencil marks in b cells is 3;
+        - the size of the intersection of pencil marks in b cells is 1
+        - the cell in b with 3 pencil marks sees both other cells in b
+        - cells in a see all cells in b;
+        - cells in a have the cell in b's pencil marks' intersection in their pencil marks
+
+        If no such lists exist, return two empty tuples.
+        """
+        possible_xyzwings = []
+        for triple in itertools.combinations(self.sudoku, r=3):
+            axis = False
+            shared_digit = None
+
+            if {cell.coordinates for cell in triple} == {(2, 6), (5, 6), (2, 7)}:
+                a = ""
+
+            # check whether triple meets conditions
+            for cell in triple:
+                temp_axis = cell
+                wings = [c for c in triple if c != cell]
+
+                if len(temp_axis.pencil_marks) == 3:
+                    if len(wings[0].pencil_marks) == 2 and len(wings[1].pencil_marks) == 2:
+                        pencil_marks = [c.pencil_marks for c in triple]
+                        if len(set.union(*pencil_marks)) == 3:
+                            pm_intersection = set.intersection(*pencil_marks)
+                            if len(set.intersection(*pencil_marks)) == 1:
+                                if temp_axis.sees(wings[0]) and temp_axis.sees(wings[1]):
+                                    axis = temp_axis
+                                    shared_digit = pm_intersection.pop()
+                                    break
+            else:
+                continue
+
+            # find cells which see all cells in axis and wings and which
+            # contain shared_digit in their pencil_marks.
+            if affected_keys := set.intersection(*[cell.visible_cells for cell in triple]):
+                affected_cells = []
+                for key in affected_keys:
+                    cell = self.sudoku[key]
+                    if shared_digit in cell.pencil_marks:
+                        affected_cells.append(cell)
+                possible_xyzwings.append([affected_cells, shared_digit])
+        return possible_xyzwings
+
     @staticmethod
     def find_valid_ywings(triples) -> list[Optional[list[Cell, Cell]]]:
-        """Return either an empty list or top_left list containing pairs of
+        """Return either an empty list or a list containing pairs of
         cells which are the wings of ywings."""
         ywings = []
         for a, b, c in triples:
@@ -340,7 +409,7 @@ def _options_in_cell_min(options: Iterable, cell: Cell) -> bool:
 
 
 def _overlapping_elements(*args: set) -> set:
-    """Return top_left set containing all elements shared by two or more of args.
+    """Return a set containing all elements shared by two or more of args.
     *args should all be sets."""
 
     all_digits = []
