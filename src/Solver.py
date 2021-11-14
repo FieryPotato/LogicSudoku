@@ -312,17 +312,18 @@ class Solver:
         possible_xyzwings = []
         for triple in itertools.combinations(self.sudoku, r=3):
             shared_digit = self.possible_xyzwing_shared_digit(triple)
-
-            # find cells which see all cells in axis and wings and which
-            # contain shared_digit in their pencil_marks.
-            affected_cells = []
-            if affected_keys := set.intersection(*[cell.visible_cells for cell in triple]):
-                for key in affected_keys:
-                    cell = self.sudoku[key]
-                    if shared_digit in cell.pencil_marks:
-                        affected_cells.append(cell)
+            affected_cells = self.xyzwing_affected_cells(shared_digit, triple)
             possible_xyzwings.append([affected_cells, shared_digit])
         return possible_xyzwings
+
+    def xyzwing_affected_cells(self, shared_digit, triple) -> list:
+        affected_cells = []
+        if affected_keys := set.intersection(*[cell.visible_cells for cell in triple]):
+            for key in affected_keys:
+                cell = self.sudoku[key]
+                if shared_digit in cell.pencil_marks:
+                    affected_cells.append(cell)
+        return affected_cells
 
     def possible_xyzwing_shared_digit(self, triple: Iterable[Cell, Cell, Cell]) -> Optional[int]:
         """Return triple's shared digit if input triple is a viable xyzwing;

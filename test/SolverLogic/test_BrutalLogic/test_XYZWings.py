@@ -15,8 +15,6 @@ UNSOLVED = "   39 486" \
              "  9  614 "
 
 
-
-
 class TestXYZWings(unittest.TestCase):
     def test_solver_clears_xyzwings(self):
         sudoku = Sudoku.from_string(UNSOLVED)
