@@ -4,20 +4,22 @@ from src.Solver import Solver
 from src.Sudoku import Sudoku
 
 
-UNSOLVED_1 = "   39 486" \
-           "8 367 912" \
-           " 96 28537" \
-           "687 4 359" \
-           "9  783621" \
-           "231569874" \
-           "   9  76 " \
-           "56  17293" \
-           "  9  614 "
+UNSOLVED = "   39 486" \
+             "8 367 912" \
+             " 96 28537" \
+             "687 4 359" \
+             "9  783621" \
+             "231569874" \
+             "   9  76 " \
+             "56  17293" \
+             "  9  614 "
+
+
 
 
 class TestXYZWings(unittest.TestCase):
     def test_solver_clears_xyzwings(self):
-        sudoku = Sudoku.from_string(UNSOLVED_1)
+        sudoku = Sudoku.from_string(UNSOLVED)
         edited_cells = {
             (1, 0): 5,
             (1, 6): 4,

@@ -311,40 +311,33 @@ class Solver:
         """
         possible_xyzwings = []
         for triple in itertools.combinations(self.sudoku, r=3):
-            axis = False
-            shared_digit = None
-
-            if {cell.coordinates for cell in triple} == {(2, 6), (5, 6), (2, 7)}:
-                a = ""
-
-            # check whether triple meets conditions
-            for cell in triple:
-                temp_axis = cell
-                wings = [c for c in triple if c != cell]
-
-                if len(temp_axis.pencil_marks) == 3:
-                    if len(wings[0].pencil_marks) == 2 and len(wings[1].pencil_marks) == 2:
-                        pencil_marks = [c.pencil_marks for c in triple]
-                        if len(set.union(*pencil_marks)) == 3:
-                            pm_intersection = set.intersection(*pencil_marks)
-                            if len(set.intersection(*pencil_marks)) == 1:
-                                if temp_axis.sees(wings[0]) and temp_axis.sees(wings[1]):
-                                    axis = temp_axis
-                                    shared_digit = pm_intersection.pop()
-                                    break
-            else:
-                continue
+            shared_digit = self.possible_xyzwing_shared_digit(triple)
 
             # find cells which see all cells in axis and wings and which
             # contain shared_digit in their pencil_marks.
+            affected_cells = []
             if affected_keys := set.intersection(*[cell.visible_cells for cell in triple]):
-                affected_cells = []
                 for key in affected_keys:
                     cell = self.sudoku[key]
                     if shared_digit in cell.pencil_marks:
                         affected_cells.append(cell)
-                possible_xyzwings.append([affected_cells, shared_digit])
+            possible_xyzwings.append([affected_cells, shared_digit])
         return possible_xyzwings
+
+    def possible_xyzwing_shared_digit(self, triple: Iterable[Cell, Cell, Cell]) -> Optional[int]:
+        """Return triple's shared digit if input triple is a viable xyzwing;
+        returns None otherwise."""
+        for cell in triple:
+            wings = [c for c in triple if c != cell]
+            if len(wings[0].pencil_marks) == len(wings[1].pencil_marks) == 2:
+                if cell.sees(wings[0]) and cell.sees(wings[1]):
+                    if len(cell.pencil_marks) == 3:
+                        pencil_marks = [c.pencil_marks for c in triple]
+                        intersection = set.intersection(*pencil_marks)
+                        if len(set.union(*pencil_marks)) == 3:
+                            if len(set.intersection(*pencil_marks)) == 1:
+                                return intersection.pop()
+        return None
 
     @staticmethod
     def find_valid_ywings(triples) -> list[Optional[list[Cell, Cell]]]:
