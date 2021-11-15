@@ -288,7 +288,8 @@ class Solver:
                 return True
         return False
 
-    def clear_xyzwing(self, targets, digit):
+    @staticmethod
+    def clear_xyzwing(targets, digit):
         operated = False
         for cell in targets:
             if digit in (pencil_marks := cell.pencil_marks):
@@ -310,11 +311,22 @@ class Solver:
         If no such lists exist, return two empty tuples.
         """
         possible_xyzwings = []
-        for triple in itertools.combinations(self.sudoku, r=3):
-            shared_digit = self.possible_xyzwing_shared_digit(triple)
+        for index, triple in self.possible_xyzwing_triples():
+            shared_digit = self.xyzwing_triple_shared_digit(index, triple)
             affected_cells = self.xyzwing_affected_cells(shared_digit, triple)
             possible_xyzwings.append([affected_cells, shared_digit])
         return possible_xyzwings
+
+    def possible_xyzwing_triples(self) -> Generator[tuple[Cell, [Cell, Cell]], None, None]:
+        for triple in itertools.combinations(self.sudoku, r=3):
+            if len({cell.box_num for cell in triple}) != 2:
+                continue
+            indices = {0, 1, 2}
+            for i in range(3):
+                axis = triple[i]
+                wings = [triple[x] for x in indices - {i}]
+                if len(axis.pencil_marks) == 3 and len(wings[0].pencil_marks) == len(wings[1].pencil_marks) == 2:
+                    yield axis, wings
 
     def xyzwing_affected_cells(self, shared_digit, triple) -> list:
         affected_cells = []
@@ -325,19 +337,15 @@ class Solver:
                     affected_cells.append(cell)
         return affected_cells
 
-    def possible_xyzwing_shared_digit(self, triple: Iterable[Cell, Cell, Cell]) -> Optional[int]:
+    @staticmethod
+    def xyzwing_triple_shared_digit(axis: Cell, wings: list[Cell, Cell]) -> Optional[int]:
         """Return triple's shared digit if input triple is a viable xyzwing;
         returns None otherwise."""
-        for cell in triple:
-            wings = [c for c in triple if c != cell]
-            if len(wings[0].pencil_marks) == len(wings[1].pencil_marks) == 2:
-                if cell.sees(wings[0]) and cell.sees(wings[1]):
-                    if len(cell.pencil_marks) == 3:
-                        pencil_marks = [c.pencil_marks for c in triple]
-                        intersection = set.intersection(*pencil_marks)
-                        if len(set.union(*pencil_marks)) == 3:
-                            if len(set.intersection(*pencil_marks)) == 1:
-                                return intersection.pop()
+        if min([axis.sees(cell) for cell in wings]):
+            pencil_marks = [cell.pencil_marks for cell in wings + [axis]]
+            intersection = set.intersection(*pencil_marks)
+            if len(set.union(*pencil_marks)) == 3 and len(set.intersection(*pencil_marks)) == 1:
+                return intersection.pop()
         return None
 
     @staticmethod
