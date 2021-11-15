@@ -317,16 +317,17 @@ class Solver:
             possible_xyzwings.append([affected_cells, shared_digit])
         return possible_xyzwings
 
-    def possible_xyzwing_triples(self) -> Generator[tuple[Cell, [Cell, Cell]], None, None]:
+    def possible_xyzwing_triples(self) -> Generator[tuple[int, [Cell, Cell, Cell]], None, None]:
         for triple in itertools.combinations(self.sudoku, r=3):
             if len({cell.box_num for cell in triple}) != 2:
                 continue
+
             indices = {0, 1, 2}
             for i in range(3):
                 axis = triple[i]
                 wings = [triple[x] for x in indices - {i}]
                 if len(axis.pencil_marks) == 3 and len(wings[0].pencil_marks) == len(wings[1].pencil_marks) == 2:
-                    yield axis, wings
+                    yield i, triple
 
     def xyzwing_affected_cells(self, shared_digit, triple) -> list:
         affected_cells = []
@@ -338,11 +339,13 @@ class Solver:
         return affected_cells
 
     @staticmethod
-    def xyzwing_triple_shared_digit(axis: Cell, wings: list[Cell, Cell]) -> Optional[int]:
+    def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:
         """Return triple's shared digit if input triple is a viable xyzwing;
         returns None otherwise."""
+        axis = triple[index]
+        wings = [triple[x] for x in {0, 1, 2} - {index}]
         if min([axis.sees(cell) for cell in wings]):
-            pencil_marks = [cell.pencil_marks for cell in wings + [axis]]
+            pencil_marks = [cell.pencil_marks for cell in triple]
             intersection = set.intersection(*pencil_marks)
             if len(set.union(*pencil_marks)) == 3 and len(set.intersection(*pencil_marks)) == 1:
                 return intersection.pop()
