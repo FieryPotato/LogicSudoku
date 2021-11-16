@@ -357,36 +357,41 @@ class Solver:
                 if cell_a.pencil_marks != cell_b.pencil_marks:
                     continue
 
+                target = None
+                cell = None
                 # branching based on if a and b share a row or column
                 if cell_a.y == cell_b.y:
                     for key in [k for k in cell_a.column if k != cell_a.coordinates]:
-                        if (cell := self.sudoku[key]).pencil_marks == cell_a.pencil_marks:
+                        cell = self.sudoku[key]
+                        if cell.pencil_marks == cell_a.pencil_marks:
                             target = self.sudoku[(cell_b.x, cell.y)]
-                            if intersection := cell.pencil_marks.intersection(target.pencil_marks):
-                                target.pencil_marks -= intersection
-                                return True
+                            break
                     else:
                         for key in [k for k in cell_b.column if k != cell_b.coordinates]:
-                            if (cell := self.sudoku[key].pencil_marks) == cell_b.pencil_marks:
+                            cell = self.sudoku[key]
+                            if cell.pencil_marks == cell_b.pencil_marks:
                                 target = self.sudoku[(cell_a.x, cell.y)]
-                                if intersection := cell.pencil_marks.intersection(target.pencil_marks):
-                                    target.pencil_marks -= intersection
-                                    return True
-
+                                break
                 if cell_a.x == cell_b.x:
                     for key in [k for k in cell_a.row if k != cell_a.coordinates]:
-                        if (cell := self.sudoku[key]).pencil_marks == cell_a.pencil_marks:
+                        cell = self.sudoku[key]
+                        if cell.pencil_marks == cell_a.pencil_marks:
                             target = self.sudoku[(cell.x, cell_b.y)]
-                            if intersection := cell.pencil_marks.intersection(target.pencil_marks):
-                                target.pencil_marks -= intersection
-                                return True
+                            break
                     else:
                         for key in [k for k in cell_b.row if k != cell_b.coordinates]:
-                            if (cell := self.sudoku[key]).pencil_marks == cell_a.pencil_marks:
+                            cell = self.sudoku[key]
+                            if cell.pencil_marks == cell_a.pencil_marks:
                                 target = self.sudoku[(cell.x, cell_a.y)]
-                                if intersection := cell.pencil_marks.intersection(target.pencil_marks):
-                                    target.pencil_marks -= intersection
-                                    return True
+                                break
+
+                if target is None or cell is None:
+                    continue
+
+                if intersection := cell.pencil_marks.intersection(target.pencil_marks):
+                    target.remove(intersection)
+                    return True
+
         return False
 
     @staticmethod
