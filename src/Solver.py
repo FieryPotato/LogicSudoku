@@ -17,13 +17,15 @@ class Solver:
         sudoku.update_pencil_marks()
         self.sudoku = sudoku
         self.is_solved = self.sudoku.is_complete
+
         self.basic_logic = self.fill_naked_singles, self.fill_hidden_singles
         self.easy_logic = self.check_for_naked_tuples, self.check_for_locked_candidates, self.check_for_pointing_tuple
         self.intermediate_logic = self.check_for_hidden_tuples, self.check_for_xwings
         self.hard_logic = self.check_for_ywings, self.check_for_avoidable_rectangles
-        self.brutal_logic = self.check_for_xyzwings,
+        self.brutal_logic = self.check_for_xyzwings, self.check_for_unique_rectangles
         self.galaxy_brain_logic = ()
-        self.levels = self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic, self.try_hard_logic
+
+        self.levels = self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic, self.try_hard_logic, self.try_brutal_logic
 
     def main(self):
         if not self.is_solved:
@@ -55,6 +57,12 @@ class Solver:
 
     def try_hard_logic(self) -> bool:
         for strategy in self.hard_logic:
+            if strategy():
+                return True
+        return False
+
+    def try_brutal_logic(self) -> bool:
+        for strategy in self.brutal_logic:
             if strategy():
                 return True
         return False
@@ -337,6 +345,49 @@ class Solver:
                 if shared_digit in cell.pencil_marks:
                     affected_cells.append(cell)
         return affected_cells
+
+    def check_for_unique_rectangles(self) -> bool:
+        for box in self.sudoku.boxes:
+            pairs = [cell for cell in box if len(cell.pencil_marks) == 2]
+            for cell_a, cell_b in itertools.combinations(pairs, r=2):
+
+                # break early if they're not a good pair
+                if cell_a.x != cell_b.x and cell_a.y != cell_b.y:
+                    continue
+                if cell_a.pencil_marks != cell_b.pencil_marks:
+                    continue
+
+                # branching based on if a and b share a row or column
+                if cell_a.y == cell_b.y:
+                    for key in [k for k in cell_a.column if k != cell_a.coordinates]:
+                        if (cell := self.sudoku[key]).pencil_marks == cell_a.pencil_marks:
+                            target = self.sudoku[(cell_b.x, cell.y)]
+                            if intersection := cell.pencil_marks.intersection(target.pencil_marks):
+                                target.pencil_marks -= intersection
+                                return True
+                    else:
+                        for key in [k for k in cell_b.column if k != cell_b.coordinates]:
+                            if (cell := self.sudoku[key].pencil_marks) == cell_b.pencil_marks:
+                                target = self.sudoku[(cell_a.x, cell.y)]
+                                if intersection := cell.pencil_marks.intersection(target.pencil_marks):
+                                    target.pencil_marks -= intersection
+                                    return True
+
+                if cell_a.x == cell_b.x:
+                    for key in [k for k in cell_a.row if k != cell_a.coordinates]:
+                        if (cell := self.sudoku[key]).pencil_marks == cell_a.pencil_marks:
+                            target = self.sudoku[(cell.x, cell_b.y)]
+                            if intersection := cell.pencil_marks.intersection(target.pencil_marks):
+                                target.pencil_marks -= intersection
+                                return True
+                    else:
+                        for key in [k for k in cell_b.row if k != cell_b.coordinates]:
+                            if (cell := self.sudoku[key]).pencil_marks == cell_a.pencil_marks:
+                                target = self.sudoku[(cell.x, cell_a.y)]
+                                if intersection := cell.pencil_marks.intersection(target.pencil_marks):
+                                    target.pencil_marks -= intersection
+                                    return True
+        return False
 
     @staticmethod
     def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:

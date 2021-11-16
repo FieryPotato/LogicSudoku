@@ -1,5 +1,11 @@
 import itertools
+
 from typing import Union
+from collections import namedtuple
+
+
+FrozenCell = namedtuple("FrozenCell", ["coordinates", "x", "y", "digit", "pencil_marks", "started_empty"])
+
 
 BOX_MAP: dict = {
     0: ((0, 0), (1, 0), (2, 0),
@@ -55,6 +61,9 @@ class Cell:
             if getattr(self, attribute) != getattr(other, attribute):
                 return True
         return False
+
+    def __bool__(self) -> bool:
+        return self.digit != " "
 
     @property
     def is_empty(self) -> bool:
@@ -123,3 +132,14 @@ class Cell:
         return max(self.x == other.x,
                    self.y == other.y,
                    self.box_num == other.box_num)
+
+
+def frozencell(cell: Cell) -> namedtuple:
+    """Return a hashable, immutable cell stand-in."""
+    coordinates = cell.coordinates
+    x = cell.x
+    y = cell.y
+    digit = cell.digit
+    pencil_marks = tuple(cell.pencil_marks)
+    started_empty = cell.started_empty
+    return FrozenCell(coordinates, x, y, digit, pencil_marks, started_empty)
