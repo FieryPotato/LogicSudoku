@@ -350,49 +350,52 @@ class Solver:
         for box in self.sudoku.boxes:
             pairs = [cell for cell in box if len(cell.pencil_marks) == 2]
             for cell_a, cell_b in itertools.combinations(pairs, r=2):
-
-                # break early if they're not a good pair
                 if cell_a.x != cell_b.x and cell_a.y != cell_b.y:
                     continue
                 if cell_a.pencil_marks != cell_b.pencil_marks:
                     continue
 
-                target = None
-                cell = None
-                # branching based on if a and b share a row or column
-                if cell_a.y == cell_b.y:
-                    for key in [k for k in cell_a.column if k != cell_a.coordinates]:
-                        cell = self.sudoku[key]
-                        if cell.pencil_marks == cell_a.pencil_marks:
-                            target = self.sudoku[(cell_b.x, cell.y)]
-                            break
-                    else:
-                        for key in [k for k in cell_b.column if k != cell_b.coordinates]:
-                            cell = self.sudoku[key]
-                            if cell.pencil_marks == cell_b.pencil_marks:
-                                target = self.sudoku[(cell_a.x, cell.y)]
-                                break
-                if cell_a.x == cell_b.x:
-                    for key in [k for k in cell_a.row if k != cell_a.coordinates]:
-                        cell = self.sudoku[key]
-                        if cell.pencil_marks == cell_a.pencil_marks:
-                            target = self.sudoku[(cell.x, cell_b.y)]
-                            break
-                    else:
-                        for key in [k for k in cell_b.row if k != cell_b.coordinates]:
-                            cell = self.sudoku[key]
-                            if cell.pencil_marks == cell_a.pencil_marks:
-                                target = self.sudoku[(cell.x, cell_a.y)]
-                                break
+                cell, target = self.get_rectangle_cell_and_target(cell_a, cell_b)
 
-                if target is None or cell is None:
-                    continue
-
-                if intersection := cell.pencil_marks.intersection(target.pencil_marks):
-                    target.remove(intersection)
-                    return True
-
+                if cell is not None and target is not None:
+                    if intersection := cell.pencil_marks.intersection(target.pencil_marks):
+                        target.remove(intersection)
+                        return True
         return False
+
+    def get_rectangle_cell_and_target(self, cell_a, cell_b):
+        """Given cell_a, cell_b that share a row or column in the same box
+        and have identical pencil_marks, return a cell (if any) that shares a
+        column or row (respectively) with one of them and the cell that
+        completes the rectangle."""
+        cell, target = None, None
+        # a and b share a row
+        if cell_a.y == cell_b.y:
+            for key in [k for k in cell_a.column if k != cell_a.coordinates]:
+                cell = self.sudoku[key]
+                if cell.pencil_marks == cell_a.pencil_marks:
+                    target = self.sudoku[(cell_b.x, cell.y)]
+                    break
+            else:
+                for key in [k for k in cell_b.column if k != cell_b.coordinates]:
+                    cell = self.sudoku[key]
+                    if cell.pencil_marks == cell_b.pencil_marks:
+                        target = self.sudoku[(cell_a.x, cell.y)]
+                        break
+        # a and b share a column
+        elif cell_a.x == cell_b.x:
+            for key in [k for k in cell_a.row if k != cell_a.coordinates]:
+                cell = self.sudoku[key]
+                if cell.pencil_marks == cell_a.pencil_marks:
+                    target = self.sudoku[(cell.x, cell_b.y)]
+                    break
+            else:
+                for key in [k for k in cell_b.row if k != cell_b.coordinates]:
+                    cell = self.sudoku[key]
+                    if cell.pencil_marks == cell_a.pencil_marks:
+                        target = self.sudoku[(cell.x, cell_a.y)]
+                        break
+        return cell, target
 
     @staticmethod
     def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:
