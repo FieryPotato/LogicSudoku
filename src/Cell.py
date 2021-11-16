@@ -133,6 +133,10 @@ class Cell:
                    self.y == other.y,
                    self.box_num == other.box_num)
 
+    def remove(self, pencil_marks: set) -> None:
+        """Remove input set from self.pencil_marks."""
+        self.pencil_marks -= pencil_marks
+
 
 def frozencell(cell: Cell) -> namedtuple:
     """Return a hashable, immutable cell stand-in."""
