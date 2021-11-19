@@ -397,6 +397,40 @@ class Solver:
                         break
         return cell, target
 
+    def check_for_pointing_rectangles(self) -> bool:
+        pass
+
+    def sudoku_rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
+        """Generates tuples of 4 cells that are arranged in a rectangle."""
+        for box in self.sudoku.boxes:
+            pairs = [cell for cell in box if len(cell.pencil_marks) == 2]
+            for a, b in itertools.combinations(pairs, r=2):
+                if a.x != b.x and a.y != b.y:
+                    continue
+
+                if a.y == b.y:
+                    for key in [k for k in a.visible_cells("column")]:
+                        c = self.sudoku[key]
+                        d = self.sudoku[(c.x, b.y)]
+                        yield a, b, c, d
+
+                    else:
+                        for key in [k for k in b.visible_cells("column")]:
+                            c = self.sudoku[key]
+                            d = self.sudoku[(c.x, a.y)]
+                            yield a, b, c, d
+
+                elif a.x == b.x:
+                    for key in [k for k in a.visible_cells("row")]:
+                        c = self.sudoku[key]
+                        d = self.sudoku[(b.x, c.y)]
+                        yield a, b, c, d
+                    else:
+                        for key in [k for k in b.visible_cells("row")]:
+                            c = self.sudoku[key]
+                            d = self.sudoku[(a.x, c.y)]
+                            yield a, b, c, d
+
     @staticmethod
     def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:
         """Return triple's shared digit if input triple is a viable xyzwing;
