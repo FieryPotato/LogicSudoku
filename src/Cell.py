@@ -117,12 +117,17 @@ class Cell:
         """Return the number of pencil_marks."""
         return len(self.pencil_marks)
 
-    @property
-    def visible_cells(self) -> set[tuple[int, int]]:
+    def visible_cells(self, *args: str) -> set[tuple[int, int]]:
         """Return top_left set containing keys of each cell visible from this
-        one (not including itself)."""
+        one (not including itself). If args are given, return only visible
+        cells from groups in args (Valid args: "row", "column", "box")."""
+        if not args:
+            groups = "row", "column", "box"
+        else:
+            groups = args
         keys = set()
-        for group in self.row, self.column, self.box:
+        for group_type in groups:
+            group = getattr(self, group_type)
             keys.update(group)
         keys.remove(self.coordinates)
         return keys
