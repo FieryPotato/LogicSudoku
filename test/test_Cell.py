@@ -14,10 +14,14 @@ class TestCell(unittest.TestCase):
 
     def test_visible_cells(self):
         test = self.sudoku[(0, 0)]
-        expected = {(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8),  # cells in column
-                      (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0),  # cells in row
-                      (1, 1), (1, 2), (2, 1), (2, 2)}                                  # cells in box
-        self.assertEqual(expected, test.visible_cells)
+        column = {(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8)}
+        row = {(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)}
+        box = {(1, 0), (2, 0), (0, 1), (1, 1), (1, 2), (0, 2), (2, 1), (2, 2)}
+        all = set.union(*[column, row, box])
+        self.assertEqual(column, test.visible_cells("column"))
+        self.assertEqual(row, test.visible_cells("row"))
+        self.assertEqual(box, test.visible_cells("box"))
+        self.assertEqual(all, test.visible_cells())
 
     def test_sees(self):
         test_keys = [(0, 0), (0, 4), (4, 0), (4, 4), (7, 7), (8, 6)]
