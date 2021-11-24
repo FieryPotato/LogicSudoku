@@ -188,8 +188,3 @@ class Sudoku:
     def column(self, c) -> list[Cell]:
         """Return the list of cells in column bot_left """
         return [self[key] for key in [(c, r) for r in range(9)]]
-
-    def strongly_connected_cells(self, digit: int) -> Generator[tuple[Cell, Cell], None, None]:
-        for group_type in "rows", "columns", "boxes":
-            for group in getattr(self, group_type):
-                pass

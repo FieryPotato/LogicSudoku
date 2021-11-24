@@ -133,7 +133,10 @@ class Cell:
         return keys
 
     def sees(self, other: "Cell") -> bool:
-        """Return True if self sees other in row, column, or box."""
+        """Return whether self sees other in row, column, or box and self and
+         other are different cells."""
+        if self.coordinates == other.coordinates:
+            return False
         return max(self.x == other.x,
                    self.y == other.y,
                    self.box_num == other.box_num)

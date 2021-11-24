@@ -1,5 +1,5 @@
 import itertools
-from collections import Iterable
+from collections.abc import Iterable
 from copy import deepcopy
 from typing import Optional, Generator, Union, Any
 
@@ -25,7 +25,8 @@ class Solver:
         self.brutal_logic = self.check_for_xyzwings, self.check_for_unique_rectangles
         self.galaxy_brain_logic = ()
 
-        self.levels = self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic, self.try_hard_logic, self.try_brutal_logic
+        self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
+                       self.try_hard_logic, self.try_brutal_logic)
 
     def main(self):
         if not self.is_solved:
@@ -194,7 +195,7 @@ class Solver:
                 if min([len(x) == len(y) == size for x, y in itertools.combinations(candidates, r=2)]):
                     candidate_cells = [cell for candidate in candidates for cell in candidate]  # candidates flattened
                     cross_groups = [group for group in zip(*candidates)]
-                    check_group, check_param = _param_group_values_for_xwing(group_type)
+                    check_group, check_param = _xwing_param_group_values(group_type)
 
                     if _cells_in_groups_share_param(cross_groups, check_param):
                         groups = [getattr(cell, check_group) for cell in candidates[0]]
@@ -339,7 +340,7 @@ class Solver:
 
     def xyzwing_affected_cells(self, shared_digit, triple) -> list:
         affected_cells = []
-        if affected_keys := set.intersection(*[cell.visible_cells for cell in triple]):
+        if affected_keys := set.intersection(*[cell.visible_cells() for cell in triple]):
             for key in affected_keys:
                 cell = self.sudoku[key]
                 if shared_digit in cell.pencil_marks:
@@ -355,7 +356,7 @@ class Solver:
                 if cell_a.pencil_marks != cell_b.pencil_marks:
                     continue
 
-                cell, target = self.get_rectangle_cell_and_target(cell_a, cell_b)
+                cell, target = self.unique_rectangle_cell_and_target(cell_a, cell_b)
 
                 if cell is not None and target is not None:
                     if intersection := cell.pencil_marks.intersection(target.pencil_marks):
@@ -363,7 +364,7 @@ class Solver:
                         return True
         return False
 
-    def get_rectangle_cell_and_target(self, cell_a, cell_b):
+    def unique_rectangle_cell_and_target(self, cell_a, cell_b):
         """Given cell_a, cell_b that share a row or column in the same box
         and have identical pencil_marks, return a cell (if any) that shares a
         column or row (respectively) with one of them and the cell that
@@ -398,38 +399,59 @@ class Solver:
         return cell, target
 
     def check_for_pointing_rectangles(self) -> bool:
-        pass
-
-    def sudoku_rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
-        """Generates tuples of 4 cells that are arranged in a rectangle."""
-        for box in self.sudoku.boxes:
-            pairs = [cell for cell in box if len(cell.pencil_marks) == 2]
-            for a, b in itertools.combinations(pairs, r=2):
-                if a.x != b.x and a.y != b.y:
-                    continue
-
-                if a.y == b.y:
-                    for key in [k for k in a.visible_cells("column")]:
-                        c = self.sudoku[key]
-                        d = self.sudoku[(c.x, b.y)]
-                        yield a, b, c, d
-
-                    else:
-                        for key in [k for k in b.visible_cells("column")]:
-                            c = self.sudoku[key]
-                            d = self.sudoku[(c.x, a.y)]
-                            yield a, b, c, d
-
-                elif a.x == b.x:
-                    for key in [k for k in a.visible_cells("row")]:
-                        c = self.sudoku[key]
-                        d = self.sudoku[(b.x, c.y)]
-                        yield a, b, c, d
-                    else:
-                        for key in [k for k in b.visible_cells("row")]:
-                            c = self.sudoku[key]
-                            d = self.sudoku[(a.x, c.y)]
-                            yield a, b, c, d
+        operated = False
+        for a, b in itertools.combinations([cell for cell in self.sudoku if cell.is_empty], r=2):
+            if not a.sees(b):
+                continue
+            if a.pencil_marks != b.pencil_marks:
+                continue
+            if a.coordinates == (2, 0) and b.coordinates == (4, 0):  # Remove after testing
+                sentinel = True
+            if a.y == b.y:
+                # If a and b share a row
+                for key in a.column:
+                    if (c := self.sudoku[key]).is_empty:
+                        if c.pencil_marks.issuperset(a.pencil_marks):
+                            if (d := self.sudoku[(b.x, c.y)]).is_empty:
+                                if d.pencil_marks.issuperset(b.pencil_marks):
+                                    extra_digits = set.union(*[c.pencil_marks - a.pencil_marks, d.pencil_marks - a.pencil_marks])
+                                    if not extra_digits:
+                                        continue
+                                    for pointing in [self.sudoku[key] for key in c.row]:
+                                        if pointing.pencil_marks == extra_digits:
+                                            pointed = []
+                                            for k in pointing.row:
+                                                cell = self.sudoku[k]
+                                                if cell.sees(c) and cell.sees(d) and cell.sees(pointing):
+                                                    pointed.append(cell)
+                                            for cell in pointed:
+                                                if cell.pencil_marks.intersection(a.pencil_marks):
+                                                    cell.remove(pointing.pencil_marks)
+                                                    operated = True
+                                    if operated: return True
+            elif a.x == b.x:
+                # If a and b share a column
+                for key in a.row:
+                    if (c := self.sudoku[key]).is_empty:
+                        if c.pencil_marks.issuperset(a.pencil_marks):
+                            if (d := self.sudoku[(c.x, b.y)]).is_empty:
+                                if d.pencil_marks.issuperset(b.pencil_marks):
+                                    extra_digits = set.union(
+                                        *[c.pencil_marks - a.pencil_marks, d.pencil_marks - a.pencil_marks])
+                                    for pointing in [self.sudoku[key] for key in c.column]:
+                                        if pointing.pencil_marks == extra_digits:
+                                            pointed = []
+                                            for k in pointing.row:
+                                                cell = self.sudoku[k]
+                                                if cell.sees(c) and cell.sees(d) and cell.sees(pointing):
+                                                    pointed.append(cell)
+                                            for cell in pointed:
+                                                cell.remove(pointing.pencil_marks)
+                                                operated = True
+                                    if operated: return True
+            else:
+                continue
+        return operated
 
     @staticmethod
     def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:
@@ -531,7 +553,7 @@ def _cells_in_groups_share_param(groups: Iterable[Iterable[Cell]], check_param: 
     return True
 
 
-def _param_group_values_for_xwing(group_type) -> tuple[str, str]:
+def _xwing_param_group_values(group_type) -> tuple[str, str]:
     check_param, check_group = None, None
     if group_type == "rows":
         check_param = "x"

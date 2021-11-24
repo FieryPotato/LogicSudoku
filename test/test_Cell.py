@@ -37,6 +37,10 @@ class TestCell(unittest.TestCase):
             self.assertFalse(x.sees(y))
             self.assertFalse(y.sees(x))
 
+    def test_cells_do_not_see_themselves(self):
+        for cell in self.sudoku:
+            self.assertFalse(cell.sees(self.sudoku[cell.coordinates]))
+
 
 if __name__ == '__main__':
     unittest.main()
