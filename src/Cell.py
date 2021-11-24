@@ -1,10 +1,6 @@
 import itertools
 
 from typing import Union
-from collections import namedtuple
-
-
-FrozenCell = namedtuple("FrozenCell", ["coordinates", "x", "y", "digit", "pencil_marks", "started_empty"])
 
 
 BOX_MAP: dict = {
@@ -49,6 +45,9 @@ class Cell:
 
     def __repr__(self) -> str:
         return f"Cell({self.coordinates}: {self.digit})"
+
+    def __hash__(self):
+        return hash(self.coordinates)
 
     def __eq__(self, other) -> bool:
         for attribute in ("coordinates", "digit", "pencil_marks"):
@@ -147,13 +146,7 @@ class Cell:
             pencil_marks = {pencil_marks}
         self.pencil_marks -= pencil_marks
 
-
-def frozencell(cell: Cell) -> namedtuple:
-    """Return a hashable, immutable cell stand-in."""
-    coordinates = cell.coordinates
-    x = cell.x
-    y = cell.y
-    digit = cell.digit
-    pencil_marks = tuple(cell.pencil_marks)
-    started_empty = cell.started_empty
-    return FrozenCell(coordinates, x, y, digit, pencil_marks, started_empty)
+    def intersection(*args: "Cell") -> set:
+        """Return a list of cells which see each of the input cells."""
+        seen_keys = [cell.visible_cells() for cell in args]
+        return set.intersection(*seen_keys)
