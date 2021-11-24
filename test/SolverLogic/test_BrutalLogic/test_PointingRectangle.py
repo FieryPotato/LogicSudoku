@@ -31,45 +31,41 @@ class TestPointingRectangle(unittest.TestCase):
         solver = Solver(sudoku)
 
         edited = {
-            (3, 0): {},
-            (5, 0): {},
+            (3, 0): set(),
+            (5, 0): set(),
             (7, 0): {1},
-            (0, 1): {},
+            (0, 1): set(),
             (2, 1): {4},
-            (4, 1): {},
-            (5, 1): {},
+            (4, 1): set(),
+            (5, 1): set(),
             (8, 1): {4},
-            (1, 2): {},
-            (3, 2): {},
-            (4, 2): {},
+            (1, 2): set(),
+            (3, 2): set(),
+            (4, 2): set(),
             (7, 2): {4},
             (8, 2): {4},
-            (2, 3): {},
-            (4, 3): {},
-            (5, 3): {},
-            (7, 3): {},
-            (0, 4): {},
-            (1, 4): {},
-            (2, 4): {},
-            (0, 5): {},
-            (2, 5): {},
-            (3, 5): {},
-            (4, 5): {},
-            (6, 5): {},
-            (7, 5): {},
-            (4, 6): {},
+            (2, 3): set(),
+            (4, 3): set(),
+            (5, 3): set(),
+            (7, 3): set(),
+            (0, 4): set(),
+            (1, 4): set(),
+            (2, 4): set(),
+            (0, 5): set(),
+            (2, 5): set(),
+            (3, 5): set(),
+            (4, 5): set(),
+            (6, 5): set(),
+            (7, 5): set(),
+            (4, 6): set(),
             (7, 6): {4},
-            (3, 7): {},
-            (4, 7): {},
-            (8, 7): {},
-            (5, 8): {}
+            (3, 7): set(),
+            (4, 7): set(),
+            (8, 7): set(),
+            (5, 8): set()
         }
 
-        for key, pencil_marks in edited.items():
-            cell = sudoku[key]
-            cell.started_empty = True
-            if pencil_marks:
-                cell.remove(pencil_marks)
+        sudoku.post_init(edited)
 
         affected_key = (7, 0)
         digits = {1, 8}
@@ -84,20 +80,20 @@ class TestPointingRectangle(unittest.TestCase):
         solver = Solver(sudoku)
 
         edited = {
-            (1, 0): {},
+            (1, 0): set(),
             (2, 0): {1, 2, 9},
-            (3, 0): {},
+            (3, 0): set(),
             (4, 0): {1, 2},
             (0, 1): {9},
             (2, 1): {1, 9},
-            (3, 1): {},
-            (8, 1): {},
+            (3, 1): set(),
+            (8, 1): set(),
             (2, 2): {2, 9},
-            (6, 2): {},
+            (6, 2): set(),
             (0, 3): {7},
             (2, 3): {1, 2, 3, 7},
             (6, 3): {7},
-            (7, 3): {},
+            (7, 3): set(),
             (8, 3): {1, 2},
             (0, 4): {2, 3},
             (1, 4): {9},
@@ -107,20 +103,16 @@ class TestPointingRectangle(unittest.TestCase):
             (2, 5): {7, 9},
             (6, 5): {1},
             (2, 6): {5},
-            (7, 6): {},
-            (8, 6): {},
+            (7, 6): set(),
+            (8, 6): set(),
             (2, 7): {5},
-            (5, 7): {},
-            (0, 8): {},
-            (6, 8): {},
-            (7, 8): {}
+            (5, 7): set(),
+            (0, 8): set(),
+            (6, 8): set(),
+            (7, 8): set()
         }
 
-        for key, pencil_marks in edited.items():
-            cell = sudoku[key]
-            cell.started_empty = True
-            if pencil_marks:
-                cell.remove(pencil_marks)
+        sudoku.post_init(edited)
 
         affected_keys = {(1, 2), (5, 2)}
         digits = {1, 2}

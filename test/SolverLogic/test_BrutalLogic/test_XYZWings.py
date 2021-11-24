@@ -18,13 +18,12 @@ UNSOLVED = "   39 486" \
 class TestXYZWings(unittest.TestCase):
     def test_solver_clears_xyzwings(self):
         sudoku = Sudoku.from_string(UNSOLVED)
-        edited_cells = {
+        edited = {
             (1, 0): 5,
             (1, 6): 4,
             (5, 6): 5
         }
-        for key, digit in edited_cells.items():
-            sudoku[key].pencil_marks.remove(digit)
+        sudoku.post_init(edited)
         solver = Solver(sudoku)
         affected = sudoku[(0, 6)]
         digit_to_remove = 4

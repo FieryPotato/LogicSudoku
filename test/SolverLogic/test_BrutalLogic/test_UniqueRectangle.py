@@ -21,7 +21,7 @@ class TestUniqueRectangle(unittest.TestCase):
         changed_key = (1, 3)
         digits_to_remove = {1, 4}
 
-        changed = {
+        edited = {
             (2, 0): {1},
             (6, 0): {1, 9},
             (2, 2): {1},
@@ -37,8 +37,7 @@ class TestUniqueRectangle(unittest.TestCase):
             (5, 8): {1, 4}
         }
 
-        for key, digits in changed.items():
-            sudoku[key].remove(digits)
+        sudoku.post_init(edited)
 
         self.assertTrue(solver.check_for_unique_rectangles())
 
