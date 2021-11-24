@@ -1,6 +1,7 @@
 import unittest
 
-from src.Sudoku import BOX_MAP, Sudoku
+from src.Cell import Cell
+from src.Sudoku import Sudoku, BOX_MAP
 
 
 class TestCell(unittest.TestCase):
@@ -17,11 +18,11 @@ class TestCell(unittest.TestCase):
         column = {(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8)}
         row = {(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)}
         box = {(1, 0), (2, 0), (0, 1), (1, 1), (1, 2), (0, 2), (2, 1), (2, 2)}
-        all = set.union(*[column, row, box])
+        all_groups = set.union(*[column, row, box])
         self.assertEqual(column, test.visible_cells("column"))
         self.assertEqual(row, test.visible_cells("row"))
         self.assertEqual(box, test.visible_cells("box"))
-        self.assertEqual(all, test.visible_cells())
+        self.assertEqual(all_groups, test.visible_cells())
 
     def test_sees(self):
         test_keys = [(0, 0), (0, 4), (4, 0), (4, 4), (7, 7), (8, 6)]
@@ -41,6 +42,19 @@ class TestCell(unittest.TestCase):
         for cell in self.sudoku:
             self.assertFalse(cell.sees(self.sudoku[cell.coordinates]))
 
+    def test_intersection(self):
+        a = (0, 0)
+        b = (2, 2)
+        c = (8, 0)
+        d = (6, 2)
+        tests = {
+            (a, b, c): {(1, 0), (2, 0)},
+            (b, c, d): {(7, 2), (8, 2)},
+            (a, d): {(0, 2), (1, 2), (2, 2), (6, 0), (7, 0), (8, 0)},
+            (a, c): {(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)}
+        }
 
-if __name__ == '__main__':
-    unittest.main()
+        for test_keys, expected in tests.items():
+            test = [Cell(key) for key in test_keys]
+            self.assertEqual(expected, Cell.intersection(*test))
+            self.assertEqual(expected, test[0].intersection(*test[1:]))
