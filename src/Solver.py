@@ -69,7 +69,7 @@ class Solver:
         return False
 
     def fill_naked_singles(self) -> bool:
-        for key, cell in self.sudoku.items():
+        for cell in self.sudoku:
             if len(cell.pencil_marks) == 1:
                 cell.fill(*cell.pencil_marks)
                 self.sudoku.update_pencil_marks()
@@ -77,7 +77,7 @@ class Solver:
         return False
 
     def fill_hidden_singles(self) -> bool:
-        for key, cell in self.sudoku.items():
+        for cell in self.sudoku:
             if self.cell_fill_hidden_singles(cell):
                 self.sudoku.update_pencil_marks()
                 return True
@@ -103,12 +103,11 @@ class Solver:
                             return True
         return False
 
-    def clear_naked_tuples(self, group, test_tuple, tuple_options):
+    @staticmethod
+    def clear_naked_tuples(group, test_tuple, tuple_options):
         operated = False
-        non_members: set = (set([cell.coordinates for cell in group])
-                            - set([cell.coordinates for cell in test_tuple]))
-        for coordinates in non_members:
-            cell = self.sudoku[coordinates]
+        non_members: set = (set(group) - set(test_tuple))
+        for cell in non_members:
             if cell.pencil_marks.intersection(tuple_options):
                 cell.pencil_marks -= set(tuple_options)
                 operated = True
@@ -126,10 +125,8 @@ class Solver:
 
     def clear_locked_candidate(self, digit, group, group_type, possible_cells) -> bool:
         operated = False
-        locked_box = set([cell.coordinates
-                          for cell in self.sudoku.box(possible_cells[0].box_num)])
-        for coordinates in locked_box - set(c.coordinates for c in possible_cells):
-            cell = self.sudoku[coordinates]
+        locked_box = set([cell for cell in self.sudoku.box(possible_cells[0].box_num)])
+        for cell in locked_box - set(c for c in possible_cells):
             if digit in cell.pencil_marks:
                 if group_type == "rows":
                     if cell.y != group[0].y:
@@ -185,12 +182,13 @@ class Solver:
         return False
 
     def check_for_xwings(self) -> bool:
+        # size variable for extension for swordfish and jellyfish.
         size = 2
 
         for group_type, digit in itertools.product(RC, range(1, 10)):
             for indices in itertools.combinations(range(9), r=size):
-                candidates: list[list[Cell]] = [self.cells_in_group_with_digit_in_pm(digit, index, group_type) for index
-                                                in indices]
+                candidates: list[list[Cell]] = [self.cells_in_group_with_digit_in_pm(digit, index, group_type)
+                                                for index in indices]
 
                 if min([len(x) == len(y) == size for x, y in itertools.combinations(candidates, r=2)]):
                     candidate_cells = [cell for candidate in candidates for cell in candidate]  # candidates flattened
@@ -418,7 +416,8 @@ class Solver:
                     if not digits: continue
                     if self.clear_pointing_rectangle((c, d), digits, "column"):
                         return True
-            else: continue
+            else:
+                continue
         return False
 
     def clear_pointing_rectangle(self, pointing_pair, extra_digits, group) -> bool:
