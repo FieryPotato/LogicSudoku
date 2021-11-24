@@ -433,7 +433,7 @@ class Solver:
         return operated
 
     @staticmethod
-    def _pointing_rectangle_digits(a, b, c, d) -> set:
+    def _pointing_rectangle_digits(a: Cell, b: Cell, c: Cell, d: Cell) -> set:
         if c.is_empty:
             if c.pencil_marks.issuperset(a.pencil_marks):
                 if d.is_empty:
@@ -507,6 +507,62 @@ class Solver:
                         cell.pencil_marks.remove(option)
                         operated = True
         return operated
+
+    def check_for_hidden_rectangle(self) -> bool:
+        operated = False
+        for digit in range(1, 10):
+            for row in self.sudoku.rows:
+                for a, b in itertools.combinations(row, r=2):
+
+                    if digit not in a.pencil_marks: continue
+                    if len(a.pencil_marks) != 2: continue
+                    if a.pencil_marks != b.pencil_marks: continue
+
+                    a_col_cells = {cell for cell in self.sudoku.column(a.x) if digit in cell.pencil_marks}
+                    b_col_cells = {cell for cell in self.sudoku.column(b.x) if digit in cell.pencil_marks}
+
+                    if len(a_col_cells) != 2: continue
+                    if len(b_col_cells) != 2: continue
+
+                    a_partner: Cell = (a_col_cells - {a}).pop()
+                    b_partner: Cell = (b_col_cells - {b}).pop()
+                    if a_partner.y != b_partner.y: continue
+
+                    if len(
+                            partners := [cell for cell in self.sudoku.row(a_partner.y) if digit in cell.pencil_marks]
+                    ) == 2:
+                        for cell in partners:
+                            removed_digit = (a.pencil_marks - {digit}).pop()
+                            if cell.remove(removed_digit):
+                                operated = True
+                    if operated: return True
+
+            for column in self.sudoku.columns:
+                for a, b in itertools.combinations(column, r=2):
+
+                    if digit not in a.pencil_marks: continue
+                    if len(a.pencil_marks) != 2: continue
+                    if a.pencil_marks != b.pencil_marks: continue
+
+                    a_row_cells = {cell for cell in self.sudoku.row(a.y) if digit in cell.pencil_marks}
+                    b_row_cells = {cell for cell in self.sudoku.row(b.y) if digit in cell.pencil_marks}
+
+                    if len(a_row_cells) != 2: continue
+                    if len(b_row_cells) != 2: continue
+
+                    a_partner: Cell = (a_row_cells - {a}).pop()
+                    b_partner: Cell = (b_row_cells - {b}).pop()
+                    if a_partner.x != b_partner.x: continue
+
+                    if len(
+                            partners := [cell for cell in self.sudoku.column(a_partner.x) if digit in cell.pencil_marks]
+                    ) == 2:
+                        for cell in partners:
+                            removed_digit = (a.pencil_marks - {digit}).pop()
+                            if cell.remove(removed_digit):
+                                operated = True
+                    if operated: return True
+        return False
 
 
 def _options_in_cell_min(options: Iterable, cell: Cell) -> bool:
