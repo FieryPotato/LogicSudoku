@@ -71,8 +71,10 @@ class Sudoku:
         self.cell_dict[key] = value
         return None
 
-    def __getitem__(self, item) -> Cell:
-        return self.cell_dict[item]
+    def __getitem__(self, *args) -> Cell:
+        if len(args) == 1:
+            return self.cell_dict[args[0]]
+        return self.cell_dict[args]
 
     def __delitem__(self, key) -> None:
         self.cell_dict[key].clear()

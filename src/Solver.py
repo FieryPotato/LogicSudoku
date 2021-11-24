@@ -399,59 +399,49 @@ class Solver:
         return cell, target
 
     def check_for_pointing_rectangles(self) -> bool:
-        operated = False
         for a, b in itertools.combinations([cell for cell in self.sudoku if cell.is_empty], r=2):
-            if not a.sees(b):
-                continue
-            if a.pencil_marks != b.pencil_marks:
-                continue
-            if a.coordinates == (2, 0) and b.coordinates == (4, 0):  # Remove after testing
-                sentinel = True
+            if not a.sees(b): continue
+            if a.pencil_marks != b.pencil_marks: continue
             if a.y == b.y:
-                # If a and b share a row
                 for key in a.column:
-                    if (c := self.sudoku[key]).is_empty:
-                        if c.pencil_marks.issuperset(a.pencil_marks):
-                            if (d := self.sudoku[(b.x, c.y)]).is_empty:
-                                if d.pencil_marks.issuperset(b.pencil_marks):
-                                    extra_digits = set.union(*[c.pencil_marks - a.pencil_marks, d.pencil_marks - a.pencil_marks])
-                                    if not extra_digits:
-                                        continue
-                                    for pointing in [self.sudoku[key] for key in c.row]:
-                                        if pointing.pencil_marks == extra_digits:
-                                            pointed = []
-                                            for k in pointing.row:
-                                                cell = self.sudoku[k]
-                                                if cell.sees(c) and cell.sees(d) and cell.sees(pointing):
-                                                    pointed.append(cell)
-                                            for cell in pointed:
-                                                if cell.pencil_marks.intersection(a.pencil_marks):
-                                                    cell.remove(pointing.pencil_marks)
-                                                    operated = True
-                                    if operated: return True
+                    c = self.sudoku[key]
+                    d = self.sudoku[(b.x, c.y)]
+                    digits = self._pointing_rectangle_digits(a, b, c, d)
+                    if not digits: continue
+                    if self.clear_pointing_rectangle((c, d), digits, "row"):
+                        return True
             elif a.x == b.x:
-                # If a and b share a column
                 for key in a.row:
-                    if (c := self.sudoku[key]).is_empty:
-                        if c.pencil_marks.issuperset(a.pencil_marks):
-                            if (d := self.sudoku[(c.x, b.y)]).is_empty:
-                                if d.pencil_marks.issuperset(b.pencil_marks):
-                                    extra_digits = set.union(
-                                        *[c.pencil_marks - a.pencil_marks, d.pencil_marks - a.pencil_marks])
-                                    for pointing in [self.sudoku[key] for key in c.column]:
-                                        if pointing.pencil_marks == extra_digits:
-                                            pointed = []
-                                            for k in pointing.row:
-                                                cell = self.sudoku[k]
-                                                if cell.sees(c) and cell.sees(d) and cell.sees(pointing):
-                                                    pointed.append(cell)
-                                            for cell in pointed:
-                                                cell.remove(pointing.pencil_marks)
-                                                operated = True
-                                    if operated: return True
-            else:
-                continue
+                    c = self.sudoku[key]
+                    d = self.sudoku[(c.x, b.y)]
+                    digits = self._pointing_rectangle_digits(a, b, c, d)
+                    if not digits: continue
+                    if self.clear_pointing_rectangle((c, d), digits, "column"):
+                        return True
+            else: continue
+        return False
+
+    def clear_pointing_rectangle(self, pointing_pair, extra_digits, group) -> bool:
+        operated = False
+        c, d = pointing_pair
+        for pointing in [self.sudoku[key] for key in getattr(c, group)]:
+            if pointing.pencil_marks == extra_digits:
+                pointed_keys = Cell.intersection(c, d, pointing)
+                pointed = [self.sudoku[key] for key in pointed_keys]
+                for cell in pointed:
+                    cell.remove(pointing.pencil_marks)
+                    operated = True
         return operated
+
+    @staticmethod
+    def _pointing_rectangle_digits(a, b, c, d) -> set:
+        if c.is_empty:
+            if c.pencil_marks.issuperset(a.pencil_marks):
+                if d.is_empty:
+                    if d.pencil_marks.issuperset(b.pencil_marks):
+                        return set.union(
+                            *[c.pencil_marks - a.pencil_marks, d.pencil_marks - a.pencil_marks]
+                        )
 
     @staticmethod
     def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:
