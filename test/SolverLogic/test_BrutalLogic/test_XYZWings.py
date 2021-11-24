@@ -19,9 +19,9 @@ class TestXYZWings(unittest.TestCase):
     def test_solver_clears_xyzwings(self):
         sudoku = Sudoku.from_string(UNSOLVED)
         edited = {
-            (1, 0): 5,
-            (1, 6): 4,
-            (5, 6): 5
+            (1, 0): {5},
+            (1, 6): {4},
+            (5, 6): {5}
         }
         sudoku.post_init(edited)
         solver = Solver(sudoku)

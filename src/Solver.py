@@ -6,10 +6,29 @@ from typing import Optional, Generator, Union, Any
 from src.Cell import Cell
 from src.Sudoku import Sudoku
 
-RC = "rows", "columns"
-RC_cell = "row", "column"
-RCB = tuple(RC + ("boxes",))
-RCB_cell = tuple(RC_cell + ("box",))
+RC_ITER = "rows", "columns"
+RC = "row", "column"
+RCB_ITER = tuple(RC_ITER + ("boxes",))
+RCB = tuple(RC + ("box",))
+
+LITERALS = {
+    "row": {
+        "iter_group": "rows",
+        "single_group": "row",
+        "opposite_iter_group": "columns",
+        "opposite_group": "column",
+        "check_axis": "y",
+        "opposite_axis": "x",
+    },
+    "column": {
+        "iter_group": "columns",
+        "single_group": "column",
+        "opposite_iter_group": "rows",
+        "opposite_group": "row",
+        "check_axis": "x",
+        "opposite_axis": "y"
+    }
+}
 
 
 class Solver:
@@ -84,13 +103,13 @@ class Solver:
         return False
 
     def cell_fill_hidden_singles(self, cell) -> bool:
-        for digit, group_type in itertools.product(cell.pencil_marks, RCB_cell):
+        for digit, group_type in itertools.product(cell.pencil_marks, RCB):
             if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group_type):
                 return True
         return False
 
     def check_for_naked_tuples(self) -> bool:
-        for size, group_type in itertools.product(range(2, 5), RCB):
+        for size, group_type in itertools.product(range(2, 5), RCB_ITER):
             for group in getattr(self.sudoku, group_type):
                 empty_cells = [cell for cell in group if cell.is_empty]
                 candidate_cells = itertools.combinations(empty_cells, r=size)
@@ -115,7 +134,7 @@ class Solver:
 
     def check_for_locked_candidates(self) -> bool:
         operated = False
-        for digit, group_type in itertools.product(range(1, 10), RC):
+        for digit, group_type in itertools.product(range(1, 10), RC_ITER):
             for group in getattr(self.sudoku, group_type):
                 possible_cells: list[Cell] = [cell for cell in group if digit in cell.pencil_marks]
                 if len(set([cell.box_num for cell in possible_cells])) == 1:
@@ -168,7 +187,7 @@ class Solver:
 
     def check_for_hidden_tuples(self) -> bool:
         checked_sizes = range(2, 5)
-        for size, group_type in itertools.product(checked_sizes, RCB):
+        for size, group_type in itertools.product(checked_sizes, RCB_ITER):
             group_list: list = getattr(self.sudoku, group_type)
             checked_options = itertools.combinations(range(1, 10), r=size)
             for group, possible_options in itertools.product(group_list, checked_options):
