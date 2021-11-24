@@ -511,57 +511,65 @@ class Solver:
     def check_for_hidden_rectangle(self) -> bool:
         operated = False
         for digit in range(1, 10):
-            for row in self.sudoku.rows:
-                for a, b in itertools.combinations(row, r=2):
+            checked_axis = {
+                "check_row": {
+                    "iter_group": "rows",
+                    "single_group": "row",
+                    "opposite_group": "column",
+                    "check_axis": "x",
+                    "opposite_axis": "y",
+                },
+                "check_column": {
+                    "iter_group": "columns",
+                    "single_group": "column",
+                    "opposite_group": "row",
+                    "check_axis": "y",
+                    "opposite_axis": "x"
+                }
+            }
+            for axis in checked_axis.values():
+                for group in getattr(self.sudoku, axis["iter_group"]):
+                    for a, b in itertools.combinations(group, r=2):
 
-                    if digit not in a.pencil_marks: continue
-                    if len(a.pencil_marks) != 2: continue
-                    if a.pencil_marks != b.pencil_marks: continue
+                        if digit not in a.pencil_marks: continue
+                        if len(a.pencil_marks) != 2: continue
+                        if a.pencil_marks != b.pencil_marks: continue
 
-                    a_col_cells = {cell for cell in self.sudoku.column(a.x) if digit in cell.pencil_marks}
-                    b_col_cells = {cell for cell in self.sudoku.column(b.x) if digit in cell.pencil_marks}
+                        a_cells = {cell for cell in
+                                   getattr(self.sudoku, axis["opposite_group"])(getattr(a, axis["check_axis"]))
+                                   if digit in cell.pencil_marks}
+                        b_cells = {cell for cell in
+                                   getattr(self.sudoku, axis["opposite_group"])(getattr(b, axis["check_axis"]))
+                                   if digit in cell.pencil_marks}
 
-                    if len(a_col_cells) != 2: continue
-                    if len(b_col_cells) != 2: continue
+                        if len(a_cells) != 2: continue
+                        if len(b_cells) != 2: continue
 
-                    a_partner: Cell = (a_col_cells - {a}).pop()
-                    b_partner: Cell = (b_col_cells - {b}).pop()
-                    if a_partner.y != b_partner.y: continue
+                        a_partner: Cell = (a_cells - {a}).pop()
+                        b_partner: Cell = (b_cells - {b}).pop()
+                        if (
+                                getattr(a_partner, axis["opposite_axis"])
+                                != getattr(b_partner, axis["opposite_axis"])
+                        ):
+                            continue
 
-                    if len(
-                            partners := [cell for cell in self.sudoku.row(a_partner.y) if digit in cell.pencil_marks]
-                    ) == 2:
-                        for cell in partners:
-                            removed_digit = (a.pencil_marks - {digit}).pop()
-                            if cell.remove(removed_digit):
-                                operated = True
-                    if operated: return True
+                        if len(
+                            partners := [
+                                cell
+                                for cell in getattr(
+                                    self.sudoku, axis["single_group"]
+                                )(
+                                    getattr(a_partner, axis["opposite_axis"])
+                                )
+                                if digit in cell.pencil_marks
+                            ]
+                        ) == 2:
+                            for cell in partners:
+                                removed_digit: set = a.pencil_marks - {digit}
+                                if cell.remove(removed_digit):
+                                    operated = True
+                        if operated: return True
 
-            for column in self.sudoku.columns:
-                for a, b in itertools.combinations(column, r=2):
-
-                    if digit not in a.pencil_marks: continue
-                    if len(a.pencil_marks) != 2: continue
-                    if a.pencil_marks != b.pencil_marks: continue
-
-                    a_row_cells = {cell for cell in self.sudoku.row(a.y) if digit in cell.pencil_marks}
-                    b_row_cells = {cell for cell in self.sudoku.row(b.y) if digit in cell.pencil_marks}
-
-                    if len(a_row_cells) != 2: continue
-                    if len(b_row_cells) != 2: continue
-
-                    a_partner: Cell = (a_row_cells - {a}).pop()
-                    b_partner: Cell = (b_row_cells - {b}).pop()
-                    if a_partner.x != b_partner.x: continue
-
-                    if len(
-                            partners := [cell for cell in self.sudoku.column(a_partner.x) if digit in cell.pencil_marks]
-                    ) == 2:
-                        for cell in partners:
-                            removed_digit = (a.pencil_marks - {digit}).pop()
-                            if cell.remove(removed_digit):
-                                operated = True
-                    if operated: return True
         return False
 
 
