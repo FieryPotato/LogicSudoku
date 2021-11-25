@@ -42,6 +42,20 @@ class TestXWing(unittest.TestCase):
         keys_to_clear = {(0, 3), (3, 0), (3, 6)}
         cleared_digit = 6
 
+        edited = {
+            (6, 0): {7},
+            (8, 0): {1, 7},
+            (0, 1): {1},
+            (3, 1): {7, 8},
+            (6, 2): {7, 8},
+            (3, 4): {3},
+            (1, 5): {7, 8},
+            (3, 5): {8},
+            (6, 8): {9}
+        }
+
+        sudoku.post_init(edited)
+
         self.assertTrue(solver.check_for_fish())
 
         for key in keys_to_clear:

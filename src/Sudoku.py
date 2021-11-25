@@ -55,13 +55,13 @@ class Sudoku:
         return blank.format(*values)
 
     def __eq__(self, other) -> bool:
-        if type(other) == self.__class__:
+        if isinstance(other, self.__class__):
             if self.cell_dict == other.cell_dict:
                 return True
         return False
 
     def __ne__(self, other) -> bool:
-        if type(other) == self.__class__:
+        if isinstance(other, self.__class__):
             if self.cell_dict == other.cell_dict:
                 return False
         return True

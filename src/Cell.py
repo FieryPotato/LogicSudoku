@@ -50,12 +50,14 @@ class Cell:
         return hash(self.coordinates)
 
     def __eq__(self, other) -> bool:
+        if not isinstance(other, self.__class__): return False
         for attribute in ("coordinates", "digit", "pencil_marks"):
             if getattr(self, attribute) != getattr(other, attribute):
                 return False
         return True
 
     def __ne__(self, other) -> bool:
+        if not isinstance(other, self.__class__): return False
         for attribute in ("coordinates", "digit", "pencil_marks"):
             if getattr(self, attribute) != getattr(other, attribute):
                 return True
