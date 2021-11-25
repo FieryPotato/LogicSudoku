@@ -202,40 +202,51 @@ class Solver:
 
     def check_for_fish(self) -> bool:
         """Fish include X-wings, Swordfish, and Jellyfish."""
-        operated = False
         sizes = 2,
         for size, group_type, digit in itertools.product(sizes, RC, range(1, 10)):
-            iter_group = LITERALS[group_type]["iter_group"]
-            opposite_group = LITERALS[group_type]["opposite_group"]
-            opposite_axis = LITERALS[group_type]["opposite_axis"]
+            candidate_groups = self.fish_candidate_groups(digit, group_type, size)
+            fish_groups = self.trimmed_fish_groups(candidate_groups, group_type, size)
 
-            candidate_groups = []
-            for group in getattr(self.sudoku, iter_group):
-                candidate_cells = [cell for cell in group if digit in cell.pencil_marks]
-                if len(candidate_cells) == size:
-                    candidate_groups.append(candidate_cells)
-            fish_groups = set()
-            tuple_of_candidates: tuple[list]
-            for tuple_of_candidates in itertools.combinations(candidate_groups, r=size):
-                candidate_perpendiculars = [perp for perp in zip(*tuple_of_candidates)]
-                for perpendicular_tuple in candidate_perpendiculars:
-                    axes = {getattr(cell, opposite_axis) for cell in perpendicular_tuple}
-                    if len(axes) != 1:
-                        break
-                else:
-                    fish_groups.update([tuple(candidate) for candidate in candidate_perpendiculars])
-            if len(fish_groups) != size: continue
-            for fish in fish_groups:
-                for cell in [c for c in getattr(
-                        self.sudoku, opposite_group
-                )(
-                    getattr(fish[0], opposite_axis)
-                ) if c not in fish
-                             ]:
-                    if cell.remove(digit):
-                        operated = True
-            if operated: return True
+            if self.clear_fish(digit, fish_groups, group_type):
+                return True
         return False
+
+    def clear_fish(self, digit, fish_groups, group_type) -> bool:
+        operated = False
+        opposite_axis = LITERALS[group_type]["opposite_axis"]
+        opposite_group = LITERALS[group_type]["opposite_group"]
+
+        for fish in fish_groups:
+            for cell in [c for c in getattr(
+                    self.sudoku, opposite_group
+            )(
+                getattr(fish[0], opposite_axis)
+            ) if c not in fish
+                         ]:
+                if cell.remove(digit):
+                    operated = True
+        return operated
+
+    def trimmed_fish_groups(self, candidate_groups, group_type, size) -> set:
+        opposite_axis = LITERALS[group_type]["opposite_axis"]
+        fish_groups = set()
+        tuple_of_candidates: tuple[list]
+        for tuple_of_candidates in itertools.combinations(candidate_groups, r=size):
+            candidate_perpendiculars = [perp for perp in zip(*tuple_of_candidates)]
+            for perpendicular_tuple in candidate_perpendiculars:
+                axes = {getattr(cell, opposite_axis) for cell in perpendicular_tuple}
+                if len(axes) != 1:
+                    break
+            else:
+                fish_groups.update([tuple(candidate) for candidate in candidate_perpendiculars])
+        return fish_groups
+
+    def fish_candidate_groups(self, digit, group_type, size) -> Generator[list[Cell], None, None]:
+        iter_group = LITERALS[group_type]["iter_group"]
+        for group in getattr(self.sudoku, iter_group):
+            candidate_cells = [cell for cell in group if digit in cell.pencil_marks]
+            if len(candidate_cells) == size:
+                yield candidate_cells
 
     def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
         """
