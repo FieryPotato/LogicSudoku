@@ -202,7 +202,7 @@ class Solver:
 
     def check_for_fish(self) -> bool:
         """Fish include X-wings, Swordfish, and Jellyfish."""
-        sizes = 2, 3
+        sizes = 2, 3, 4
         for size, group_type, digit in itertools.product(sizes, RC, range(1, 10)):
             candidate_groups = self.fish_candidate_groups(digit, group_type, size)
             fish_groups = self.trimmed_fish_groups(candidate_groups, group_type, size)
