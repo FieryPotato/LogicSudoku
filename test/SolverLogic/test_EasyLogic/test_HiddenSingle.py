@@ -1,5 +1,5 @@
 """
-If only one cell in top_left row, column, or box can contain top_left given digit,
+If only one cell in a row, column, or box can contain a given digit,
 that digit can be written into the cell.
 """
 

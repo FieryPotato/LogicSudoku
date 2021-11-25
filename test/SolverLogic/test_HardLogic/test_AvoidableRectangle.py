@@ -1,3 +1,11 @@
+"""
+Given three filled cells arranged in a rectangle and an empty cell that
+completes that rectangle, if those filled cells started empty and the
+two filled cells which are opposite each other have the same digit,
+then the digit in the cell opposite the empty cell can be removed from
+the empty cell's pencil marks.
+"""
+
 import unittest
 
 from src.Sudoku import Sudoku

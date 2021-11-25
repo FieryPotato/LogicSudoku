@@ -1,3 +1,7 @@
+"""
+
+"""
+
 import unittest
 
 from src.Solver import Solver
@@ -24,6 +28,16 @@ UNSOLVED_2 = "2467591  " \
              "46 23    " \
              "8 194    " \
              "   6   45"
+
+UNSOLVED_3 = "36   2 4 " \
+             "7 4 3    " \
+             "829764351" \
+             "596247183" \
+             "432158   " \
+             "187396524" \
+             "243  961 " \
+             "9786  43 " \
+             "6  4 3  8"
 
 
 class TestHiddenRectangle(unittest.TestCase):
@@ -109,6 +123,51 @@ class TestHiddenRectangle(unittest.TestCase):
 
         for key in changed_keys:
             self.assertFalse(removed_digit in sudoku[key].pencil_marks)
+
+    def test_solver_clears_hidden_rectangle_opposite(self):
+        sudoku = Sudoku.from_string(UNSOLVED_3)
+        solver = Solver(sudoku)
+        edited = {
+            (7, 0): {},
+            (0, 1): {},
+            (3, 1): {5},
+            (4, 1): {},
+            (0, 2): {},
+            (1, 2): {},
+            (4, 2): {},
+            (5, 2): {},
+            (7, 2): {},
+            (2, 3): {},
+            (3, 3): {},
+            (5, 3): {},
+            (6, 3): {},
+            (7, 3): {},
+            (8, 3): {},
+            (0, 4): {},
+            (1, 4): {},
+            (2, 4): {},
+            (4, 4): {},
+            (0, 5): {},
+            (1, 5): {},
+            (2, 5): {},
+            (3, 5): {},
+            (6, 5): {},
+            (1, 6): {},
+            (7, 6): {},
+            (0, 7): {},
+            (2, 7): {},
+            (3, 7): {},
+            (6, 7): {},
+            (7, 7): {},
+            (0, 8): {},
+            (5, 8): {}
+        }
+        sudoku.post_init(edited)
+        changed = (8, 4),
+        digits = {9}
+
+        self.assertTrue(solver.check_for_hidden_rectangle())
+
 
 if __name__ == '__main__':
     unittest.main()

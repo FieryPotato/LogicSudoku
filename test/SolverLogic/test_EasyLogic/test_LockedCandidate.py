@@ -1,5 +1,5 @@
 """
-If the only places for top_left digit in top_left row or column share top_left box, the other
+If the only places for a digit in a row or column share a box, the other
 cells in that box cannot contain that digit.
 """
 

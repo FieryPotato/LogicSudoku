@@ -198,5 +198,7 @@ class Sudoku:
         :param edited_cells: e.g. (1, 1): set() or (2, 2): {1, 5, 9}
         """
         for key, digits in edited_cells.items():
+            if digits == {}:
+                digits = set()
             self[key].pencil_marks -= digits
             self[key].started_empty = True

@@ -1,5 +1,5 @@
 """
-If top_left digits possible positions in top_left box all occur in the same row or
+If a digit's possible positions in a box all occur in the same row or
 column, that digit can be eliminated from pencil marks of all other
 cells in that row or column.
 """
