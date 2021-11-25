@@ -42,7 +42,7 @@ class TestXWing(unittest.TestCase):
         keys_to_clear = {(0, 3), (3, 0), (3, 6)}
         cleared_digit = 6
 
-        self.assertTrue(solver.check_for_xwings())
+        self.assertTrue(solver.check_for_fish())
 
         for key in keys_to_clear:
             self.assertFalse(cleared_digit in sudoku[key].pencil_marks)
@@ -53,7 +53,7 @@ class TestXWing(unittest.TestCase):
         keys_to_clear = {(8, 3)}
         cleared_digit = 3
 
-        self.assertTrue(solver.check_for_xwings())
+        self.assertTrue(solver.check_for_fish())
 
         for key in keys_to_clear:
             self.assertFalse(cleared_digit in sudoku[key].pencil_marks)

@@ -1,7 +1,7 @@
 import itertools
 from collections.abc import Iterable
 from copy import deepcopy
-from typing import Optional, Generator, Union, Any
+from typing import Optional, Generator, Union, Any, List, Tuple
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -39,7 +39,7 @@ class Solver:
 
         self.basic_logic = self.fill_naked_singles, self.fill_hidden_singles
         self.easy_logic = self.check_for_naked_tuples, self.check_for_locked_candidates, self.check_for_pointing_tuple
-        self.intermediate_logic = self.check_for_hidden_tuples, self.check_for_xwings
+        self.intermediate_logic = self.check_for_hidden_tuples, self.check_for_fish
         self.hard_logic = self.check_for_ywings, self.check_for_avoidable_rectangles
         self.brutal_logic = self.check_for_xyzwings, self.check_for_unique_rectangles
         self.galaxy_brain_logic = ()
@@ -200,35 +200,42 @@ class Solver:
                             return True
         return False
 
-    def check_for_xwings(self) -> bool:
-        # size variable for extension for swordfish and jellyfish.
-        size = 2
-
-        for group_type, digit in itertools.product(RC, range(1, 10)):
-            for indices in itertools.combinations(range(9), r=size):
-                candidates: list[list[Cell]] = [self.cells_in_group_with_digit_in_pm(digit, index, group_type)
-                                                for index in indices]
-
-                if min([len(x) == len(y) == size for x, y in itertools.combinations(candidates, r=2)]):
-                    candidate_cells = [cell for candidate in candidates for cell in candidate]  # candidates flattened
-                    cross_groups = [group for group in zip(*candidates)]
-                    check_group, check_param = _xwing_param_group_values(group_type)
-
-                    if _cells_in_groups_share_param(cross_groups, check_param):
-                        groups = [getattr(cell, check_group) for cell in candidates[0]]
-                        if self.clear_xwings(candidate_cells, digit, groups):
-                            return True
-        return False
-
-    def clear_xwings(self, candidate_cells, digit, groups) -> bool:
+    def check_for_fish(self) -> bool:
+        """Fish include X-wings, Swordfish, and Jellyfish."""
         operated = False
-        for group in groups:
-            for cell in [self.sudoku[key] for key in group
-                         if self.sudoku[key] not in candidate_cells]:
-                if digit in cell.pencil_marks:
-                    cell.pencil_marks.remove(digit)
-                    operated = True
-        return operated
+        sizes = 2,
+        for size, group_type, digit in itertools.product(sizes, RC, range(1, 10)):
+            iter_group = LITERALS[group_type]["iter_group"]
+            opposite_group = LITERALS[group_type]["opposite_group"]
+            opposite_axis = LITERALS[group_type]["opposite_axis"]
+
+            candidate_groups = []
+            for group in getattr(self.sudoku, iter_group):
+                candidate_cells = [cell for cell in group if digit in cell.pencil_marks]
+                if len(candidate_cells) == size:
+                    candidate_groups.append(candidate_cells)
+            fish_groups = set()
+            tuple_of_candidates: tuple[list]
+            for tuple_of_candidates in itertools.combinations(candidate_groups, r=size):
+                candidate_perpendiculars = [perp for perp in zip(*tuple_of_candidates)]
+                for perpendicular_tuple in candidate_perpendiculars:
+                    axes = {getattr(cell, opposite_axis) for cell in perpendicular_tuple}
+                    if len(axes) != 1:
+                        break
+                else:
+                    fish_groups.update([tuple(candidate) for candidate in candidate_perpendiculars])
+            if len(fish_groups) != size: continue
+            for fish in fish_groups:
+                for cell in [c for c in getattr(
+                        self.sudoku, opposite_group
+                )(
+                    getattr(fish[0], opposite_axis)
+                ) if c not in fish
+                             ]:
+                    if cell.remove(digit):
+                        operated = True
+            if operated: return True
+        return False
 
     def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
         """
@@ -573,15 +580,15 @@ class Solver:
                             continue
 
                         if len(
-                            partners := [
-                                cell
-                                for cell in getattr(
-                                    self.sudoku, axis["single_group"]
-                                )(
-                                    getattr(a_partner, axis["opposite_axis"])
-                                )
-                                if digit in cell.pencil_marks
-                            ]
+                                partners := [
+                                    cell
+                                    for cell in getattr(
+                                        self.sudoku, axis["single_group"]
+                                    )(
+                                        getattr(a_partner, axis["opposite_axis"])
+                                    )
+                                    if digit in cell.pencil_marks
+                                ]
                         ) == 2:
                             for cell in partners:
                                 removed_digit: set = a.pencil_marks - {digit}
@@ -623,14 +630,3 @@ def _cells_in_groups_share_param(groups: Iterable[Iterable[Cell]], check_param: 
                     for cell_a, cell_b in itertools.combinations(group, r=2)]):
             return False
     return True
-
-
-def _xwing_param_group_values(group_type) -> tuple[str, str]:
-    check_param, check_group = None, None
-    if group_type == "rows":
-        check_param = "x"
-        check_group = "column"
-    elif group_type == "columns":
-        check_param = "y"
-        check_group = "row"
-    return check_group, check_param
