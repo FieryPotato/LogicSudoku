@@ -28,7 +28,7 @@ class TestXYZWings(unittest.TestCase):
         affected = sudoku[(0, 6)]
         digit_to_remove = 4
 
-        self.assertTrue(solver.check_for_xyzwings())
+        self.assertTrue(solver.check_for_xyzwing())
 
         self.assertFalse(digit_to_remove in affected.pencil_marks)
 

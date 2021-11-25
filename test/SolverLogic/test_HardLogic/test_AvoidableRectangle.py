@@ -37,7 +37,7 @@ class TestAvoidableRectangle(unittest.TestCase):
         avoidable_cell = sudoku[(7, 5)]
         avoidable_digit = 1
 
-        self.assertTrue(solver.check_for_avoidable_rectangles())
+        self.assertTrue(solver.check_for_avoidable_rectangle())
         self.assertFalse(avoidable_digit in avoidable_cell.pencil_marks)
 
 

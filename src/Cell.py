@@ -142,10 +142,10 @@ class Cell:
                    self.y == other.y,
                    self.box_num == other.box_num)
 
-    def remove(self, pencil_marks: Union[set, int]) -> bool:
+    def remove(self, pencil_marks: Union[set, int, list]) -> bool:
         """Remove input set from self.pencil_marks;
         return True if a change was made, and False if not."""
-        if isinstance(pencil_marks, int):
+        if isinstance(pencil_marks, int) or isinstance(pencil_marks, list):
             pencil_marks = {pencil_marks}
         if self.pencil_marks.intersection(pencil_marks):
             self.pencil_marks -= pencil_marks

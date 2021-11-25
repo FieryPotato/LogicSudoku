@@ -37,7 +37,7 @@ class TestLockedCandidate(unittest.TestCase):
         keys_to_change = ((0, 6), (1, 6), (2, 6), (0, 7))
         locked_candidates = ((1, 8), (2, 8))
 
-        self.assertTrue(solver.check_for_locked_candidates())
+        self.assertTrue(solver.check_for_locked_candidate())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -52,7 +52,7 @@ class TestLockedCandidate(unittest.TestCase):
         keys_to_change = ((7, 0), (8, 0), (7, 1), (8, 1), (7, 2))
         locked_candidates = ((6, 0), (6, 1), (6, 2))
 
-        self.assertTrue(solver.check_for_locked_candidates())
+        self.assertTrue(solver.check_for_locked_candidate())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks

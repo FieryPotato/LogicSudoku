@@ -36,7 +36,7 @@ class TestYWing(unittest.TestCase):
         sudoku[(8, 0)].pencil_marks.remove(4)
         sudoku[(7, 1)].pencil_marks.remove(3)
 
-        self.assertTrue(solver.check_for_ywings())
+        self.assertTrue(solver.check_for_ywing())
 
         for key in cleared_cells:
             self.assertFalse(cleared_digit in sudoku[key].pencil_marks)

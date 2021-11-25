@@ -193,7 +193,7 @@ class Sudoku:
     def post_init(self, edited_cells: dict[tuple[int, int], [set[int]]]) -> None:
         """Set self.cells that are keys of edited_cells to have started empty
         and remove digits in sets that are values of edited_cells from those
-        cells' pencil_marks.
+        cells' pencil_marks. Mainly for use in testing.
 
         :param edited_cells: e.g. (1, 1): set() or (2, 2): {1, 5, 9}
         """
@@ -202,3 +202,12 @@ class Sudoku:
                 digits = set()
             self[key].pencil_marks -= digits
             self[key].started_empty = True
+
+    def rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
+        for row in self.rows:
+            for top_left, top_right in itertools.combinations(row, r=2):
+                for bottom_left in [self[key]
+                                    for key in top_left.visible_cells("column")
+                                    if key[1] > top_left.y]:
+                    bottom_right = self[top_right.x, bottom_left.y]
+                    yield top_left, top_right, bottom_left, bottom_right

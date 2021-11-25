@@ -70,7 +70,7 @@ class TestPointingRectangle(unittest.TestCase):
         affected_key = (7, 0)
         digits = {1, 8}
 
-        self.assertTrue(solver.check_for_pointing_rectangles())
+        self.assertTrue(solver.check_for_pointing_rectangle())
 
         for digit in digits:
             self.assertFalse(digit in sudoku[affected_key].pencil_marks)
@@ -117,7 +117,7 @@ class TestPointingRectangle(unittest.TestCase):
         affected_keys = {(1, 2), (5, 2)}
         digits = {1, 2}
 
-        self.assertTrue(solver.check_for_pointing_rectangles())
+        self.assertTrue(solver.check_for_pointing_rectangle())
 
         for key in affected_keys:
             for digit in digits:

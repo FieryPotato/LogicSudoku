@@ -109,8 +109,8 @@ class TestHiddenTupleRow(unittest.TestCase):
         pair = ((1, 3), (7, 3))
         options = {2, 6}
 
-        solver.check_for_hidden_tuples()
-        self.assertTrue(solver.check_for_hidden_tuples())
+        solver.check_for_hidden_tuple()
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in pair:
             self.assertEqual(options, sudoku[key].pencil_marks)
@@ -127,7 +127,7 @@ class TestHiddenTupleRow(unittest.TestCase):
                 if digit in (cell := sudoku[key].pencil_marks):
                     cell.remove(digit)
 
-        self.assertTrue(solver.check_for_hidden_tuples())
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in triple:
             pencil_marks = sudoku[key].pencil_marks
@@ -140,7 +140,7 @@ class TestHiddenTupleRow(unittest.TestCase):
         quadruple = ((0, 4), (3, 4), (4, 4), (8, 4))
         options = {4, 6, 8, 9}
 
-        self.assertTrue(solver.check_for_hidden_tuples())
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in quadruple:
             for digit in options:
@@ -155,7 +155,7 @@ class TestHiddenTupleColumn(unittest.TestCase):
         pair = ((0, 0), (0, 4))
         options = {3, 4}
 
-        self.assertTrue(solver.check_for_hidden_tuples())
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in pair:
             self.assertEqual(options, sudoku[key].pencil_marks)
@@ -172,7 +172,7 @@ class TestHiddenTupleColumn(unittest.TestCase):
                 if digit in (cell := sudoku[key].pencil_marks):
                     cell.remove(digit)
 
-        self.assertTrue(solver.check_for_hidden_tuples())
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in triple:
             pencil_marks = sudoku[key].pencil_marks
@@ -185,7 +185,7 @@ class TestHiddenTupleColumn(unittest.TestCase):
         quadruple = ((4, 0), (4, 4), (4, 5), (4, 8))
         options = {3, 5, 6, 7}
 
-        self.assertTrue(solver.check_for_hidden_tuples())
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in quadruple:
             for digit in options:
@@ -200,7 +200,7 @@ class TestHiddenTupleBox(unittest.TestCase):
         pair = ((5, 3), (5, 5))
         options = {1, 9}
 
-        self.assertTrue(solver.check_for_hidden_tuples())
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in pair:
             self.assertEqual(options, sudoku[key].pencil_marks)
@@ -211,7 +211,7 @@ class TestHiddenTupleBox(unittest.TestCase):
         triple = ((0, 3), (0, 4), (1, 4))
         options = {1, 6, 8}
 
-        self.assertTrue(solver.check_for_hidden_tuples())
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in triple:
             pencil_marks = sudoku[key].pencil_marks
@@ -224,11 +224,11 @@ class TestHiddenTupleBox(unittest.TestCase):
         quadruple = ((1, 0), (2, 0), (1, 1), (2, 1))
         options = {1, 2, 8, 9}
 
-        solver.check_for_hidden_tuples()
-        solver.check_for_hidden_tuples()
-        solver.check_for_hidden_tuples()
-        solver.check_for_hidden_tuples()
-        self.assertTrue(solver.check_for_hidden_tuples())
+        solver.check_for_hidden_tuple()
+        solver.check_for_hidden_tuple()
+        solver.check_for_hidden_tuple()
+        solver.check_for_hidden_tuple()
+        self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in quadruple:
             pencil_marks = sudoku[key].pencil_marks

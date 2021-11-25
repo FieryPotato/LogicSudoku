@@ -110,7 +110,7 @@ class TestNakedRowTuples(unittest.TestCase):
         naked_pair: tuple = ((4, 8), (5, 8))
         pair_options = {3, 9}
 
-        self.assertTrue(solver.check_for_naked_tuples())
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -129,10 +129,10 @@ class TestNakedRowTuples(unittest.TestCase):
         triple_options: set = {3, 4, 6}
 
         # Two preliminary calls to clear the way for testing on the triple
-        solver.check_for_naked_tuples()
-        solver.check_for_naked_tuples()
+        solver.check_for_naked_tuple()
+        solver.check_for_naked_tuple()
 
-        self.assertTrue(solver.check_for_naked_tuples())
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -150,9 +150,9 @@ class TestNakedRowTuples(unittest.TestCase):
         naked_quadruple: tuple = ((5, 2), (6, 2), (7, 2), (8, 2))
         quadruple_options: set = {1, 3, 8, 9}
 
-        solver.check_for_naked_tuples()
-        solver.check_for_naked_tuples()
-        self.assertTrue(solver.check_for_naked_tuples())
+        solver.check_for_naked_tuple()
+        solver.check_for_naked_tuple()
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -172,8 +172,8 @@ class TestNakedColumnTuples(unittest.TestCase):
         naked_pair: tuple = ((7, 0), (7, 2))
         pair_options = {5, 9}
 
-        solver.check_for_naked_tuples()
-        self.assertTrue(solver.check_for_naked_tuples())
+        solver.check_for_naked_tuple()
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -192,8 +192,8 @@ class TestNakedColumnTuples(unittest.TestCase):
         triple_options = {4, 6, 8}
 
         # eliminate naked triple in row 9
-        solver.check_for_naked_tuples()
-        self.assertTrue(solver.check_for_naked_tuples())
+        solver.check_for_naked_tuple()
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -211,11 +211,11 @@ class TestNakedColumnTuples(unittest.TestCase):
         naked_quadruple: tuple = ((0, 0), (0, 1), (0, 2), (0, 5))
         quadruple_options = {2, 3, 7, 8}
 
-        solver.check_for_naked_tuples()
-        solver.check_for_naked_tuples()
-        solver.check_for_naked_tuples()
-        solver.check_for_naked_tuples()
-        self.assertTrue(solver.check_for_naked_tuples())
+        solver.check_for_naked_tuple()
+        solver.check_for_naked_tuple()
+        solver.check_for_naked_tuple()
+        solver.check_for_naked_tuple()
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -235,7 +235,7 @@ class TestNakedBoxTuples(unittest.TestCase):
         naked_pair: tuple = ((1, 3), (1, 4))
         pair_options = {4, 5}
 
-        self.assertTrue(solver.check_for_naked_tuples())
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -253,9 +253,9 @@ class TestNakedBoxTuples(unittest.TestCase):
         naked_triple: tuple = ((7, 6), (8, 6), (6, 7))
         triple_options = {2, 8, 9}
 
-        solver.check_for_naked_tuples()
-        solver.check_for_naked_tuples()
-        self.assertTrue(solver.check_for_naked_tuples())
+        solver.check_for_naked_tuple()
+        solver.check_for_naked_tuple()
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks
@@ -273,8 +273,8 @@ class TestNakedBoxTuples(unittest.TestCase):
         quadruple: tuple = ((4, 3), (3, 4), (4, 4), (4, 5))
         quadruple_options = {1, 2, 3, 5}
 
-        solver.check_for_naked_tuples()
-        self.assertTrue(solver.check_for_naked_tuples())
+        solver.check_for_naked_tuple()
+        self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
             pencil_marks = sudoku[key].pencil_marks

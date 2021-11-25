@@ -38,10 +38,12 @@ class Solver:
         self.is_solved = self.sudoku.is_complete
 
         self.basic_logic = self.fill_naked_singles, self.fill_hidden_singles
-        self.easy_logic = self.check_for_naked_tuples, self.check_for_locked_candidates, self.check_for_pointing_tuple
-        self.intermediate_logic = self.check_for_hidden_tuples, self.check_for_fish
-        self.hard_logic = self.check_for_ywings, self.check_for_avoidable_rectangles
-        self.brutal_logic = self.check_for_xyzwings, self.check_for_unique_rectangles
+        self.easy_logic = (self.check_for_naked_tuple, self.check_for_locked_candidate,
+                           self.check_for_pointing_tuple)
+        self.intermediate_logic = self.check_for_hidden_tuple, self.check_for_fish
+        self.hard_logic = self.check_for_ywing, self.check_for_avoidable_rectangle
+        self.brutal_logic = (self.check_for_xyzwing, self.check_for_unique_rectangle,
+                             self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
         self.galaxy_brain_logic = ()
 
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
@@ -108,7 +110,7 @@ class Solver:
                 return True
         return False
 
-    def check_for_naked_tuples(self) -> bool:
+    def check_for_naked_tuple(self) -> bool:
         for size, group_type in itertools.product(range(2, 5), RCB_ITER):
             for group in getattr(self.sudoku, group_type):
                 empty_cells = [cell for cell in group if cell.is_empty]
@@ -132,7 +134,7 @@ class Solver:
                 operated = True
         return operated
 
-    def check_for_locked_candidates(self) -> bool:
+    def check_for_locked_candidate(self) -> bool:
         operated = False
         for digit, group_type in itertools.product(range(1, 10), RC_ITER):
             for group in getattr(self.sudoku, group_type):
@@ -185,7 +187,7 @@ class Solver:
             return True
         return False
 
-    def check_for_hidden_tuples(self) -> bool:
+    def check_for_hidden_tuple(self) -> bool:
         checked_sizes = range(2, 5)
         for size, group_type in itertools.product(checked_sizes, RCB_ITER):
             group_list: list = getattr(self.sudoku, group_type)
@@ -276,7 +278,7 @@ class Solver:
             group = self.sudoku.box(group_index)
         return [cell for cell in group if digit in cell.pencil_marks]
 
-    def check_for_ywings(self) -> bool:
+    def check_for_ywing(self) -> bool:
         triples = self.find_ywing_triples()
         ywings = self.find_valid_ywings(triples)
         if not ywings:
@@ -330,13 +332,13 @@ class Solver:
                         if len([cell for cell in quad if cell.is_empty]) == 1:
                             yield top_left, top_right, bot_left, bot_right
 
-    def check_for_avoidable_rectangles(self) -> bool:
+    def check_for_avoidable_rectangle(self) -> bool:
         for quad in self.potential_avoidable_rectangles():
             if self.clear_avoidable_rectangle(*quad):
                 return True
         return False
 
-    def check_for_xyzwings(self) -> bool:
+    def check_for_xyzwing(self) -> bool:
         possibles = self.find_xyzwings()
         for possible in possibles:
             if self.clear_xyzwing(*possible):
@@ -393,7 +395,7 @@ class Solver:
                     affected_cells.append(cell)
         return affected_cells
 
-    def check_for_unique_rectangles(self) -> bool:
+    def check_for_unique_rectangle(self) -> bool:
         for box in self.sudoku.boxes:
             pairs = [cell for cell in box if len(cell.pencil_marks) == 2]
             for cell_a, cell_b in itertools.combinations(pairs, r=2):
@@ -444,7 +446,7 @@ class Solver:
                         break
         return cell, target
 
-    def check_for_pointing_rectangles(self) -> bool:
+    def check_for_pointing_rectangle(self) -> bool:
         for a, b in itertools.combinations([cell for cell in self.sudoku if cell.is_empty], r=2):
             if not a.sees(b): continue
             if a.pencil_marks != b.pencil_marks: continue
@@ -558,66 +560,62 @@ class Solver:
 
     def check_for_hidden_rectangle(self) -> bool:
         operated = False
-        for digit in range(1, 10):
-            checked_axis = {
-                "check_row": {
-                    "iter_group": "rows",
-                    "single_group": "row",
-                    "opposite_group": "column",
-                    "check_axis": "x",
-                    "opposite_axis": "y",
-                },
-                "check_column": {
-                    "iter_group": "columns",
-                    "single_group": "column",
-                    "opposite_group": "row",
-                    "check_axis": "y",
-                    "opposite_axis": "x"
-                }
-            }
-            for axis in checked_axis.values():
-                for group in getattr(self.sudoku, axis["iter_group"]):
-                    for a, b in itertools.combinations(group, r=2):
+        for rectangle in self.sudoku.rectangles():
+            if min([cell.is_empty for cell in rectangle]) is False:
+                continue
+            if not [cell
+                    for cell in rectangle
+                    if len(cell.pencil_marks) == 2]:
+                continue
+            for pair in itertools.combinations(rectangle, r=2):
+                for group_type in RC:
+                    check_axis = LITERALS[group_type]["check_axis"]
+                    single_group = LITERALS[group_type]["single_group"]
 
-                        if digit not in a.pencil_marks: continue
-                        if len(a.pencil_marks) != 2: continue
-                        if a.pencil_marks != b.pencil_marks: continue
-
-                        a_cells = {cell for cell in
-                                   getattr(self.sudoku, axis["opposite_group"])(getattr(a, axis["check_axis"]))
-                                   if digit in cell.pencil_marks}
-                        b_cells = {cell for cell in
-                                   getattr(self.sudoku, axis["opposite_group"])(getattr(b, axis["check_axis"]))
-                                   if digit in cell.pencil_marks}
-
-                        if len(a_cells) != 2: continue
-                        if len(b_cells) != 2: continue
-
-                        a_partner: Cell = (a_cells - {a}).pop()
-                        b_partner: Cell = (b_cells - {b}).pop()
-                        if (
-                                getattr(a_partner, axis["opposite_axis"])
-                                != getattr(b_partner, axis["opposite_axis"])
-                        ):
+                    if getattr(pair[0], check_axis) == getattr(pair[1], check_axis):
+                        if len(pair[0].pencil_marks) != 2 or len(pair[1].pencil_marks) != 2:
                             continue
-
-                        if len(
-                                partners := [
+                        if (pair_pm := pair[0].pencil_marks) == pair[1].pencil_marks:
+                            opposite_pair: set[Cell, Cell] = {*rectangle} - {*pair}
+                            if min([
+                                cell.pencil_marks.issuperset(pair[0].pencil_marks)
+                                for cell in opposite_pair
+                            ]) is False:
+                                continue
+                            for digit in pair_pm:
+                                if len([
                                     cell
-                                    for cell in getattr(
-                                        self.sudoku, axis["single_group"]
-                                    )(
-                                        getattr(a_partner, axis["opposite_axis"])
-                                    )
+                                    for cell in getattr(self.sudoku, single_group)(getattr([*opposite_pair][0], check_axis))
                                     if digit in cell.pencil_marks
-                                ]
-                        ) == 2:
-                            for cell in partners:
-                                removed_digit: set = a.pencil_marks - {digit}
-                                if cell.remove(removed_digit):
-                                    operated = True
-                        if operated: return True
+                                ]) == 2:
+                                    removed_digit = [d for d in pair_pm if d != digit][0]
+                                    for focus in opposite_pair:
+                                        if focus.remove(removed_digit):
+                                            operated = True
+                                    if operated: return True
 
+            else:
+                for focus in rectangle:
+                    if len(focus.pencil_marks) == 2:
+                        if min(
+                                [other.pencil_marks.issuperset(focus.pencil_marks)
+                                 for other in {*rectangle} - {focus}]
+                        ) is True:
+                            opposite = {opp
+                                        for opp in rectangle
+                                        if opp.x != focus.x and opp.y != focus.y}.pop()
+                            for digit in focus.pencil_marks:
+                                for group_type in RC:
+                                    check_axis = LITERALS[group_type]["check_axis"]
+                                    single_group = LITERALS[group_type]["single_group"]
+
+                                    group = getattr(self.sudoku, single_group)(getattr(opposite, check_axis))
+                                    if len([cell for cell in group if digit in cell.pencil_marks]) != 2:
+                                        break
+                                else:
+                                    digit_to_remove = focus.pencil_marks - {digit}
+                                    if opposite.remove(digit_to_remove):
+                                        return True
         return False
 
 

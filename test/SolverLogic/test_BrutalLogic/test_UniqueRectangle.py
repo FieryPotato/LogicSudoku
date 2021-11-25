@@ -39,7 +39,7 @@ class TestUniqueRectangle(unittest.TestCase):
 
         sudoku.post_init(edited)
 
-        self.assertTrue(solver.check_for_unique_rectangles())
+        self.assertTrue(solver.check_for_unique_rectangle())
 
         for digit in digits_to_remove:
             self.assertFalse(digit in sudoku[changed_key].pencil_marks)
