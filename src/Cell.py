@@ -120,8 +120,8 @@ class Cell:
 
     def visible_cells(self, *args: str) -> set[tuple[int, int]]:
         """Return top_left set containing keys of each cell visible from this
-        one (not including itself). If args are given, return only visible
-        cells from groups in args (Valid args: "row", "column", "box")."""
+        one (not including itself). If cells are given, return only visible
+        cells from groups in cells (Valid cells: "row", "column", "box")."""
         if not args:
             groups = "row", "column", "box"
         else:

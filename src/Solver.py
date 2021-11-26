@@ -559,64 +559,113 @@ class Solver:
         return operated
 
     def check_for_hidden_rectangle(self) -> bool:
-        operated = False
         for rectangle in self.sudoku.rectangles():
-            if min([cell.is_empty for cell in rectangle]) is False:
-                continue
-            if not [cell
-                    for cell in rectangle
-                    if len(cell.pencil_marks) == 2]:
-                continue
-            for pair in itertools.combinations(rectangle, r=2):
-                for group_type in RC:
-                    check_axis = LITERALS[group_type]["check_axis"]
-                    single_group = LITERALS[group_type]["single_group"]
-
-                    if getattr(pair[0], check_axis) == getattr(pair[1], check_axis):
-                        if len(pair[0].pencil_marks) != 2 or len(pair[1].pencil_marks) != 2:
-                            continue
-                        if (pair_pm := pair[0].pencil_marks) == pair[1].pencil_marks:
-                            opposite_pair: set[Cell, Cell] = {*rectangle} - {*pair}
-                            if min([
-                                cell.pencil_marks.issuperset(pair[0].pencil_marks)
-                                for cell in opposite_pair
-                            ]) is False:
-                                continue
-                            for digit in pair_pm:
-                                if len([
-                                    cell
-                                    for cell in getattr(self.sudoku, single_group)(getattr([*opposite_pair][0], check_axis))
-                                    if digit in cell.pencil_marks
-                                ]) == 2:
-                                    removed_digit = [d for d in pair_pm if d != digit][0]
-                                    for focus in opposite_pair:
-                                        if focus.remove(removed_digit):
-                                            operated = True
-                                    if operated: return True
-
-            else:
-                for focus in rectangle:
-                    if len(focus.pencil_marks) == 2:
-                        if min(
-                                [other.pencil_marks.issuperset(focus.pencil_marks)
-                                 for other in {*rectangle} - {focus}]
-                        ) is True:
-                            opposite = {opp
-                                        for opp in rectangle
-                                        if opp.x != focus.x and opp.y != focus.y}.pop()
-                            for digit in focus.pencil_marks:
-                                for group_type in RC:
-                                    check_axis = LITERALS[group_type]["check_axis"]
-                                    single_group = LITERALS[group_type]["single_group"]
-
-                                    group = getattr(self.sudoku, single_group)(getattr(opposite, check_axis))
-                                    if len([cell for cell in group if digit in cell.pencil_marks]) != 2:
-                                        break
-                                else:
-                                    digit_to_remove = focus.pencil_marks - {digit}
-                                    if opposite.remove(digit_to_remove):
-                                        return True
+            if self.cells_are_empty(*rectangle) and self._at_least_one_cell_has_only_two_options(*rectangle):
+                if self._check_for_hidden_rectangle_pairs(rectangle):
+                    return True
+                elif self._check_for_hidden_rectangle_singles(rectangle):
+                    return True
         return False
+
+    def _at_least_one_cell_has_only_two_options(self, *cells) -> bool:
+        return bool([cell
+                     for cell in cells
+                     if len(cell.pencil_marks) == 2])
+
+    def cells_are_empty(self, *cells) -> bool:
+        """Return whether each cell in cells is empty."""
+        return min([cell.is_empty for cell in cells])
+
+    def _check_for_hidden_rectangle_singles(self, rectangle):
+        for check_cell in rectangle:
+            pencil_marks = check_cell.pencil_marks
+            if len(pencil_marks) == 2:
+                group = {*rectangle} - {check_cell}
+                if self.all_cells_in_group_contain_pencil_marks(group, pencil_marks):
+                    opposite = {opp
+                                for opp in rectangle
+                                if opp.x != check_cell.x and opp.y != check_cell.y}.pop()
+                    for digit in pencil_marks:
+                        if self.clear_single_hidden_rectangle(digit, check_cell, opposite):
+                            return True
+        return False
+
+    def clear_single_hidden_rectangle(self, digit, focus, opposite) -> bool:
+        for group_type in RC:
+            check_axis = LITERALS[group_type]["check_axis"]
+            single_group = LITERALS[group_type]["single_group"]
+
+            group = getattr(self.sudoku, single_group)(getattr(opposite, check_axis))
+            if not self.cells_are_closely_related_by_digit(digit, *group):
+                break
+        else:
+            digit_to_remove = focus.pencil_marks - {digit}
+            if opposite.remove(digit_to_remove):
+                return True
+        return False
+
+    def _check_for_hidden_rectangle_pairs(self, rectangle) -> bool:
+        for group_type, pair in itertools.product(RC, itertools.combinations(rectangle, r=2)):
+            check_axis = LITERALS[group_type]["check_axis"]
+
+            if self.cells_share_axis(check_axis, *pair) and self.cells_form_a_tuple(*pair):
+                pencil_marks = pair[0].pencil_marks
+                opposite_pair: set[Cell, Cell] = {*rectangle} - {*pair}
+                if self.all_cells_in_group_contain_pencil_marks(opposite_pair, pencil_marks) is False:
+                    continue
+                for digit in pencil_marks:
+                    if self.cells_are_closely_related_by_digit(digit, *opposite_pair):
+                        if self._clear_hidden_rectangle_pair(digit, opposite_pair, pencil_marks):
+                            return True
+
+    def cells_form_a_tuple(self, *cells) -> bool:
+        """Return whether input cells cumulatively contain exactly as
+        many possible digits as there are input cells."""
+        pencil_marks = [cell.pencil_marks for cell in cells]
+        for _set in pencil_marks:
+            if len(_set) != len(cells):
+                return False
+        flattened_pms = {digit for group in pencil_marks for digit in group}
+        if len(set.union(flattened_pms)) != len(cells):
+            return False
+        return True
+
+    def cells_share_axis(self, check_axis, *cells: Cell) -> bool:
+        """Return whether input cells all share a row or column.
+        check_axes should be 'x' for column or 'y' for row."""
+        axes = {getattr(cell, check_axis) for cell in cells}
+        return len(axes) == 1
+
+    def all_cells_in_group_contain_pencil_marks(self, group: Iterable[Cell], pencil_marks: set[int]) -> bool:
+        """Return whether all cells in group contain each digit in pencil_marks."""
+        return min([
+            cell.pencil_marks.issuperset(pencil_marks)
+            for cell in group
+        ])
+
+    def cells_are_closely_related_by_digit(self, digit: int, *cells: Cell) -> bool:
+        """Return whether input cells are the only two cells in their
+        row, or column that can be digit."""
+        if len({cell.x for cell in cells}) == 1:
+            axis = "x"
+            group_type = "column"
+        elif len({cell.y for cell in cells}) == 1:
+            axis = "y"
+            group_type = "row"
+        else:
+            return False
+        return len([
+            cell
+            for cell in getattr(self.sudoku, group_type)(getattr([*cells][0], axis))
+            if digit in cell.pencil_marks
+        ]) == 2
+
+    def _clear_hidden_rectangle_pair(self, digit, pair, pencil_marks):
+        removed_digit = [d for d in pencil_marks if d != digit][0]
+        for focus in pair:
+            if focus.remove(removed_digit):
+                operated = True
+        return operated
 
 
 def _options_in_cell_min(options: Iterable, cell: Cell) -> bool:
@@ -628,8 +677,8 @@ def _options_in_cell_min(options: Iterable, cell: Cell) -> bool:
 
 
 def _overlapping_elements(*args: set) -> set:
-    """Return a set containing all elements shared by two or more of args.
-    *args should all be sets."""
+    """Return a set containing all elements shared by two or more of cells.
+    *cells should all be sets."""
 
     all_digits = []
     for digit_set in args:
