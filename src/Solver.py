@@ -49,7 +49,7 @@ class Solver:
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
                        self.try_hard_logic, self.try_brutal_logic)
 
-    def main(self):
+    def main(self) -> bool:
         if not self.is_solved:
             backup = None
             while backup != self.sudoku:
@@ -58,6 +58,7 @@ class Solver:
                     if level():
                         break
             self.is_solved = self.sudoku.is_complete
+        return self.is_solved
 
     def try_basic_logic(self) -> bool:
         for strategy in self.basic_logic:

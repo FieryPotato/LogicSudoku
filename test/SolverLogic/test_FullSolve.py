@@ -63,31 +63,57 @@ HARD_SOLVED = "493287651" \
               "162835479" \
               "859174263"
 
+BRUTAL_UNSOLVED = "   4     " \
+                  "    9 31 " \
+                  " 2  574 6" \
+                  "      7 4" \
+                  " 7  6  2 " \
+                  "  9      " \
+                  "7 481  6 " \
+                  " 63  5   " \
+                  " 5   2   "
 
+BRUTAL_SOLVED = "536481279" \
+                "847296315" \
+                "921357486" \
+                "612538794" \
+                "475169823" \
+                "389724651" \
+                "794813562" \
+                "263975148" \
+                "158642937"
+
+
+@unittest.skip("Full Solve tests take too long.")
 class TestFullSolve(unittest.TestCase):
     def test_easy_solve(self):
         unsolved = Sudoku.from_string(EASY_UNSOLVED)
         solved = Sudoku.from_string(EASY_SOLVED)
         solver = Solver(unsolved)
-        solver.main()
-        self.assertTrue(solver.is_solved)
+        self.assertTrue(solver.main())
         self.assertEqual(solved, solver.sudoku)
 
     def test_intermediate_solve(self):
         unsolved = Sudoku.from_string(INTERMEDIATE_UNSOLVED)
         solved = Sudoku.from_string(INTERMEDIATE_SOLVED)
         solver = Solver(unsolved)
-        solver.main()
-        self.assertTrue(solver.is_solved)
+        self.assertTrue(solver.main())
         self.assertEqual(solved, solver.sudoku)
 
     def test_hard_solve(self):
         unsolved = Sudoku.from_string(HARD_UNSOLVED)
         solved = Sudoku.from_string(HARD_SOLVED)
         solver = Solver(unsolved)
-        solver.main()
-        self.assertTrue(solver.is_solved)
+        self.assertTrue(solver.main())
         self.assertEqual(solved, solver.sudoku)
+
+    def test_brutal_solve(self):
+        unsolved = Sudoku.from_string(BRUTAL_UNSOLVED)
+        solved = Sudoku.from_string(BRUTAL_SOLVED)
+        solver = Solver(unsolved)
+        self.assertTrue(solver.main())
+        self.assertEqual(solved, solver.sudoku)
+
 
 
 if __name__ == '__main__':
