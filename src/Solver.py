@@ -50,7 +50,7 @@ class Solver:
                            self.check_for_pointing_tuple)
         self.intermediate_logic = self.check_for_hidden_tuple, self.check_for_fish
         self.hard_logic = self.check_for_ywing, self.check_for_avoidable_rectangle
-        self.brutal_logic = (self.check_for_xyzwing, self.check_for_unique_rectangle,
+        self.brutal_logic = (self.check_for_xyzwings, self.check_for_unique_rectangle,
                              self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
         self.galaxy_brain_logic = ()
 
@@ -346,13 +346,13 @@ class Solver:
                 return True
         return False
 
-    def check_for_xyzwing(self) -> bool:
+    def check_for_xyzwings(self) -> bool:
         for index, triple in self.possible_xyzwing_triples():
-            if self.clear_xyzwings(index, triple):
+            if self.clear_xyzwing(index, triple):
                 return True
         return False
 
-    def clear_xyzwings(self, index, triple):
+    def clear_xyzwing(self, index, triple):
         shared_digit = self.xyzwing_triple_shared_digit(index, triple)
         affected_cells = self.xyzwing_affected_cells(shared_digit, triple)
         if self.remove_digits_from_cells(shared_digit, *affected_cells):
