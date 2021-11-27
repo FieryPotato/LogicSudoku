@@ -84,7 +84,7 @@ BRUTAL_SOLVED = "536481279" \
                 "158642937"
 
 
-@unittest.skip("Full Solve tests take too long.")
+@unittest.skip("Run only separately.")
 class TestFullSolve(unittest.TestCase):
     def test_easy_solve(self):
         unsolved = Sudoku.from_string(EASY_UNSOLVED)
