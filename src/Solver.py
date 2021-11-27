@@ -347,47 +347,24 @@ class Solver:
         return False
 
     def check_for_xyzwing(self) -> bool:
-        possibles = self.find_xyzwings()
-        for possible in possibles:
-            if self.clear_xyzwing(*possible):
+        for index, triple in self.possible_xyzwing_triples():
+            if self.clear_xyzwings(index, triple):
                 return True
         return False
 
-    @staticmethod
-    def clear_xyzwing(targets, digit):
-        operated = False
-        for cell in targets:
-            if digit in (pencil_marks := cell.pencil_marks):
-                pencil_marks.remove(digit)
-                operated = True
-        return operated
-
-    def find_xyzwings(self) -> Union[tuple[list[Cell], int], Any]:
-        """Return a pair of lists of cells a and b which satisfy the following:
-
-        - there are three cells in b;
-        - the size of two cells is b's pencil marks is 2, and the other 3
-        - the size of the union of pencil marks in b cells is 3;
-        - the size of the intersection of pencil marks in b cells is 1
-        - the cell in b with 3 pencil marks sees both other cells in b
-        - cells in a see all cells in b;
-        - cells in a have the cell in b's pencil marks' intersection in their pencil marks
-
-        If no such lists exist, return two empty tuples.
-        """
-        possible_xyzwings = []
-        for index, triple in self.possible_xyzwing_triples():
-            shared_digit = self.xyzwing_triple_shared_digit(index, triple)
-            affected_cells = self.xyzwing_affected_cells(shared_digit, triple)
-            possible_xyzwings.append([affected_cells, shared_digit])
-        return possible_xyzwings
+    def clear_xyzwings(self, index, triple):
+        shared_digit = self.xyzwing_triple_shared_digit(index, triple)
+        affected_cells = self.xyzwing_affected_cells(shared_digit, triple)
+        if self.remove_digits_from_cells(shared_digit, *affected_cells):
+            return True
+        return False
 
     def possible_xyzwing_triples(self) -> Generator[tuple[int, [Cell, Cell, Cell]], None, None]:
         for triple in itertools.combinations(self.sudoku, r=3):
             if len({cell.box_num for cell in triple}) != 2:
                 continue
 
-            indices = {0, 1, 2}
+            indices = set(range(3))
             for i in range(3):
                 axis = triple[i]
                 wings = [triple[x] for x in indices - {i}]
