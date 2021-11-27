@@ -130,26 +130,30 @@ class Solver:
             return True
 
     def check_for_locked_candidate(self) -> bool:
-        for digit in range(1, 10):
-            for group_type in RC_ITER:
-                for group in getattr(self.sudoku, group_type):
-                    cells_with_digit = {cell
-                                        for cell in group
-                                        if digit in cell.pencil_marks}
-                    if self._cells_share_a_box(*cells_with_digit):
-                        box_num = next(iter(cells_with_digit)).box_num
-                        affected = set(self.sudoku.box(box_num)) - cells_with_digit
-                        if self.remove_digits_from_cells(digit, *affected):
-                            return True
+        for group_type, digit in itertools.product(RC_ITER, range(1, 10)):
+            for group in getattr(self.sudoku, group_type):
+                cells_with_digit = {cell
+                                    for cell in group
+                                    if digit in cell.pencil_marks}
+                if self.cells_share_a_box(*cells_with_digit):
+                    if self.clear_locked_candidate(cells_with_digit, digit):
+                        return True
         return False
 
-    def _cells_share_a_row(self, *cells: Cell) -> bool:
+    def clear_locked_candidate(self, locked_candidate, digit) -> bool:
+        box_num = next(iter(locked_candidate)).box_num
+        affected = set(self.sudoku.box(box_num)) - locked_candidate
+        if self.remove_digits_from_cells(digit, *affected):
+            return True
+        return False
+
+    def cells_share_a_row(self, *cells: Cell) -> bool:
         return len({cell.y for cell in cells}) == 1
 
-    def _cells_share_a_column(self, *cells: Cell) -> bool:
+    def cells_share_a_column(self, *cells: Cell) -> bool:
         return len({cell.x for cell in cells}) == 1
 
-    def _cells_share_a_box(self, *cells: Cell) -> bool:
+    def cells_share_a_box(self, *cells: Cell) -> bool:
         return len({cell.box_num for cell in cells}) == 1
 
     def remove_digits_from_cells(self, digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
@@ -168,9 +172,9 @@ class Solver:
 
     def _cells_seen_by_pointing_tuple(self, box, digit):
         pointing = {cell for cell in box if digit in cell.pencil_marks}
-        if self._cells_share_a_row(*pointing):
+        if self.cells_share_a_row(*pointing):
             pointed = set(self.sudoku.row(next(iter(pointing)).y))
-        elif self._cells_share_a_column(*pointing):
+        elif self.cells_share_a_column(*pointing):
             pointed = set(self.sudoku.column(next(iter(pointing)).x))
         else:
             return set()
