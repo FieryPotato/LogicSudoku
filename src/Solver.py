@@ -247,13 +247,12 @@ class Solver:
 
         perpendicular_fish_groups = self.perpendicular_groups(fish_groups, group_type)
 
-        for fish in perpendicular_fish_groups:
-            fish_group_index = (getattr(fish[0], opposite_axis))
-            fish_group = getattr(self.sudoku, opposite_group)(fish_group_index)
-
-            for cell in [c for c in fish_group if c not in fish]:
-                if cell.remove(digit):
-                    operated = True
+        for perp_group in perpendicular_fish_groups:
+            group_index = (getattr(next(iter(perp_group)), opposite_axis))
+            group = getattr(self.sudoku, opposite_group)(group_index)
+            cells = [cell for cell in group if cell not in perp_group]
+            if self.remove_digits_from_cells(digit, *cells):
+                operated = True
         return operated
 
     def perpendicular_groups(self, group_list: list[list[Cell]], group_type: str) -> list[list[Cell]]:
@@ -268,6 +267,7 @@ class Solver:
         return perpendicular_groups
 
     def trimmed_fish_groups(self, candidate_groups, group_type, size) -> Optional[tuple]:
+        """Return group of cells that could be an xwing, swordfish, or jellyfish."""
         opposite_axis = LITERALS[group_type]["opposite_axis"]
         for candidates in itertools.combinations(candidate_groups, r=size):
             total_axes = set()
@@ -288,12 +288,10 @@ class Solver:
 
     def check_for_ywing(self) -> bool:
         triples = self.find_ywing_triples()
-        ywings = self.find_valid_ywings(triples)
-        if not ywings:
-            return False
-        for ywing in ywings:
-            if self.clear_ywing(ywing):
-                return True
+        if ywings := self.find_valid_ywings(triples):
+            for ywing in ywings:
+                if self.clear_ywing(ywing):
+                    return True
         return False
 
     def clear_ywing(self, ywing) -> bool:
