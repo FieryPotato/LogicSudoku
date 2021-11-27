@@ -15,18 +15,26 @@ LITERALS = {
     "row": {
         "iter_group": "rows",
         "single_group": "row",
+        "check_axis": "y",
         "opposite_iter_group": "columns",
         "opposite_group": "column",
-        "check_axis": "y",
         "opposite_axis": "x",
     },
     "column": {
         "iter_group": "columns",
         "single_group": "column",
+        "check_axis": "x",
         "opposite_iter_group": "rows",
         "opposite_group": "row",
-        "check_axis": "x",
         "opposite_axis": "y"
+    },
+    "box": {
+        "iter_group": "boxes",
+        "single_group": "box",
+        "check_axis": "box_num",
+        "opposite_iter_group": None,
+        "opposite_group": None,
+        "opposite_axis": None
     }
 }
 
@@ -100,16 +108,17 @@ class Solver:
 
     def fill_hidden_singles(self) -> bool:
         for cell in self.sudoku:
-            if self.cell_fill_hidden_singles(cell):
-                self.sudoku.update_pencil_marks()
-                return True
+            for digit, group_type in itertools.product(cell.pencil_marks, RCB):
+                axis = LITERALS[group_type]["check_axis"]
+                group = getattr(self.sudoku, group_type)(getattr(cell, axis))
+                if self._only_one_cell_in_group_can_contain_digit(digit, group):
+                    cell.fill(digit)
+                    self.sudoku.update_pencil_marks()
+                    return True
         return False
 
-    def cell_fill_hidden_singles(self, cell) -> bool:
-        for digit, group_type in itertools.product(cell.pencil_marks, RCB):
-            if self.check_digit_in_cell_for_group_hidden_single(digit, cell, group_type):
-                return True
-        return False
+    def _only_one_cell_in_group_can_contain_digit(self, digit, group) -> bool:
+        return len({cell for cell in group if digit in cell.pencil_marks}) == 1
 
     def check_for_naked_tuple(self) -> bool:
         for size, group_type in itertools.product(range(2, 5), RCB_ITER):
@@ -165,13 +174,13 @@ class Solver:
 
     def check_for_pointing_tuple(self) -> bool:
         for digit, box in itertools.product(range(1, 10), self.sudoku.boxes):
-            pointed = self._cells_seen_by_pointing_tuple(box, digit)
+            pointing = {cell for cell in box if digit in cell.pencil_marks}
+            pointed = self._cells_seen_by_pointing_tuple(pointing)
             if self.remove_digits_from_cells(digit, *pointed):
                 return True
         return False
 
-    def _cells_seen_by_pointing_tuple(self, box, digit):
-        pointing = {cell for cell in box if digit in cell.pencil_marks}
+    def _cells_seen_by_pointing_tuple(self, pointing):
         if self.cells_share_a_row(*pointing):
             pointed = set(self.sudoku.row(next(iter(pointing)).y))
         elif self.cells_share_a_column(*pointing):
@@ -180,17 +189,6 @@ class Solver:
             return set()
         pointed -= pointing
         return pointed
-
-    def check_digit_in_cell_for_group_hidden_single(self, digit, cell, group) -> bool:
-        pencil_marks = [self.sudoku[c].pencil_marks for c in getattr(cell, group)]
-        pencil_marks.remove(cell.pencil_marks)
-        for valid_set in pencil_marks:
-            if digit in valid_set:
-                break
-        else:
-            cell.fill(digit)
-            return True
-        return False
 
     def check_for_hidden_tuple(self) -> bool:
         checked_sizes = range(2, 5)
