@@ -111,14 +111,11 @@ class Solver:
             for digit, group_type in itertools.product(cell.pencil_marks, RCB):
                 axis = LITERALS[group_type]["check_axis"]
                 group = getattr(self.sudoku, group_type)(getattr(cell, axis))
-                if self._only_one_cell_in_group_can_contain_digit(digit, group):
+                if self.only_one_cell_in_group_can_contain_digit(digit, group):
                     cell.fill(digit)
                     self.sudoku.update_pencil_marks()
                     return True
         return False
-
-    def _only_one_cell_in_group_can_contain_digit(self, digit, group) -> bool:
-        return len({cell for cell in group if digit in cell.pencil_marks}) == 1
 
     def check_for_naked_tuple(self) -> bool:
         for size, group_type in itertools.product(range(2, 5), RCB_ITER):
@@ -126,7 +123,7 @@ class Solver:
                 empty_cells = [cell for cell in group if cell.is_empty]
                 candidate_tuples = itertools.combinations(empty_cells, r=size)
                 for candidate_tuple in candidate_tuples:
-                    if self.cells_form_a_tuple(*candidate_tuple):
+                    if self.cells_form_naked_tuple(*candidate_tuple):
                         if self.clear_naked_tuples(group, candidate_tuple):
                             return True
         return False
@@ -156,15 +153,6 @@ class Solver:
             return True
         return False
 
-    def cells_share_a_row(self, *cells: Cell) -> bool:
-        return len({cell.y for cell in cells}) == 1
-
-    def cells_share_a_column(self, *cells: Cell) -> bool:
-        return len({cell.x for cell in cells}) == 1
-
-    def cells_share_a_box(self, *cells: Cell) -> bool:
-        return len({cell.box_num for cell in cells}) == 1
-
     def remove_digits_from_cells(self, digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
         operated = False
         for cell in cells:
@@ -180,6 +168,18 @@ class Solver:
                 return True
         return False
 
+    def cells_share_a_row(self, *cells: Cell) -> bool:
+        return len({cell.y for cell in cells}) == 1
+
+    def cells_share_a_column(self, *cells: Cell) -> bool:
+        return len({cell.x for cell in cells}) == 1
+
+    def cells_share_a_box(self, *cells: Cell) -> bool:
+        return len({cell.box_num for cell in cells}) == 1
+
+    def only_one_cell_in_group_can_contain_digit(self, digit, group) -> bool:
+        return len({cell for cell in group if digit in cell.pencil_marks}) == 1
+
     def _cells_seen_by_pointing_tuple(self, pointing):
         if self.cells_share_a_row(*pointing):
             pointed = set(self.sudoku.row(next(iter(pointing)).y))
@@ -191,19 +191,40 @@ class Solver:
         return pointed
 
     def check_for_hidden_tuple(self) -> bool:
-        checked_sizes = range(2, 5)
-        for size, group_type in itertools.product(checked_sizes, RCB_ITER):
-            group_list: list = getattr(self.sudoku, group_type)
-            checked_options = itertools.combinations(range(1, 10), r=size)
-            for group, possible_options in itertools.product(group_list, checked_options):
-                possible_cells = [cell for cell in group if
-                                  _options_in_cell_min(possible_options, cell)]
-                if len(possible_cells) == size:
-                    if (set(possible_options) <= _overlapping_elements(
-                            *[cell.pencil_marks for cell in possible_cells])):
-                        if self.clear_hidden_tuple(group, possible_cells, possible_options):
-                            return True
+        sizes = range(2, 5)
+        for size in sizes:
+            for group_type in RCB:
+                iter_group = LITERALS[group_type]["iter_group"]
+                groups = getattr(self.sudoku, iter_group)
+                for group in groups:
+                    for digits in itertools.combinations(range(1, 10), r=size):
+                        candidate_tuple = self.cells_in_group_with_digits(digits, group)
+                        if len(candidate_tuple) != size: continue
+                        if self.cells_form_hidden_tuple(digits, candidate_tuple):
+                            other_digits = set(range(1, 10)) - set(digits)
+                            if self.remove_digits_from_cells(other_digits, *candidate_tuple):
+                                return True
         return False
+
+    def cells_form_hidden_tuple(self, digits, candidate_tuple) -> bool:
+        digits = set(digits)
+        cells_individually_contain_at_least_two_of_digits = min(
+            [len(cell.pencil_marks.intersection(digits)) >= 2
+             for cell in candidate_tuple]
+        )
+        cells_together_contain_all_digits = digits.issubset(
+            set.union(*[cell.pencil_marks for cell in candidate_tuple])
+        )
+        return cells_individually_contain_at_least_two_of_digits and cells_together_contain_all_digits
+
+
+    def cells_in_group_with_digits(self, digits, group):
+        empty_cells = {cell for cell in group if cell.is_empty}
+        cells_with_digits = [
+            {cell for cell in empty_cells if digit in cell.pencil_marks} for digit in digits
+        ]
+        flattened_cells = {cell for _list in cells_with_digits for cell in _list}
+        return flattened_cells
 
     def check_for_fish(self) -> bool:
         """Fish include X-wings, Swordfish, and Jellyfish."""
@@ -263,23 +284,6 @@ class Solver:
             if 2 <= len(candidate_cells) <= size:
                 candidate_groups.append(candidate_cells)
         return candidate_groups
-
-    def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
-        """
-        Return a list of cells in the cells with input digit in its pencil marks.
-        :param digit: a digit from 1 to 9
-        :param group_index: a digit from 1 to 9
-        :param group_type: "rows", "columns", or "boxes"
-        :return: list
-        """
-        group = None
-        if group_type == "rows":
-            group = self.sudoku.row(group_index)
-        elif group_type == "columns":
-            group = self.sudoku.column(group_index)
-        elif group_type == "boxes":
-            group = self.sudoku.box(group_index)
-        return [cell for cell in group if digit in cell.pencil_marks]
 
     def check_for_ywing(self) -> bool:
         triples = self.find_ywing_triples()
@@ -546,21 +550,6 @@ class Solver:
                     return True
         return False
 
-    @staticmethod
-    def clear_hidden_tuple(group, possible_cells, possible_options) -> bool:
-        operated = False
-        group_minus_possibles = [c for c in group if c not in possible_cells]
-        for cell in group_minus_possibles:
-            if cell.pencil_marks.intersection(set(possible_options)):
-                break
-        else:
-            for cell in possible_cells:
-                for option in tuple(cell.pencil_marks):
-                    if option not in possible_options:
-                        cell.pencil_marks.remove(option)
-                        operated = True
-        return operated
-
     def check_for_hidden_rectangle(self) -> bool:
         for rectangle in self.sudoku.rectangles():
             if self.cells_are_empty(*rectangle) and self._at_least_one_cell_has_only_two_options(*rectangle):
@@ -611,7 +600,7 @@ class Solver:
         for group_type, pair in itertools.product(RC, itertools.combinations(rectangle, r=2)):
             check_axis = LITERALS[group_type]["check_axis"]
 
-            if self.cells_share_axis(check_axis, *pair) and self.cells_form_a_tuple(*pair):
+            if self.cells_share_axis(check_axis, *pair) and self.cells_form_naked_tuple(*pair):
                 pencil_marks = pair[0].pencil_marks
                 opposite_pair: set[Cell, Cell] = {*rectangle} - {*pair}
                 if self.all_cells_in_group_contain_pencil_marks(opposite_pair, pencil_marks) is False:
@@ -621,7 +610,7 @@ class Solver:
                         if self._clear_hidden_rectangle_pair(digit, opposite_pair, pencil_marks):
                             return True
 
-    def cells_form_a_tuple(self, *cells) -> bool:
+    def cells_form_naked_tuple(self, *cells) -> bool:
         """Return whether input cells cumulatively contain exactly as
         many possible digits as there are input cells."""
         pencil_marks = [cell.pencil_marks for cell in cells]
@@ -666,36 +655,3 @@ class Solver:
             if focus.remove(removed_digit):
                 operated = True
         return operated
-
-
-def _options_in_cell_min(options: Iterable, cell: Cell) -> bool:
-    """Return true if any options are in cell.pencil_marks."""
-    for option in options:
-        if option in cell.pencil_marks:
-            return True
-    return False
-
-
-def _overlapping_elements(*args: set) -> set:
-    """Return a set containing all elements shared by two or more of cells.
-    *cells should all be sets."""
-
-    all_digits = []
-    for digit_set in args:
-        all_digits.extend(digit for digit in digit_set)
-    check_set = set()
-    overlap = set()
-    for digit in all_digits:
-        if digit in check_set:
-            overlap.add(digit, )
-        check_set.add(digit, )
-    return overlap
-
-
-def _cells_in_groups_share_param(groups: Iterable[Iterable[Cell]], check_param: str) -> bool:
-    """Return True if all cells share check_param with the other cells in their subgroup."""
-    for group in groups:
-        if not min([getattr(cell_a, check_param) == getattr(cell_b, check_param)
-                    for cell_a, cell_b in itertools.combinations(group, r=2)]):
-            return False
-    return True

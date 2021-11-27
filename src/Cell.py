@@ -145,7 +145,7 @@ class Cell:
     def remove(self, pencil_marks: Union[set, int, list]) -> bool:
         """Remove input set from self.pencil_marks;
         return True if a change was made, and False if not."""
-        if isinstance(pencil_marks, int) or isinstance(pencil_marks, list):
+        if type(pencil_marks) in (list, tuple, int):
             pencil_marks = {pencil_marks}
         if self.pencil_marks.intersection(pencil_marks):
             self.pencil_marks -= pencil_marks

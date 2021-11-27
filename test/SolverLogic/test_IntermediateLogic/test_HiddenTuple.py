@@ -11,35 +11,35 @@ import unittest
 from src.Solver import Solver
 from src.Sudoku import Sudoku
 
-ROW_PAIR = "      456" \
-           "5 734   2" \
-           " 942 5 8 " \
-           "4 95     " \
-           "  16 254 " \
-           "  54 7   " \
-           "95 1   34" \
-           "     42  " \
-           " 4    6  "
+ROW_PAIR = " 19 3    " \
+           "4 582  7 " \
+           "         " \
+           "69  857 4" \
+           "57  4  8 " \
+           "3487    2" \
+           "95  7    " \
+           " 8  194  " \
+           "1   5 69 "
 
-COL_PAIR = "   8697  " \
-           " 7 34568 " \
-           "6 8271 3 " \
-           "   483  5" \
-           "    57  8" \
-           "8  6 2 4 " \
-           " 235 84 6" \
-           "184726   " \
-           "  6 348  "
+COL_PAIR = "  5    17" \
+           "  9 5 8 4" \
+           "71  4   5" \
+           " 5 61 4  " \
+           "       5 " \
+           "  257419 " \
+           "   42356 " \
+           "5 4   3  " \
+           "  3  5 4 " \
 
-BOX_PAIR = "6  1  27 " \
-           "   9  6  " \
-           "3  276  4" \
-           "  6 3  25" \
-           "  9 683  " \
-           "73  2  6 " \
-           "5  61  32" \
-           " 638 2   " \
-           " 1 3    6"
+BOX_PAIR = " 5    9  " \
+           "     54  " \
+           "38 7   15" \
+           "  85 2   " \
+           "  79 48  " \
+           "  38     " \
+           " 354 8 6 " \
+           "8 215   4" \
+           "      589"
 
 ROW_TRIPLE = "  2 1 8 6" \
              " 69 83 17" \
@@ -106,10 +106,24 @@ class TestHiddenTupleRow(unittest.TestCase):
     def test_solver_clears_pairs(self):
         sudoku = Sudoku.from_string(ROW_PAIR)
         solver = Solver(sudoku)
-        pair = ((1, 3), (7, 3))
-        options = {2, 6}
+        pair = ((2, 6), (3, 6))
+        options = {4, 6}
 
-        solver.check_for_hidden_tuple()
+        edited = {
+            (3, 0): {4},
+            (5, 0): {6},
+            (2, 2): {2},
+            (3, 2): {4},
+            (5, 2): {1, 6},
+            (5, 4): {1, 6},
+            (2, 6): {2},
+            (5, 6): {4, 6},
+            (2, 7): {2},
+            (2, 8): {2},
+            (5, 8): {4}
+        }
+        sudoku.post_init(edited)
+
         self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in pair:
@@ -152,12 +166,26 @@ class TestHiddenTupleColumn(unittest.TestCase):
     def test_solver_clears_pairs(self):
         sudoku = Sudoku.from_string(COL_PAIR)
         solver = Solver(sudoku)
-        pair = ((0, 0), (0, 4))
-        options = {3, 4}
+        changed = ((5, 1), (5, 7))
+        options = {1, 7}
+        edited = {
+            (6, 0): {2},
+            (3, 1): {2, 3},
+            (5, 1): {2, 6},
+            (6, 2): {2},
+            (0, 3): {8},
+            (5, 3): {8},
+            (7, 3): {2, 3},
+            (8, 3): {8},
+            (6, 4): {6},
+            (7, 7): {2},
+            (6, 8): {9}
+        }
+        sudoku.post_init(edited)
 
         self.assertTrue(solver.check_for_hidden_tuple())
 
-        for key in pair:
+        for key in changed:
             self.assertEqual(options, sudoku[key].pencil_marks)
 
     def test_solver_clears_triples(self):
@@ -197,8 +225,21 @@ class TestHiddenTupleBox(unittest.TestCase):
     def test_solver_clears_pairs(self):
         sudoku = Sudoku.from_string(BOX_PAIR)
         solver = Solver(sudoku)
-        pair = ((5, 3), (5, 5))
-        options = {1, 9}
+        pair = ((7, 3), (7, 5))
+        options = {4, 9}
+
+        edited = {
+            (5, 0): {6},
+            (5, 5): {6},
+            (0, 6): {1},
+            (4, 6): {2},
+            (6, 6): {7},
+            (8, 6): {7},
+            (1, 7): {7},
+            (5, 7): {3, 7},
+            (5, 8): {6}
+        }
+        sudoku.post_init(edited)
 
         self.assertTrue(solver.check_for_hidden_tuple())
 
@@ -224,10 +265,39 @@ class TestHiddenTupleBox(unittest.TestCase):
         quadruple = ((1, 0), (2, 0), (1, 1), (2, 1))
         options = {1, 2, 8, 9}
 
-        solver.check_for_hidden_tuple()
-        solver.check_for_hidden_tuple()
-        solver.check_for_hidden_tuple()
-        solver.check_for_hidden_tuple()
+        edited = {
+            (0, 0): {5},
+            (2, 0): {5},
+            (5, 0): {1, 8},
+            (4, 1): {1},
+            (1, 2): {1, 2},
+            (2, 2): {1, 2, 8},
+            (7, 2): {1, 8},
+            (4, 3): {7, 8},
+            (5, 3): {1, 2, 3, 4, 5, 6, 9},
+            (3, 4): {1, 2, 3, 4, 5, 6, 9},
+            (4, 4): {7, 8},
+            (5, 4): {7, 8},
+            (6, 4): {1},
+            (7, 4): {1},
+            (4, 5): {7, 8},
+            (8, 5): {1},
+            (1, 6): {4, 7},
+            (6, 6): {1},
+            (7, 6): {1},
+            (8, 6): {1},
+            (2, 7): {4, 5, 7},
+            (6, 7): {1},
+            (7, 7): {1},
+            (8, 7): {1},
+            (0, 8): {1},
+            (1, 8): {1},
+            (2, 8): {6},
+            (6, 8): {2, 3, 4, 5, 7, 8, 9},
+            (7, 8): {2, 3, 4, 5, 7, 8, 9}
+        }
+        sudoku.post_init(edited)
+
         self.assertTrue(solver.check_for_hidden_tuple())
 
         for key in quadruple:
