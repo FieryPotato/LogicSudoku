@@ -297,13 +297,11 @@ class Solver:
     def clear_ywing(self, ywing) -> bool:
         operated = False
         wing_a, wing_b = ywing
-        cleared_digit: int = wing_a.pencil_marks.intersection(wing_b.pencil_marks).pop()
-        affected_cells = [cell for cell in self.sudoku
-                          if (cell.sees(wing_a) and cell.sees(wing_b))]
-        for cell in affected_cells:
-            if cleared_digit in cell.pencil_marks:
-                cell.pencil_marks.remove(cleared_digit)
-                operated = True
+        shared_digit: int = wing_a.pencil_marks.intersection(wing_b.pencil_marks).pop()
+        affected_cells = {cell for cell in self.sudoku
+                          if (cell.sees(wing_a) and cell.sees(wing_b))}
+        if self.remove_digits_from_cells(shared_digit, *affected_cells):
+            return True
         return operated
 
     def find_ywing_triples(self) -> list[tuple[Cell, Cell, Cell]]:
@@ -311,6 +309,7 @@ class Solver:
         Return a list of tuples of cells in self.sudoku which meet
         the following criteria:
 
+        - there are three cells in the tuple
         - all cells have 2 options;
         - each cell hase 1 and only 1 overlapping option with each other cell;
         - the cells together have a total of 3 unique options between them.
@@ -319,9 +318,10 @@ class Solver:
         return [
             (a, b, c) for a, b, c in itertools.combinations(self.sudoku, r=3)
             if ((len(a.pencil_marks) == len(b.pencil_marks) == len(c.pencil_marks) == 2)
-                and (len(a.pencil_marks.intersection(b.pencil_marks)) ==
-                     len(a.pencil_marks.intersection(c.pencil_marks)) ==
-                     len(b.pencil_marks.intersection(c.pencil_marks)) == 1)
+                and (len(a.pencil_marks.intersection(b.pencil_marks))
+                     == len(a.pencil_marks.intersection(c.pencil_marks))
+                     == len(b.pencil_marks.intersection(c.pencil_marks))
+                     == 1)
                 and (len(a.pencil_marks.union(b.pencil_marks, c.pencil_marks)) == 3))
         ]
 
