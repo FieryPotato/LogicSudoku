@@ -122,65 +122,60 @@ class Solver:
                             return True
         return False
 
-    @staticmethod
-    def clear_naked_tuples(group, tuple_cells):
-        operated = False
+    def clear_naked_tuples(self, group, tuple_cells):
         non_members: set[Cell] = set(group) - set(tuple_cells)
         marks = [tuple(cell.pencil_marks) for cell in tuple_cells]
         options = {digit for pms in marks for digit in pms}
-        for cell in non_members:
-            if cell.remove(options):
-                operated = True
-        return operated
+        if self.remove_digits_from_cells(options, *non_members):
+            return True
 
     def check_for_locked_candidate(self) -> bool:
-        operated = False
-        for digit, group_type in itertools.product(range(1, 10), RC_ITER):
-            for group in getattr(self.sudoku, group_type):
-                if self._cells_with_digit_share_a_box(digit, *group):
-                    if self.clear_locked_candidate(digit, group):
-                        operated = True
-        return operated
-
-    def _cells_with_digit_share_a_box(self, digit, *cells) -> bool:
-        cells = [cell for cell in cells if digit in cell.pencil_marks]
-        cell_boxes = {cell.box_num for cell in cells}
-        if len(cell_boxes) == 1:
-            return True
+        for digit in range(1, 10):
+            for group_type in RC_ITER:
+                for group in getattr(self.sudoku, group_type):
+                    cells_with_digit = {cell
+                                        for cell in group
+                                        if digit in cell.pencil_marks}
+                    if self._cells_share_a_box(*cells_with_digit):
+                        box_num = next(iter(cells_with_digit)).box_num
+                        affected = set(self.sudoku.box(box_num)) - cells_with_digit
+                        if self.remove_digits_from_cells(digit, *affected):
+                            return True
         return False
 
-    def clear_locked_candidate(self, digit, group) -> bool:
+    def _cells_share_a_row(self, *cells: Cell) -> bool:
+        return len({cell.y for cell in cells}) == 1
+
+    def _cells_share_a_column(self, *cells: Cell) -> bool:
+        return len({cell.x for cell in cells}) == 1
+
+    def _cells_share_a_box(self, *cells: Cell) -> bool:
+        return len({cell.box_num for cell in cells}) == 1
+
+    def remove_digits_from_cells(self, digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
         operated = False
-        locked_cells = {cell for cell in group if digit in cell.pencil_marks}
-        box_num = {cell.box_num for cell in locked_cells}.pop()
-        for cell in set(self.sudoku.box(box_num)) - locked_cells:
-            if cell.remove(digit):
+        for cell in cells:
+            if cell.remove(digits):
                 operated = True
         return operated
 
-    def _cells_share_a_row(self, *cells) -> bool:
-        return len([cell.x for cell in cells]) == 1
-
-    def _cells_share_a_column(self, *cells) -> bool:
-        return len([cell.y for cell in cells]) == 1
-
     def check_for_pointing_tuple(self) -> bool:
-        operated = False
         for digit, box in itertools.product(range(1, 10), self.sudoku.boxes):
-            possibles = [cell for cell in box if digit in cell.pencil_marks]
-            rows = set(c.y for c in possibles)
-            cols = set(c.x for c in possibles)
-            if len(rows) == 1:
-                pointed_group = self.sudoku.row(rows.pop())
-            elif len(cols) == 1:
-                pointed_group = self.sudoku.column(cols.pop())
-            else:
-                continue
-            for cell in pointed_group:
-                if cell not in possibles and digit in cell.pencil_marks:
-                    cell.pencil_marks.remove(digit)
-                    operated = True
-        return operated
+            pointed = self._cells_seen_by_pointing_tuple(box, digit)
+            if self.remove_digits_from_cells(digit, *pointed):
+                return True
+        return False
+
+    def _cells_seen_by_pointing_tuple(self, box, digit):
+        pointing = {cell for cell in box if digit in cell.pencil_marks}
+        if self._cells_share_a_row(*pointing):
+            pointed = set(self.sudoku.row(next(iter(pointing)).y))
+        elif self._cells_share_a_column(*pointing):
+            pointed = set(self.sudoku.column(next(iter(pointing)).x))
+        else:
+            return set()
+        pointed -= pointing
+        return pointed
 
     def check_digit_in_cell_for_group_hidden_single(self, digit, cell, group) -> bool:
         pencil_marks = [self.sudoku[c].pencil_marks for c in getattr(cell, group)]

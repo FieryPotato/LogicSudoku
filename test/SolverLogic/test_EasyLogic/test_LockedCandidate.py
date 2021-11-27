@@ -19,15 +19,15 @@ UNSOLVED_ROW: str = "75  21  4" \
                     " 415 8   " \
                     "6  41  58"
 
-UNSOLVED_COL: str = " 5 9     " \
-                    " 1   8   " \
-                    "3 2 6   8" \
-                    "9 4  6   " \
-                    "7 6   9 5" \
-                    " 2  398 6" \
-                    " 6    5 7" \
-                    "   6  28 " \
-                    "    45 6 "
+UNSOLVED_COL: str = " 9 7     " \
+                    " 2   5   " \
+                    "4 1 8   5" \
+                    "7 6  8   " \
+                    "3 8   7 9" \
+                    " 1  475 8" \
+                    " 8    9 3" \
+                    "   8  15 " \
+                    "    69 8 "
 
 
 class TestLockedCandidate(unittest.TestCase):
@@ -49,17 +49,25 @@ class TestLockedCandidate(unittest.TestCase):
     def test_solver_clears_pencil_marks_in_column(self) -> None:
         sudoku: Sudoku = Sudoku.from_string(UNSOLVED_COL)
         solver: Solver = Solver(sudoku)
-        keys_to_change = ((7, 0), (8, 0), (7, 1), (8, 1), (7, 2))
+
+        edited = {
+            (3, 5): {2, 9},
+            (7, 5): {2},
+            (1, 7): {4},
+            (1, 8): {4, 5}
+        }
+        sudoku.post_init(edited)
+
+        changed = ((7, 0), (8, 0), (7, 1), (8, 1), (7, 2))
         locked_candidates = ((6, 0), (6, 1), (6, 2))
+        digit = 6
 
         self.assertTrue(solver.check_for_locked_candidate())
 
-        for key in keys_to_change:
-            pencil_marks = sudoku[key].pencil_marks
-            self.assertFalse(4 in pencil_marks)
+        for key in changed:
+            self.assertFalse(digit in sudoku[key].pencil_marks)
         for key in locked_candidates:
-            pencil_marks = sudoku[key].pencil_marks
-            self.assertTrue(4 in pencil_marks)
+            self.assertTrue(digit in sudoku[key].pencil_marks)
 
 
 if __name__ == '__main__':
