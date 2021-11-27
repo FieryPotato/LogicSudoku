@@ -326,21 +326,23 @@ class Solver:
         ]
 
     def potential_avoidable_rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
-        for quad in itertools.combinations(self.sudoku, r=4):
-            top_left, top_right, bot_left, bot_right = quad
-            # if cells are arranged in a rectangle
-            if (top_left.y == top_right.y and bot_left.y == bot_right.y
-                    and top_left.x == bot_left.x and top_right.x == bot_right.x
-                    and top_left.x != bot_right.x and top_left.y != bot_right.y):
+        """Yield only groups of cells that form a rectangle and which
+        could break uniqueness."""
+        for rectangle in self.sudoku.rectangles():
+            if self.rectangle_is_avoidable(rectangle):
+                yield rectangle
 
-                if min([cell.started_empty for cell in quad]):
-                    if len({cell.box_num for cell in quad}) == 2:
-                        if len([cell for cell in quad if cell.is_empty]) == 1:
-                            yield top_left, top_right, bot_left, bot_right
+    def rectangle_is_avoidable(self, rectangle) -> bool:
+        """Return true if filling in the rectangle improperly would
+         break uniqueness."""
+        if (min([cell.started_empty for cell in rectangle])
+                and len({cell.box_num for cell in rectangle}) == 2
+                and len([cell for cell in rectangle if cell.is_empty]) == 1):
+            return True
 
     def check_for_avoidable_rectangle(self) -> bool:
-        for quad in self.potential_avoidable_rectangles():
-            if self.clear_avoidable_rectangle(*quad):
+        for rectangle in self.potential_avoidable_rectangles():
+            if self.clear_avoidable_rectangle(*rectangle):
                 return True
         return False
 
@@ -529,25 +531,26 @@ class Solver:
 
     @staticmethod
     def clear_avoidable_rectangle(top_left, top_right, bot_left, bot_right) -> bool:
+        operated = False
         if top_left.digit == bot_right.digit:
             if top_right.is_empty and not bot_left.is_empty:
                 if bot_left.digit in top_right.pencil_marks:
                     top_right.pencil_marks.remove(bot_left.digit)
-                    return True
+                    operated = True
             elif bot_left.is_empty and not top_right.is_empty:
                 if top_right.digit in bot_left.pencil_marks:
                     bot_left.pencil_marks.remove(top_right.digit)
-                    return True
+                    operated = True
         elif top_right.digit == bot_left.digit:
             if top_left.is_empty and not bot_right.is_empty:
                 if bot_right.digit in top_left.pencil_marks:
                     top_left.pencil_marks.remove(bot_right.digit)
-                    return True
+                    operated = True
             elif bot_right.is_empty and not top_left.is_empty:
                 if top_left.digit in bot_right.pencil_marks:
                     bot_right.pencil_marks.remove(top_left.digit)
-                    return True
-        return False
+                    operated = True
+        return operated
 
     def check_for_hidden_rectangle(self) -> bool:
         for rectangle in self.sudoku.rectangles():
