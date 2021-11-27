@@ -221,7 +221,6 @@ class Solver:
         )
         return cells_individually_contain_at_least_two_of_digits and cells_together_contain_all_digits
 
-
     def cells_in_group_with_digits(self, digits, group):
         empty_cells = {cell for cell in group if cell.is_empty}
         cells_with_digits = [
@@ -249,12 +248,10 @@ class Solver:
         perpendicular_fish_groups = self.perpendicular_groups(fish_groups, group_type)
 
         for fish in perpendicular_fish_groups:
-            for cell in [c for c in getattr(
-                    self.sudoku, opposite_group
-            )(
-                getattr(fish[0], opposite_axis)
-            ) if c not in fish
-                         ]:
+            fish_group_index = (getattr(fish[0], opposite_axis))
+            fish_group = getattr(self.sudoku, opposite_group)(fish_group_index)
+
+            for cell in [c for c in fish_group if c not in fish]:
                 if cell.remove(digit):
                     operated = True
         return operated
