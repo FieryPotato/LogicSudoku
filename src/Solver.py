@@ -192,18 +192,22 @@ class Solver:
 
     def check_for_hidden_tuple(self) -> bool:
         sizes = range(2, 5)
-        for size in sizes:
-            for group_type in RCB:
-                iter_group = LITERALS[group_type]["iter_group"]
-                groups = getattr(self.sudoku, iter_group)
-                for group in groups:
-                    for digits in itertools.combinations(range(1, 10), r=size):
-                        candidate_tuple = self.cells_in_group_with_digits(digits, group)
-                        if len(candidate_tuple) != size: continue
-                        if self.cells_form_hidden_tuple(digits, candidate_tuple):
-                            other_digits = set(range(1, 10)) - set(digits)
-                            if self.remove_digits_from_cells(other_digits, *candidate_tuple):
-                                return True
+        for size, group_type in itertools.product(sizes, RCB):
+            iter_group = LITERALS[group_type]["iter_group"]
+            groups = getattr(self.sudoku, iter_group)
+            for group in groups:
+                if self.clear_hidden_tuple(group, size):
+                    return True
+        return False
+
+    def clear_hidden_tuple(self, group, size) -> bool:
+        for digits in itertools.combinations(range(1, 10), r=size):
+            candidate_tuple = self.cells_in_group_with_digits(digits, group)
+            if len(candidate_tuple) != size: continue
+            if self.cells_form_hidden_tuple(digits, candidate_tuple):
+                other_digits = set(range(1, 10)) - set(digits)
+                if self.remove_digits_from_cells(other_digits, *candidate_tuple):
+                    return True
         return False
 
     def cells_form_hidden_tuple(self, digits, candidate_tuple) -> bool:
