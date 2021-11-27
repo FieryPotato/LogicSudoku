@@ -115,23 +115,21 @@ class Solver:
         for size, group_type in itertools.product(range(2, 5), RCB_ITER):
             for group in getattr(self.sudoku, group_type):
                 empty_cells = [cell for cell in group if cell.is_empty]
-                candidate_cells = itertools.combinations(empty_cells, r=size)
-                for test_tuple in candidate_cells:
-                    tuple_options = set()
-                    for cell in test_tuple:
-                        tuple_options = tuple_options.union(cell.pencil_marks)
-                    if len(tuple_options) == size:
-                        if self.clear_naked_tuples(group, test_tuple, tuple_options):
+                candidate_tuples = itertools.combinations(empty_cells, r=size)
+                for candidate_tuple in candidate_tuples:
+                    if self.cells_form_a_tuple(*candidate_tuple):
+                        if self.clear_naked_tuples(group, candidate_tuple):
                             return True
         return False
 
     @staticmethod
-    def clear_naked_tuples(group, test_tuple, tuple_options):
+    def clear_naked_tuples(group, tuple_cells):
         operated = False
-        non_members: set = (set(group) - set(test_tuple))
+        non_members: set[Cell] = set(group) - set(tuple_cells)
+        marks = [tuple(cell.pencil_marks) for cell in tuple_cells]
+        options = {digit for pms in marks for digit in pms}
         for cell in non_members:
-            if cell.pencil_marks.intersection(tuple_options):
-                cell.pencil_marks -= set(tuple_options)
+            if cell.remove(options):
                 operated = True
         return operated
 
@@ -139,25 +137,32 @@ class Solver:
         operated = False
         for digit, group_type in itertools.product(range(1, 10), RC_ITER):
             for group in getattr(self.sudoku, group_type):
-                possible_cells: list[Cell] = [cell for cell in group if digit in cell.pencil_marks]
-                if len(set([cell.box_num for cell in possible_cells])) == 1:
-                    if self.clear_locked_candidate(digit, group, group_type, possible_cells):
+                if self._cells_with_digit_share_a_box(digit, *group):
+                    if self.clear_locked_candidate(digit, group):
                         operated = True
         return operated
 
-    def clear_locked_candidate(self, digit, group, group_type, possible_cells) -> bool:
+    def _cells_with_digit_share_a_box(self, digit, *cells) -> bool:
+        cells = [cell for cell in cells if digit in cell.pencil_marks]
+        cell_boxes = {cell.box_num for cell in cells}
+        if len(cell_boxes) == 1:
+            return True
+        return False
+
+    def clear_locked_candidate(self, digit, group) -> bool:
         operated = False
-        locked_box = set([cell for cell in self.sudoku.box(possible_cells[0].box_num)])
-        for cell in locked_box - set(c for c in possible_cells):
-            if digit in cell.pencil_marks:
-                if group_type == "rows":
-                    if cell.y != group[0].y:
-                        cell.pencil_marks.remove(digit)
-                elif group_type == "columns":
-                    if cell.x != group[0].x:
-                        cell.pencil_marks.remove(digit)
+        locked_cells = {cell for cell in group if digit in cell.pencil_marks}
+        box_num = {cell.box_num for cell in locked_cells}.pop()
+        for cell in set(self.sudoku.box(box_num)) - locked_cells:
+            if cell.remove(digit):
                 operated = True
         return operated
+
+    def _cells_share_a_row(self, *cells) -> bool:
+        return len([cell.x for cell in cells]) == 1
+
+    def _cells_share_a_column(self, *cells) -> bool:
+        return len([cell.y for cell in cells]) == 1
 
     def check_for_pointing_tuple(self) -> bool:
         operated = False
@@ -264,7 +269,7 @@ class Solver:
 
     def cells_in_group_with_digit_in_pm(self, digit, group_index, group_type) -> list[Cell]:
         """
-        Return a list of cells in the group with input digit in its pencil marks.
+        Return a list of cells in the cells with input digit in its pencil marks.
         :param digit: a digit from 1 to 9
         :param group_index: a digit from 1 to 9
         :param group_type: "rows", "columns", or "boxes"
@@ -623,9 +628,6 @@ class Solver:
         """Return whether input cells cumulatively contain exactly as
         many possible digits as there are input cells."""
         pencil_marks = [cell.pencil_marks for cell in cells]
-        for _set in pencil_marks:
-            if len(_set) != len(cells):
-                return False
         flattened_pms = {digit for group in pencil_marks for digit in group}
         if len(set.union(flattened_pms)) != len(cells):
             return False
@@ -638,7 +640,7 @@ class Solver:
         return len(axes) == 1
 
     def all_cells_in_group_contain_pencil_marks(self, group: Iterable[Cell], pencil_marks: set[int]) -> bool:
-        """Return whether all cells in group contain each digit in pencil_marks."""
+        """Return whether all cells in cells contain each digit in pencil_marks."""
         return min([
             cell.pencil_marks.issuperset(pencil_marks)
             for cell in group

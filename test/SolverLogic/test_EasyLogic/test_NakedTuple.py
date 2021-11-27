@@ -191,8 +191,13 @@ class TestNakedColumnTuples(unittest.TestCase):
         naked_triple: tuple = ((1, 1), (1, 2), (1, 8))
         triple_options = {4, 6, 8}
 
-        # eliminate naked triple in row 9
-        solver.check_for_naked_tuple()
+        edited = {
+            (7, 0): {9},
+            (8, 0): {9},
+            (0, 8): {1, 9},
+            (1, 8): {1}
+        }
+        sudoku.post_init(edited)
         self.assertTrue(solver.check_for_naked_tuple())
 
         for key in keys_to_change:
