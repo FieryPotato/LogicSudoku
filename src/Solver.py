@@ -383,51 +383,43 @@ class Solver:
     def check_for_unique_rectangle(self) -> bool:
         for box in self.sudoku.boxes:
             pairs = [cell for cell in box if len(cell.pencil_marks) == 2]
-            for cell_a, cell_b in itertools.combinations(pairs, r=2):
-                if cell_a.x != cell_b.x and cell_a.y != cell_b.y:
-                    continue
-                if cell_a.pencil_marks != cell_b.pencil_marks:
-                    continue
+            for a, b in itertools.combinations(pairs, r=2):
+                if self.cells_form_naked_tuple(a, b):
+                    cell, target = self.unique_rectangle_cell_and_target(a, b)
 
-                cell, target = self.unique_rectangle_cell_and_target(cell_a, cell_b)
-
-                if cell is not None and target is not None:
-                    if intersection := cell.pencil_marks.intersection(target.pencil_marks):
-                        target.remove(intersection)
-                        return True
+                    if cell is not None and target is not None:
+                        if intersection := cell.pencil_marks.intersection(target.pencil_marks):
+                            target.remove(intersection)
+                            return True
         return False
 
-    def unique_rectangle_cell_and_target(self, cell_a, cell_b):
+    def unique_rectangle_cell_and_target(self, a, b):
         """Given cell_a, cell_b that share a row or column in the same box
         and have identical pencil_marks, return a cell (if any) that shares a
         column or row (respectively) with one of them and the cell that
         completes the rectangle."""
         cell, target = None, None
         # a and b share a row
-        if cell_a.y == cell_b.y:
-            for key in [k for k in cell_a.column if k != cell_a.coordinates]:
-                cell = self.sudoku[key]
-                if cell.pencil_marks == cell_a.pencil_marks:
-                    target = self.sudoku[(cell_b.x, cell.y)]
+        if a.y == b.y:
+            for cell in [self.sudoku[k] for k in a.column if k != a.coordinates]:
+                if cell.pencil_marks == a.pencil_marks:
+                    target = self.sudoku[(b.x, cell.y)]
                     break
             else:
-                for key in [k for k in cell_b.column if k != cell_b.coordinates]:
-                    cell = self.sudoku[key]
-                    if cell.pencil_marks == cell_b.pencil_marks:
-                        target = self.sudoku[(cell_a.x, cell.y)]
+                for cell in [self.sudoku[k] for k in b.column if k != b.coordinates]:
+                    if cell.pencil_marks == b.pencil_marks:
+                        target = self.sudoku[(a.x, cell.y)]
                         break
         # a and b share a column
-        elif cell_a.x == cell_b.x:
-            for key in [k for k in cell_a.row if k != cell_a.coordinates]:
-                cell = self.sudoku[key]
-                if cell.pencil_marks == cell_a.pencil_marks:
-                    target = self.sudoku[(cell.x, cell_b.y)]
+        elif a.x == b.x:
+            for cell in [self.sudoku[k] for k in a.row if k != a.coordinates]:
+                if cell.pencil_marks == a.pencil_marks:
+                    target = self.sudoku[(cell.x, b.y)]
                     break
             else:
-                for key in [k for k in cell_b.row if k != cell_b.coordinates]:
-                    cell = self.sudoku[key]
-                    if cell.pencil_marks == cell_a.pencil_marks:
-                        target = self.sudoku[(cell.x, cell_a.y)]
+                for cell in [self.sudoku[k] for k in b.row if k != b.coordinates]:
+                    if cell.pencil_marks == a.pencil_marks:
+                        target = self.sudoku[(cell.x, a.y)]
                         break
         return cell, target
 
@@ -614,10 +606,10 @@ class Solver:
     def cells_are_closely_related_by_digit(self, digit: int, *cells: Cell) -> bool:
         """Return whether input cells are the only two cells in their
         row, or column that can be digit."""
-        if len({cell.x for cell in cells}) == 1:
+        if self.cells_share_a_column(*cells):
             axis = "x"
             group_type = "column"
-        elif len({cell.y for cell in cells}) == 1:
+        elif self.cells_share_a_row(*cells):
             axis = "y"
             group_type = "row"
         else:
@@ -629,7 +621,8 @@ class Solver:
         ]) == 2
 
     def _clear_hidden_rectangle_pair(self, digit, pair, pencil_marks):
-        removed_digit = [d for d in pencil_marks if d != digit][0]
+        operated = False
+        removed_digit = next(iter(d for d in pencil_marks if d != digit))
         for focus in pair:
             if focus.remove(removed_digit):
                 operated = True
