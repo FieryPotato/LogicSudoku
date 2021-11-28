@@ -1,7 +1,7 @@
 import itertools
 from collections.abc import Iterable
 from copy import deepcopy
-from typing import Optional, Generator, Union, Any, List, Tuple
+from typing import Optional, Generator, Union
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -153,7 +153,8 @@ class Solver:
             return True
         return False
 
-    def remove_digits_from_cells(self, digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
+    @staticmethod
+    def remove_digits_from_cells(digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
         operated = False
         for cell in cells:
             if cell.remove(digits):
@@ -168,16 +169,20 @@ class Solver:
                 return True
         return False
 
-    def cells_share_a_row(self, *cells: Cell) -> bool:
+    @staticmethod
+    def cells_share_a_row(*cells: Cell) -> bool:
         return len({cell.y for cell in cells}) == 1
 
-    def cells_share_a_column(self, *cells: Cell) -> bool:
+    @staticmethod
+    def cells_share_a_column(*cells: Cell) -> bool:
         return len({cell.x for cell in cells}) == 1
 
-    def cells_share_a_box(self, *cells: Cell) -> bool:
+    @staticmethod
+    def cells_share_a_box(*cells: Cell) -> bool:
         return len({cell.box_num for cell in cells}) == 1
 
-    def only_one_cell_in_group_can_contain_digit(self, digit, group) -> bool:
+    @staticmethod
+    def only_one_cell_in_group_can_contain_digit(digit, group) -> bool:
         return len({cell for cell in group if digit in cell.pencil_marks}) == 1
 
     def _cells_seen_by_pointing_tuple(self, pointing):
@@ -210,7 +215,8 @@ class Solver:
                     return True
         return False
 
-    def cells_form_hidden_tuple(self, digits, candidate_tuple) -> bool:
+    @staticmethod
+    def cells_form_hidden_tuple(digits, candidate_tuple) -> bool:
         digits = set(digits)
         cells_individually_contain_at_least_two_of_digits = min(
             [len(cell.pencil_marks.intersection(digits)) >= 2
@@ -221,7 +227,8 @@ class Solver:
         )
         return cells_individually_contain_at_least_two_of_digits and cells_together_contain_all_digits
 
-    def cells_in_group_with_digits(self, digits, group):
+    @staticmethod
+    def cells_in_group_with_digits(digits, group):
         empty_cells = {cell for cell in group if cell.is_empty}
         cells_with_digits = [
             {cell for cell in empty_cells if digit in cell.pencil_marks} for digit in digits
@@ -255,7 +262,8 @@ class Solver:
                 operated = True
         return operated
 
-    def perpendicular_groups(self, group_list: list[list[Cell]], group_type: str) -> list[list[Cell]]:
+    @staticmethod
+    def perpendicular_groups(group_list: list[list[Cell]], group_type: str) -> list[list[Cell]]:
         """Converts lists of cells grouped by row or column into lists
         of those same cells grouped by column or row, respectively."""
         opposite_axis = LITERALS[group_type]["opposite_axis"]
@@ -266,7 +274,8 @@ class Solver:
             perpendicular_groups.append([cell for cell in all_cells if getattr(cell, opposite_axis) == axis])
         return perpendicular_groups
 
-    def trimmed_fish_groups(self, candidate_groups, group_type, size) -> Optional[tuple]:
+    @staticmethod
+    def trimmed_fish_groups(candidate_groups, group_type, size) -> Optional[tuple]:
         """Return group of cells that could be an xwing, swordfish, or jellyfish."""
         opposite_axis = LITERALS[group_type]["opposite_axis"]
         for candidates in itertools.combinations(candidate_groups, r=size):
@@ -332,7 +341,8 @@ class Solver:
             if self.rectangle_is_avoidable(rectangle):
                 yield rectangle
 
-    def rectangle_is_avoidable(self, rectangle) -> bool:
+    @staticmethod
+    def rectangle_is_avoidable(rectangle) -> bool:
         """Return true if filling in the rectangle improperly would
          break uniqueness."""
         if (min([cell.started_empty for cell in rectangle])
@@ -530,12 +540,14 @@ class Solver:
                     return True
         return False
 
-    def _at_least_one_cell_has_only_two_options(self, *cells) -> bool:
+    @staticmethod
+    def _at_least_one_cell_has_only_two_options(*cells) -> bool:
         return bool([cell
                      for cell in cells
                      if len(cell.pencil_marks) == 2])
 
-    def cells_are_empty(self, *cells) -> bool:
+    @staticmethod
+    def cells_are_empty(*cells) -> bool:
         """Return whether each cell in cells is empty."""
         return min([cell.is_empty for cell in cells])
 
@@ -581,7 +593,8 @@ class Solver:
                         if self._clear_hidden_rectangle_pair(digit, opposite_pair, pencil_marks):
                             return True
 
-    def cells_form_naked_tuple(self, *cells) -> bool:
+    @staticmethod
+    def cells_form_naked_tuple(*cells) -> bool:
         """Return whether input cells cumulatively contain exactly as
         many possible digits as there are input cells."""
         pencil_marks = [cell.pencil_marks for cell in cells]
@@ -590,13 +603,15 @@ class Solver:
             return False
         return True
 
-    def cells_share_axis(self, check_axis, *cells: Cell) -> bool:
+    @staticmethod
+    def cells_share_axis(check_axis, *cells: Cell) -> bool:
         """Return whether input cells all share a row or column.
         check_axes should be 'x' for column or 'y' for row."""
         axes = {getattr(cell, check_axis) for cell in cells}
         return len(axes) == 1
 
-    def all_cells_in_group_contain_pencil_marks(self, group: Iterable[Cell], pencil_marks: set[int]) -> bool:
+    @staticmethod
+    def all_cells_in_group_contain_pencil_marks(group: Iterable[Cell], pencil_marks: set[int]) -> bool:
         """Return whether all cells in cells contain each digit in pencil_marks."""
         return min([
             cell.pencil_marks.issuperset(pencil_marks)
@@ -620,7 +635,8 @@ class Solver:
             if digit in cell.pencil_marks
         ]) == 2
 
-    def _clear_hidden_rectangle_pair(self, digit, pair, pencil_marks):
+    @staticmethod
+    def _clear_hidden_rectangle_pair(digit, pair, pencil_marks):
         operated = False
         removed_digit = next(iter(d for d in pencil_marks if d != digit))
         for focus in pair:
