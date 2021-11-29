@@ -58,3 +58,11 @@ class TestCell(unittest.TestCase):
             test = [Cell(key) for key in test_keys]
             self.assertEqual(expected, Cell.intersection(*test))
             self.assertEqual(expected, test[0].intersection(*test[1:]))
+
+    def test_cell_membership(self):
+        test_cell = self.sudoku[4, 4]
+        for i in range(1, 10):
+            self.assertTrue(i in test_cell)
+        test_cell.remove({1, 3, 5, 7, 9})
+        for i in range(1, 10, 2):
+            self.assertFalse(i in test_cell)

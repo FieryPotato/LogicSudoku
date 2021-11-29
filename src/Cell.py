@@ -1,7 +1,6 @@
 import itertools
 
-from typing import Union
-
+from typing import Union, Generator
 
 BOX_MAP: dict = {
     0: ((0, 0), (1, 0), (2, 0),
@@ -35,11 +34,11 @@ BOX_MAP: dict = {
 
 
 class Cell:
-    def __init__(self, coordinates: tuple[int, int]) -> None:
+    def __init__(self, coordinates: tuple[int, int], digit=" ") -> None:
         self.coordinates: tuple = coordinates
         self.x: int = coordinates[0]
         self.y: int = coordinates[1]
-        self.digit: Union[int, str] = " "
+        self.digit: Union[int, str] = digit
         self.pencil_marks = {i for i in range(1, 10)}
         self.started_empty = True
 
@@ -65,6 +64,11 @@ class Cell:
 
     def __bool__(self) -> bool:
         return self.digit != " "
+
+    def __iter__(self) -> Generator[int, None, None]:
+        """Iterates through cell pencil_marks."""
+        for digit in self.pencil_marks:
+            yield digit
 
     @property
     def is_empty(self) -> bool:
