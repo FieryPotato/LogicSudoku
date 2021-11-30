@@ -156,7 +156,6 @@ class Cell:
             return True
         return False
 
-    @staticmethod
     def intersection(*args: "Cell") -> set:
         """Return a list of cells which see each of the input cells."""
         seen_keys = [cell.visible_cells() for cell in args]
