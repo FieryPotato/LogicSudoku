@@ -1,5 +1,5 @@
 import itertools
-from typing import ItemsView, Union, KeysView, Iterator, Generator
+from typing import ItemsView, Union, KeysView, Iterator, Generator, overload
 
 from src.Cell import Cell
 
@@ -93,8 +93,7 @@ class Sudoku:
                 return False
         return True
 
-    @property
-    def is_legal(self) -> bool:
+    def is_legal(self, return_cell=False) -> Union[bool, tuple[int, int]]:
         """Return false if the sudoku has any duplicate digits in rows,
         columns, or boxes."""
         present_digits = set()
@@ -103,6 +102,8 @@ class Sudoku:
                 for cell in group:
                     if not cell.is_empty:
                         if cell.digit in present_digits:
+                            if return_cell is True:
+                                return cell.coordinates
                             return False
                         present_digits.add(cell.digit)
                 present_digits.clear()
@@ -143,7 +144,7 @@ class Sudoku:
         return self[coordinates].digit
 
     def check_cell_pencil_marks(self, coordinates) -> None:
-        """Clear pencil marks from top_left cell if the pencil mark appears
+        """Clear pencil marks from a cell if the pencil mark appears
         in the cell's row, column, or box."""
         cell: Cell = self[coordinates]
         if cell.is_empty:
@@ -157,7 +158,7 @@ class Sudoku:
 
     @classmethod
     def from_string(cls, string) -> "Sudoku":
-        """Return top_left sudoku whose cells in order appear in an 81-character string."""
+        """Return a sudoku whose cells in order appear in an 81-character string."""
         if len(string) < 81:
             raise ValueError("Your sudoku contains fewer than 81 digits.")
         elif len(string) > 81:
@@ -168,8 +169,9 @@ class Sudoku:
             cell = new[key]
             cell.fill(digit)
             cell.started_empty = False
-        if not new.is_legal:
-            raise ValueError("Your sudoku contains top_left duplicate.")
+        if not new.is_legal():
+            coordinates = new.is_legal(return_cell=True)
+            raise ValueError(f"Your sudoku contains a duplicate at {coordinates}.")
         return new
 
     def update_pencil_marks(self) -> None:

@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from copy import deepcopy
+from copy import deepcopy, copy
 from itertools import combinations, product
 from typing import Optional, Generator, Union
 
@@ -192,7 +192,6 @@ class Solver:
         else:
             raise ValueError(f"{group_type} is not a valid argument for"
                              f"Solver.cells_share_opposite_group.")
-
 
     @staticmethod
     def remove_digits_from_cells(digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
@@ -612,7 +611,7 @@ class Solver:
             single_group = LITERALS[group_type]["single_group"]
 
             group = getattr(self.sudoku, single_group)(getattr(opposite, check_axis))
-            if not self.cells_are_closely_related_by_digit(digit, *group):
+            if not self.cells_are_strongly_connected_by_digit(digit, *group):
                 break
         else:
             digit_to_remove = focus.pencil_marks - {digit}
@@ -630,7 +629,7 @@ class Solver:
                 if self.all_cells_in_group_contain_pencil_marks(opposite_pair, pencil_marks) is False:
                     continue
                 for digit in pencil_marks:
-                    if self.cells_are_closely_related_by_digit(digit, *opposite_pair):
+                    if self.cells_are_strongly_connected_by_digit(digit, *opposite_pair):
                         if self._clear_hidden_rectangle_pair(digit, opposite_pair, pencil_marks):
                             return True
 
@@ -659,7 +658,7 @@ class Solver:
             for cell in group
         ])
 
-    def cells_are_closely_related_by_digit(self, digit: int, *cells: Cell) -> bool:
+    def cells_are_strongly_connected_by_digit(self, digit: int, *cells: Cell) -> bool:
         """Return whether input cells are the only two cells in their
         row, or column that can be digit."""
         if self.cells_share_a_column(*cells):
@@ -668,6 +667,9 @@ class Solver:
         elif self.cells_share_a_row(*cells):
             axis = "y"
             group_type = "row"
+        elif self.cells_share_a_box(*cells):
+            axis = "box_num"
+            group_type = "box"
         else:
             return False
         return len([
@@ -684,3 +686,106 @@ class Solver:
             if focus.remove(removed_digit):
                 operated = True
         return operated
+
+    def find_strongly_connected_pairs_with_digit(self, digit: int) -> set[tuple[Cell, Cell]]:
+        pairs = []
+        for group_type in RCB_ITER:
+            for group in getattr(self.sudoku, group_type):
+                cells_with_digit = {cell for cell in group if digit in cell}
+                if len(cells_with_digit) == 2:
+                    pairs.append(tuple(cells_with_digit))
+        return set(pairs)
+
+    def strongly_connected_cell_chains(self, pairs: set[tuple[Cell, Cell]]):
+        """Return a list of lists of cells which form a chain of three or
+        more cells that are strongly connected."""
+        adjacencies: dict = self.strongly_connected_chain_adjacent_cells(pairs)
+        endpoints = {k for k, v in adjacencies.items() if len(v) == 1}
+        return self.match_endpoints_with_adjacencies(adjacencies, endpoints)
+
+    def match_endpoints_with_adjacencies(self, adjacencies, endpoints):
+        """Match each endpoint cell with adjacent cells and return the
+        results after pruning duplicates."""
+        chains = [[cell] for cell in endpoints]
+        no_change_counter = 0
+        while (
+                max([chain[0] == chain[-1] or chain[-1] not in endpoints
+                     for chain in chains])
+        ):
+            no_change_counter = 0
+            for chain in chains:
+                cell: Cell = chain[-1]
+                connected: set[Cell] = {c for c in adjacencies[cell]}
+                for checked in chain:
+                    connected -= {checked}
+                if len(connected) == 0:
+                    no_change_counter += 1
+                    continue
+                elif len(connected) == 1:
+                    chain.append(next(iter(connected)))
+                else:
+                    chains.remove(chain)
+                    for other_cell in connected:
+                        new_chain = [_cell for _cell in chain]
+                        new_chain.append(other_cell)
+                        chains.append(new_chain)
+            if no_change_counter == len(chains):
+                break
+        self.remove_duplicate_chains(chains)
+        return chains
+
+    def remove_duplicate_chains(self, chains: list[list[Cell]]) -> None:
+        """Remove colour_chains from the input that are either too short or
+        duplicates (but reversed)."""
+        chain_pairs = ((x, y) for x, y in combinations(chains, r=2) if len(x) == len(y))
+        for x, y in chain_pairs:
+            if x in chains and len(x) <= 2:
+                chains.remove(x)
+            if y in chains and x == y[::-1]:
+                chains.remove(y)
+
+    def strongly_connected_chain_adjacent_cells(self, pairs) -> dict[Cell, set[Cell]]:
+        """Return a dictionary mapping each cell appearing in pairs to each
+        cell it shares a pair with."""
+        flat_cells = {cell for pair in pairs for cell in pair}
+        chain_dict = {
+            cell: set()
+            for cell in flat_cells
+        }
+        for k in chain_dict:
+            pairs_with_k = [set(pair) for pair in pairs if k in pair]
+            for pair in pairs_with_k:
+                chain_dict[k].update(pair - {k})
+        return chain_dict
+
+    def colour_pairs_for_strongly_connected_chains(self, chains) -> list[list[list[Cell]]]:
+        result = []
+        for chain in chains:
+            evens = []
+            odds = []
+            for i, cell in enumerate(chain):
+                if i % 2 == 0:
+                    evens.append(cell)
+                elif i % 2 == 1:
+                    odds.append(cell)
+            result.append([evens, odds])
+        return result
+
+    def cells_seen_by_colour_chains(self, colour_chains: list[list[list[Cell]]]) -> set[Cell]:
+        result = set()
+        for chain_pair in colour_chains:
+            for seer_pair in product(*chain_pair):
+                seen = {self.sudoku[key] for key in Cell.intersection(*seer_pair)}
+                result.update({cell for cell in seen if cell.is_empty})
+        return result
+
+    def check_for_2_string_kite(self) -> bool:
+        for digit in range(1, 10):
+            strongly_connected_pairs = self.find_strongly_connected_pairs_with_digit(digit)
+            if not strongly_connected_pairs: continue
+            strongly_connected_chains = self.strongly_connected_cell_chains(strongly_connected_pairs)
+            coloured_chains = self.colour_pairs_for_strongly_connected_chains(strongly_connected_chains)
+            seen_cells = self.cells_seen_by_colour_chains(coloured_chains)
+            if self.remove_digits_from_cells(digit, *seen_cells):
+                return True
+        return False
