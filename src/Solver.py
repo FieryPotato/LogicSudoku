@@ -1,7 +1,7 @@
 from collections.abc import Iterable
-from copy import deepcopy, copy
+from copy import deepcopy
 from itertools import combinations, product
-from typing import Optional, Generator, Union
+from typing import Optional, Generator, Union, Any
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -771,7 +771,7 @@ class Solver:
             result.append([evens, odds])
         return result
 
-    def cells_seen_by_colour_chains(self, colour_chains: list[list[list[Cell]]]) -> set[Cell]:
+    def cells_seen_by_colour_chains(self, colour_chains: list[list[list[Cell]]]) -> set[Union[Cell, Any]]:
         result = set()
         for chain_pair in colour_chains:
             for seer_pair in product(*chain_pair):
