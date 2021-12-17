@@ -807,10 +807,12 @@ class Solver:
         for digit, group_type in product(range(1, 10), RC):
             iter_group = LITERALS[group_type]["iter_group"]
             for group_pair in combinations(getattr(self.sudoku, iter_group), r=2):
-                if (finned_x_wing_groups := self.finned_x_wing_groups(digit, *group_pair)) is None: continue
+                if (finned_x_wing_groups := self.finned_x_wing_groups(digit, *group_pair)) is None:
+                    continue
+
                 x_wing_group, fin_group = finned_x_wing_groups
-                affected_cells = self.finned_x_wing_affected_cells(group_type, x_wing_group, fin_group)
-                if affected_cells is None: continue
+                if (affected_cells := self.finned_x_wing_affected_cells(group_type, x_wing_group, fin_group)) is None:
+                    continue
                 if self.remove_digits_from_cells(digit, *affected_cells):
                     return True
         return False
