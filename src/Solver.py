@@ -804,40 +804,33 @@ class Solver:
         return False
 
     def check_for_finned_xwings(self) -> bool:
-        for digit in range(1, 10):
-            for group_type in RC:
-                iter_group = LITERALS[group_type]["iter_group"]
-                for group_pair in combinations(getattr(self.sudoku, iter_group), r=2):
-                    x_wing_group = []
-                    fin_group = []
-                    for group in group_pair:
-                        if len([cell for cell in group if digit in cell]) == 2:
-                            x_wing_group = group
-                        elif len([cell for cell in group if digit in cell]) in {3, 4}:
-                            fin_group = group
-                        else: break
-                    if not (x_wing_group and fin_group): continue
-                    x_wing_group: list[Cell] = [cell for cell in x_wing_group if digit in cell]
-                    fin_group: list[Cell] = [cell for cell in fin_group if digit in cell]
-                    finned_x_wing: list[Cell] = self.x_wing_if_it_has_fins(group_type, fin_group, x_wing_group)
-                    if not finned_x_wing: continue
-                    fins: set[Cell] = set(fin_group) - set(finned_x_wing)
-                    for cell in set(fin_group) - set(fins):
-                        if self.cells_share_a_box(cell, *fins):
-                            affected_finned_cell: Cell = cell
-                            break
-                    else:
-                        continue
-                    opposite_group = LITERALS[group_type]["opposite_group"]
-                    opposite_axis = LITERALS[group_type]["opposite_axis"]
-                    affected_box: list[Cell] = getattr(self.sudoku, "box")(affected_finned_cell.box_num)
-                    affected_axis: int = getattr(affected_finned_cell, opposite_axis)
-                    affected_non_box_group: list[Cell] = getattr(self.sudoku, opposite_group)(affected_axis)
-                    affected_cells = {cell for cell in affected_box if cell in affected_non_box_group}
-                    affected_cells -= set(fin_group).union(set(x_wing_group))
-                    if self.remove_digits_from_cells(digit, *affected_cells):
-                        return True
+        for digit, group_type in product(range(1, 10), RC):
+            iter_group = LITERALS[group_type]["iter_group"]
+            for group_pair in combinations(getattr(self.sudoku, iter_group), r=2):
+                if (finned_x_wing_groups := self.finned_x_wing_groups(digit, *group_pair)) is None: continue
+                x_wing_group, fin_group = finned_x_wing_groups
+                affected_cells = self.finned_x_wing_affected_cells(group_type, x_wing_group, fin_group)
+                if affected_cells is None: continue
+                if self.remove_digits_from_cells(digit, *affected_cells):
+                    return True
         return False
+
+    def finned_x_wing_groups(self, digit, a: list[Cell], b: list[Cell]) -> Optional[tuple[list[Cell], list[Cell]]]:
+        """Return two line groups if they might contain a finned x-wing. Otherwise return two empty lists"""
+        x_wing_group = []
+        fin_group = []
+        for group in a, b:
+            if len([cell for cell in group if digit in cell]) == 2:
+                x_wing_group = group
+            elif len([cell for cell in group if digit in cell]) in {3, 4}:
+                fin_group = group
+            else:
+                break
+        x_wing_group: list[Cell] = [cell for cell in x_wing_group if digit in cell]
+        fin_group: list[Cell] = [cell for cell in fin_group if digit in cell]
+        if x_wing_group and fin_group:
+            return x_wing_group, fin_group
+        return None
 
     def x_wing_if_it_has_fins(self, group_type, fin_group, x_wing_group) -> list:
         """Return the x-wing hidden inside a finned x-wing if such an x-wing exists."""
@@ -852,3 +845,25 @@ class Solver:
             if self.cells_form_a_rectangle(*checktangle):
                 return checktangle
         return []
+
+    def finned_x_wing_affected_cells(self, group_type, x_wing_group, fin_group) -> Optional[set[Cell]]:
+        if not (finned_x_wing := self.x_wing_if_it_has_fins(group_type, fin_group, x_wing_group)):
+            return None
+        fins: set[Cell] = set(fin_group) - set(finned_x_wing)
+        for cell in set(fin_group) - set(fins):
+            if self.cells_share_a_box(cell, *fins):
+                affected_finned_cell: Cell = cell
+                break
+        else:
+            return None
+
+        opposite_group = LITERALS[group_type]["opposite_group"]
+        opposite_axis = LITERALS[group_type]["opposite_axis"]
+
+        affected_box: list[Cell] = getattr(self.sudoku, "box")(affected_finned_cell.box_num)
+        affected_axis: int = getattr(affected_finned_cell, opposite_axis)
+        affected_non_box_group: list[Cell] = getattr(self.sudoku, opposite_group)(affected_axis)
+        affected_cells = {cell for cell in affected_box if cell in affected_non_box_group}
+        affected_cells -= set(fin_group).union(set(x_wing_group))
+
+        return affected_cells
