@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from copy import deepcopy
-from itertools import combinations, product
+from itertools import combinations, product, permutations
 from typing import Optional, Generator, Union, Any
 
 from src.Cell import Cell
@@ -210,16 +210,29 @@ class Solver:
         return False
 
     @staticmethod
-    def cells_share_a_row(*cells: Cell) -> bool:
+    def cells_share_a_row(*cells: Iterable[Cell]) -> bool:
+        cells = {cell for container in cells for cell in container}
         return len({cell.y for cell in cells}) == 1
 
     @staticmethod
-    def cells_share_a_column(*cells: Cell) -> bool:
+    def cells_share_a_column(*cells: Iterable[Cell]) -> bool:
+        cells = {cell for container in cells for cell in container}
         return len({cell.x for cell in cells}) == 1
 
     @staticmethod
-    def cells_share_a_box(*cells: Cell) -> bool:
+    def cells_share_a_box(*cells: Iterable[Cell]) -> bool:
+        """Return whether input cells share a box."""
         return len({cell.box_num for cell in cells}) == 1
+
+    @staticmethod
+    def cells_form_a_rectangle(*cells: Iterable[Cell]) -> bool:
+        """Return whether input cells form a rectangle."""
+        if len(cells) != 4: return False
+        for order in permutations(cells, r=4):
+            a, b, c, d = order
+            if a.x == c.x and a.y == b.y and d.x == b.x and d.y == c.y:
+                return True
+        return False
 
     @staticmethod
     def only_one_cell_in_group_can_contain_digit(digit, group) -> bool:
@@ -789,3 +802,53 @@ class Solver:
             if self.remove_digits_from_cells(digit, *seen_cells):
                 return True
         return False
+
+    def check_for_finned_xwings(self) -> bool:
+        for digit in range(1, 10):
+            for group_type in RC:
+                iter_group = LITERALS[group_type]["iter_group"]
+                for group_pair in combinations(getattr(self.sudoku, iter_group), r=2):
+                    x_wing_group = []
+                    fin_group = []
+                    for group in group_pair:
+                        if len([cell for cell in group if digit in cell]) == 2:
+                            x_wing_group = group
+                        elif len([cell for cell in group if digit in cell]) in {3, 4}:
+                            fin_group = group
+                        else: break
+                    if not (x_wing_group and fin_group): continue
+                    x_wing_group: list[Cell] = [cell for cell in x_wing_group if digit in cell]
+                    fin_group: list[Cell] = [cell for cell in fin_group if digit in cell]
+                    finned_x_wing: list[Cell] = self.x_wing_if_it_has_fins(group_type, fin_group, x_wing_group)
+                    if not finned_x_wing: continue
+                    fins: set[Cell] = set(fin_group) - set(finned_x_wing)
+                    for cell in set(fin_group) - set(fins):
+                        if self.cells_share_a_box(cell, *fins):
+                            affected_finned_cell: Cell = cell
+                            break
+                    else:
+                        continue
+                    opposite_group = LITERALS[group_type]["opposite_group"]
+                    opposite_axis = LITERALS[group_type]["opposite_axis"]
+                    affected_box: list[Cell] = getattr(self.sudoku, "box")(affected_finned_cell.box_num)
+                    affected_axis: int = getattr(affected_finned_cell, opposite_axis)
+                    affected_non_box_group: list[Cell] = getattr(self.sudoku, opposite_group)(affected_axis)
+                    affected_cells = {cell for cell in affected_box if cell in affected_non_box_group}
+                    affected_cells -= set(fin_group).union(set(x_wing_group))
+                    if self.remove_digits_from_cells(digit, *affected_cells):
+                        return True
+        return False
+
+    def x_wing_if_it_has_fins(self, group_type, fin_group, x_wing_group) -> list:
+        """Return the x-wing hidden inside a finned x-wing if such an x-wing exists."""
+        opposite_axis = LITERALS[group_type]["opposite_axis"]
+        for fin_0, fin_1 in combinations(fin_group, r=2):
+            checktangle = [
+                x_wing_group[0],
+                fin_0,
+                x_wing_group[1],
+                fin_1
+            ]
+            if self.cells_form_a_rectangle(*checktangle):
+                return checktangle
+        return []

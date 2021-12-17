@@ -1,9 +1,9 @@
-import itertools
+from itertools import product, permutations, combinations
 from typing import ItemsView, Union, KeysView, Iterator, Generator, overload
 
 from src.Cell import Cell
 
-CELL_KEYS: list = [(j, i) for i, j in itertools.product(range(9), repeat=2)]
+CELL_KEYS: list = [(j, i) for i, j in product(range(9), repeat=2)]
 BOX_MAP: dict = {
     0: ((0, 0), (1, 0), (2, 0),
         (0, 1), (1, 1), (2, 1),
@@ -206,10 +206,14 @@ class Sudoku:
             self[key].started_empty = True
 
     def rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
+        """Yield cells arranged in a rectangle"""
         for row in self.rows:
-            for top_left, top_right in itertools.combinations(row, r=2):
+            for top_left, top_right in combinations(row, r=2):
                 for bottom_left in [self[key]
                                     for key in top_left.visible_cells("column")
                                     if key[1] > top_left.y]:
                     bottom_right = self[top_right.x, bottom_left.y]
                     yield top_left, top_right, bottom_left, bottom_right
+
+
+
