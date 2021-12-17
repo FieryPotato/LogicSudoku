@@ -211,12 +211,10 @@ class Solver:
 
     @staticmethod
     def cells_share_a_row(*cells: Iterable[Cell]) -> bool:
-        cells = {cell for container in cells for cell in container}
         return len({cell.y for cell in cells}) == 1
 
     @staticmethod
     def cells_share_a_column(*cells: Iterable[Cell]) -> bool:
-        cells = {cell for container in cells for cell in container}
         return len({cell.x for cell in cells}) == 1
 
     @staticmethod
