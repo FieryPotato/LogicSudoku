@@ -82,13 +82,13 @@ class Test_2StringKite_Methods(unittest.TestCase):
     def test_find_strongly_connected_chains(self):
         self.assertEqual(
             self.strongly_connected_chains,
-            self.solver.strongly_connected_cell_chains(self.strongly_connected_9_pair_cells)
+            strongly_connected_cell_chains(self.strongly_connected_9_pair_cells)
         )
 
     def test_isolate_colour_chains(self):
         self.assertEqual(
             self.colour_chains,
-            self.solver.colour_pairs_for_strongly_connected_chains(self.strongly_connected_chains)
+            colour_pairs_for_strongly_connected_chains(self.strongly_connected_chains)
         )
 
     def test_find_cells_seen_by_kite(self):

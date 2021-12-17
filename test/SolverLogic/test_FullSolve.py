@@ -1,3 +1,13 @@
+"""
+Test the results of running the solver on varying levels of puzzle.
+These tests become less useful the more functionality and logic we add
+to the solver, but these are fun to run.
+
+The more difficult ones take long enough that I don't like running them
+with the rest of the test suite.
+"""
+
+
 import unittest
 
 from src.Solver import Solver
