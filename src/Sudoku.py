@@ -215,5 +215,7 @@ class Sudoku:
                     bottom_right = self[top_right.x, bottom_left.y]
                     yield top_left, top_right, bottom_left, bottom_right
 
-
-
+    def box_contains_filled_digit(self, box_num, digit) -> bool:
+        """Return whether input box of self contains input digit."""
+        box_digits = {cell.digit for cell in self.box(box_num) if not cell.is_empty}
+        return digit in box_digits
