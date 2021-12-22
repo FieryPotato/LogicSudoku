@@ -35,15 +35,15 @@ class TestEmptyRectangleFunctions(unittest.TestCase):
         self.sudoku.post_init(edited)
         self.solver = Solver(self.sudoku)
 
-    def test_group_contains_filled_digit(self):
-        self.assertFalse(self.sudoku.group_contains_filled_digit("box", group_num=0, digit=1))
-        self.assertTrue(self.sudoku.group_contains_filled_digit("box", group_num=5, digit=8))
+    def test_house_contains_filled_digit(self):
+        self.assertFalse(self.sudoku.house_contains_filled_digit("box", house_num=0, digit=1))
+        self.assertTrue(self.sudoku.house_contains_filled_digit("box", house_num=5, digit=8))
 
-    def test_find_cells_in_group_with_digit_possible(self):
+    def test_find_cells_in_house_with_digit_possible(self):
         possible_3_keys_in_box_1 = {self.sudoku[key] for key in [(5, 0), (3, 1), (4, 1)]}
         self.assertEqual(
             possible_3_keys_in_box_1,
-            self.sudoku.cells_in_group_with_digit_possible("box", group_num=1, digit=3)
+            self.sudoku.cells_in_house_with_digit_possible("box", house_num=1, digit=3)
         )
 
 

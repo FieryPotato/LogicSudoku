@@ -13,27 +13,27 @@ RCB = tuple(RC + ("box",))
 
 LITERALS = {
     "row": {
-        "iter_group": "rows",
-        "single_group": "row",
+        "iter_house": "rows",
+        "single_house": "row",
         "check_axis": "y",
-        "opposite_iter_group": "columns",
-        "opposite_group": "column",
+        "opposite_iter_house": "columns",
+        "opposite_house": "column",
         "opposite_axis": "x",
     },
     "column": {
-        "iter_group": "columns",
-        "single_group": "column",
+        "iter_house": "columns",
+        "single_house": "column",
         "check_axis": "x",
-        "opposite_iter_group": "rows",
-        "opposite_group": "row",
+        "opposite_iter_house": "rows",
+        "opposite_house": "row",
         "opposite_axis": "y"
     },
     "box": {
-        "iter_group": "boxes",
-        "single_group": "box",
+        "iter_house": "boxes",
+        "single_house": "box",
         "check_axis": "box_num",
-        "opposite_iter_group": None,
-        "opposite_group": None,
+        "opposite_iter_house": None,
+        "opposite_house": None,
         "opposite_axis": None
     }
 }
@@ -108,31 +108,31 @@ class Solver:
 
     def fill_hidden_singles(self) -> bool:
         for cell in self.sudoku:
-            for digit, group_type in product(cell.pencil_marks, RCB):
-                axis = LITERALS[group_type]["check_axis"]
-                group = getattr(self.sudoku, group_type)(getattr(cell, axis))
-                if only_one_cell_in_group_can_contain_digit(digit, group):
+            for digit, house_type in product(cell.pencil_marks, RCB):
+                axis = LITERALS[house_type]["check_axis"]
+                house = getattr(self.sudoku, house_type)(getattr(cell, axis))
+                if only_one_cell_in_house_can_contain_digit(digit, house):
                     cell.fill(digit)
                     self.sudoku.update_pencil_marks()
                     return True
         return False
 
     def check_for_naked_tuple(self) -> bool:
-        for size, group_type in product(range(2, 5), RCB_ITER):
-            for group in getattr(self.sudoku, group_type):
-                empty_cells = [cell for cell in group if cell.is_empty]
+        for size, house_type in product(range(2, 5), RCB_ITER):
+            for house in getattr(self.sudoku, house_type):
+                empty_cells = [cell for cell in house if cell.is_empty]
                 candidate_tuples = combinations(empty_cells, r=size)
                 for candidate_tuple in candidate_tuples:
                     if cells_form_naked_tuple(*candidate_tuple):
-                        if clear_naked_tuples(group, candidate_tuple):
+                        if clear_naked_tuples(house, candidate_tuple):
                             return True
         return False
 
     def check_for_locked_candidate(self) -> bool:
-        for group_type, digit in product(RC_ITER, range(1, 10)):
-            for group in getattr(self.sudoku, group_type):
+        for house_type, digit in product(RC_ITER, range(1, 10)):
+            for house in getattr(self.sudoku, house_type):
                 cells_with_digit = {cell
-                                    for cell in group
+                                    for cell in house
                                     if digit in cell}
                 if cells_share_a_box(*cells_with_digit):
                     if self.clear_locked_candidate(cells_with_digit, digit):
@@ -148,21 +148,21 @@ class Solver:
 
     def check_for_skyscraper(self) -> bool:
         for digit in range(1, 10):
-            for group_type in RC:
-                iter_group = LITERALS[group_type]["iter_group"]
-                groups = getattr(self.sudoku, iter_group)
-                for group_pair in combinations(groups, r=2):
-                    trimmed = [{cell for cell in group_pair[n] if digit in cell} for n in range(2)]
+            for house_type in RC:
+                iter_house = LITERALS[house_type]["iter_house"]
+                houses = getattr(self.sudoku, iter_house)
+                for house_pair in combinations(houses, r=2):
+                    trimmed = [{cell for cell in house_pair[n] if digit in cell} for n in range(2)]
                     if not min([len(g) == 2 for g in trimmed]): continue
-                    if self.clear_skyscraper(digit, trimmed, group_type):
+                    if self.clear_skyscraper(digit, trimmed, house_type):
                         return True
         return False
 
-    def clear_skyscraper(self, digit, group_pair, group_type) -> bool:
-        for pair in product(*group_pair):
-            if cells_share_opposite_group(group_type, *pair):
+    def clear_skyscraper(self, digit, house_pair, house_type) -> bool:
+        for pair in product(*house_pair):
+            if cells_share_opposite_house(house_type, *pair):
                 skyscraper = set(pair)
-                seers = (set(group_pair[0]).union(set(group_pair[1]))) - set(skyscraper)
+                seers = (set(house_pair[0]).union(set(house_pair[1]))) - set(skyscraper)
                 cells = {self.sudoku[key] for key in Cell.intersection(*seers)}
                 if remove_digits_from_cells(digit, *cells):
                     return True
@@ -188,48 +188,48 @@ class Solver:
 
     def check_for_hidden_tuple(self) -> bool:
         sizes = range(2, 5)
-        for size, group_type in product(sizes, RCB):
-            iter_group = LITERALS[group_type]["iter_group"]
-            groups = getattr(self.sudoku, iter_group)
-            for group in groups:
-                if clear_hidden_tuple(group, size):
+        for size, house_type in product(sizes, RCB):
+            iter_house = LITERALS[house_type]["iter_house"]
+            houses = getattr(self.sudoku, iter_house)
+            for house in houses:
+                if clear_hidden_tuple(house, size):
                     return True
         return False
 
     def check_for_fish(self) -> bool:
         """Fish include X-wings, Swordfish, and Jellyfish."""
         sizes = 2, 3, 4
-        for size, group_type, digit in product(sizes, RC, range(1, 10)):
-            candidate_groups = self.fish_candidate_groups(digit, group_type, size)
-            fish_groups = trimmed_fish_groups(candidate_groups, group_type, size)
-            if not fish_groups: continue
-            if self.clear_fish(digit, fish_groups, group_type):
+        for size, house_type, digit in product(sizes, RC, range(1, 10)):
+            candidate_houses = self.fish_candidate_houses(digit, house_type, size)
+            fish_houses = trimmed_fish_houses(candidate_houses, house_type, size)
+            if not fish_houses: continue
+            if self.clear_fish(digit, fish_houses, house_type):
                 return True
         return False
 
-    def clear_fish(self, digit, fish_groups, group_type) -> bool:
+    def clear_fish(self, digit, fish_houses, house_type) -> bool:
         operated = False
-        opposite_axis = LITERALS[group_type]["opposite_axis"]
-        opposite_group = LITERALS[group_type]["opposite_group"]
+        opposite_axis = LITERALS[house_type]["opposite_axis"]
+        opposite_house = LITERALS[house_type]["opposite_house"]
 
-        perpendicular_fish_groups = perpendicular_groups(fish_groups, group_type)
+        perpendicular_fish_houses = perpendicular_houses(fish_houses, house_type)
 
-        for perp_group in perpendicular_fish_groups:
-            group_index = (getattr(next(iter(perp_group)), opposite_axis))
-            group = getattr(self.sudoku, opposite_group)(group_index)
-            cells = [cell for cell in group if cell not in perp_group]
+        for perp_house in perpendicular_fish_houses:
+            house_index = (getattr(next(iter(perp_house)), opposite_axis))
+            house = getattr(self.sudoku, opposite_house)(house_index)
+            cells = [cell for cell in house if cell not in perp_house]
             if remove_digits_from_cells(digit, *cells):
                 operated = True
         return operated
 
-    def fish_candidate_groups(self, digit, group_type, size) -> list[list[Cell]]:
-        iter_group = LITERALS[group_type]["iter_group"]
-        candidate_groups = []
-        for group in getattr(self.sudoku, iter_group):
-            candidate_cells = [cell for cell in group if digit in cell]
+    def fish_candidate_houses(self, digit, house_type, size) -> list[list[Cell]]:
+        iter_house = LITERALS[house_type]["iter_house"]
+        candidate_houses = []
+        for house in getattr(self.sudoku, iter_house):
+            candidate_cells = [cell for cell in house if digit in cell]
             if 2 <= len(candidate_cells) <= size:
-                candidate_groups.append(candidate_cells)
-        return candidate_groups
+                candidate_houses.append(candidate_cells)
+        return candidate_houses
 
     def check_for_ywing(self) -> bool:
         triples = self.find_ywing_triples()
@@ -384,10 +384,10 @@ class Solver:
                 continue
         return False
 
-    def clear_pointing_rectangle(self, pointing_pair, extra_digits, group) -> bool:
+    def clear_pointing_rectangle(self, pointing_pair, extra_digits, house) -> bool:
         operated = False
         c, d = pointing_pair
-        for pointing in [self.sudoku[key] for key in getattr(c, group)]:
+        for pointing in [self.sudoku[key] for key in getattr(c, house)]:
             if pointing.pencil_marks == extra_digits:
                 pointed_keys = Cell.intersection(c, d, pointing)
                 pointed = [self.sudoku[key] for key in pointed_keys]
@@ -410,8 +410,8 @@ class Solver:
         for check_cell in rectangle:
             pencil_marks = check_cell.pencil_marks
             if len(pencil_marks) == 2:
-                group = {*rectangle} - {check_cell}
-                if all_cells_in_group_contain_pencil_marks(group, pencil_marks):
+                house = {*rectangle} - {check_cell}
+                if all_cells_in_house_contain_pencil_marks(house, pencil_marks):
                     opposite = {opp
                                 for opp in rectangle
                                 if opp.x != check_cell.x and opp.y != check_cell.y}.pop()
@@ -421,12 +421,12 @@ class Solver:
         return False
 
     def clear_single_hidden_rectangle(self, digit, focus, opposite) -> bool:
-        for group_type in RC:
-            check_axis = LITERALS[group_type]["check_axis"]
-            single_group = LITERALS[group_type]["single_group"]
+        for house_type in RC:
+            check_axis = LITERALS[house_type]["check_axis"]
+            single_house = LITERALS[house_type]["single_house"]
 
-            group = getattr(self.sudoku, single_group)(getattr(opposite, check_axis))
-            if not self.cells_are_strongly_connected_by_digit(digit, *group):
+            house = getattr(self.sudoku, single_house)(getattr(opposite, check_axis))
+            if not self.cells_are_strongly_connected_by_digit(digit, *house):
                 break
         else:
             digit_to_remove = focus.pencil_marks - {digit}
@@ -435,13 +435,13 @@ class Solver:
         return False
 
     def check_for_hidden_rectangle_pairs(self, rectangle) -> bool:
-        for group_type, pair in product(RC, combinations(rectangle, r=2)):
-            check_axis = LITERALS[group_type]["check_axis"]
+        for house_type, pair in product(RC, combinations(rectangle, r=2)):
+            check_axis = LITERALS[house_type]["check_axis"]
 
             if cells_share_axis(check_axis, *pair) and cells_form_naked_tuple(*pair):
                 pencil_marks = pair[0].pencil_marks
                 opposite_pair: set[Cell, Cell] = {*rectangle} - {*pair}
-                if all_cells_in_group_contain_pencil_marks(opposite_pair, pencil_marks) is False:
+                if all_cells_in_house_contain_pencil_marks(opposite_pair, pencil_marks) is False:
                     continue
                 for digit in pencil_marks:
                     if self.cells_are_strongly_connected_by_digit(digit, *opposite_pair):
@@ -453,26 +453,26 @@ class Solver:
         row, or column that can be digit."""
         if cells_share_a_column(*cells):
             axis = "x"
-            group_type = "column"
+            house_type = "column"
         elif cells_share_a_row(*cells):
             axis = "y"
-            group_type = "row"
+            house_type = "row"
         elif cells_share_a_box(*cells):
-            axis = "group_num"
-            group_type = "box"
+            axis = "house_num"
+            house_type = "box"
         else:
             return False
         return len([
             cell
-            for cell in getattr(self.sudoku, group_type)(getattr([*cells][0], axis))
+            for cell in getattr(self.sudoku, house_type)(getattr([*cells][0], axis))
             if digit in cell
         ]) == 2
 
     def find_strongly_connected_pairs_with_digit(self, digit: int) -> set[tuple[Cell, Cell]]:
         pairs = []
-        for group_type in RCB_ITER:
-            for group in getattr(self.sudoku, group_type):
-                cells_with_digit = {cell for cell in group if digit in cell}
+        for house_type in RCB_ITER:
+            for house in getattr(self.sudoku, house_type):
+                cells_with_digit = {cell for cell in house if digit in cell}
                 if len(cells_with_digit) == 2:
                     pairs.append(tuple(cells_with_digit))
         return set(pairs)
@@ -497,38 +497,38 @@ class Solver:
         return False
 
     def check_for_finned_xwings(self) -> bool:
-        for digit, group_type in product(range(1, 10), RC):
-            iter_group = LITERALS[group_type]["iter_group"]
-            for group_pair in combinations(getattr(self.sudoku, iter_group), r=2):
-                if (finned_groups := finned_x_wing_groups(digit, *group_pair)) is None:
+        for digit, house_type in product(range(1, 10), RC):
+            iter_house = LITERALS[house_type]["iter_house"]
+            for house_pair in combinations(getattr(self.sudoku, iter_house), r=2):
+                if (finned_houses := finned_x_wing_houses(digit, *house_pair)) is None:
                     continue
 
-                x_wing_group, fin_group = finned_groups
-                if (affected_cells := self.finned_x_wing_affected_cells(group_type, x_wing_group, fin_group)) is None:
+                x_wing_house, fin_house = finned_houses
+                if (affected_cells := self.finned_x_wing_affected_cells(house_type, x_wing_house, fin_house)) is None:
                     continue
                 if remove_digits_from_cells(digit, *affected_cells):
                     return True
         return False
 
-    def finned_x_wing_affected_cells(self, group_type, x_wing_group, fin_group) -> Optional[set[Cell]]:
-        if not (finned_x_wing := x_wing_if_it_has_fins(fin_group, x_wing_group)):
+    def finned_x_wing_affected_cells(self, house_type, x_wing_house, fin_house) -> Optional[set[Cell]]:
+        if not (finned_x_wing := x_wing_if_it_has_fins(fin_house, x_wing_house)):
             return None
-        fins: set[Cell] = set(fin_group) - set(finned_x_wing)
-        for cell in set(fin_group) - set(fins):
+        fins: set[Cell] = set(fin_house) - set(finned_x_wing)
+        for cell in set(fin_house) - set(fins):
             if cells_share_a_box(cell, *fins):
                 affected_finned_cell: Cell = cell
                 break
         else:
             return None
 
-        opposite_group = LITERALS[group_type]["opposite_group"]
-        opposite_axis = LITERALS[group_type]["opposite_axis"]
+        opposite_house = LITERALS[house_type]["opposite_house"]
+        opposite_axis = LITERALS[house_type]["opposite_axis"]
 
         affected_box: list[Cell] = getattr(self.sudoku, "box")(affected_finned_cell.box_num)
         affected_axis: int = getattr(affected_finned_cell, opposite_axis)
-        affected_non_box_group: list[Cell] = getattr(self.sudoku, opposite_group)(affected_axis)
-        affected_cells = {cell for cell in affected_box if cell in affected_non_box_group}
-        affected_cells -= set(fin_group).union(set(x_wing_group))
+        affected_non_box_house: list[Cell] = getattr(self.sudoku, opposite_house)(affected_axis)
+        affected_cells = {cell for cell in affected_box if cell in affected_non_box_house}
+        affected_cells -= set(fin_house).union(set(x_wing_house))
 
         return affected_cells
 
@@ -612,21 +612,21 @@ def strongly_connected_cell_chains(pairs: set[tuple[Cell, Cell]]):
     return match_endpoints_with_adjacencies(adjacencies, endpoints)
 
 
-def finned_x_wing_groups(digit, a: list[Cell], b: list[Cell]) -> Optional[tuple[list[Cell], list[Cell]]]:
-    """Return two line groups if they might contain a finned x-wing. Otherwise return two empty lists"""
-    x_wing_group = []
-    fin_group = []
-    for group in a, b:
-        if len([cell for cell in group if digit in cell]) == 2:
-            x_wing_group = group
-        elif len([cell for cell in group if digit in cell]) in {3, 4}:
-            fin_group = group
+def finned_x_wing_houses(digit, a: list[Cell], b: list[Cell]) -> Optional[tuple[list[Cell], list[Cell]]]:
+    """Return two line houses if they might contain a finned x-wing. Otherwise return two empty lists"""
+    x_wing_house = []
+    fin_house = []
+    for house in a, b:
+        if len([cell for cell in house if digit in cell]) == 2:
+            x_wing_house = house
+        elif len([cell for cell in house if digit in cell]) in {3, 4}:
+            fin_house = house
         else:
             break
-    x_wing_group: list[Cell] = [cell for cell in x_wing_group if digit in cell]
-    fin_group: list[Cell] = [cell for cell in fin_group if digit in cell]
-    if x_wing_group and fin_group:
-        return x_wing_group, fin_group
+    x_wing_house: list[Cell] = [cell for cell in x_wing_house if digit in cell]
+    fin_house: list[Cell] = [cell for cell in fin_house if digit in cell]
+    if x_wing_house and fin_house:
+        return x_wing_house, fin_house
     return None
 
 
@@ -661,8 +661,8 @@ def cells_form_a_rectangle(*cells: Cell) -> bool:
     return False
 
 
-def only_one_cell_in_group_can_contain_digit(digit, group) -> bool:
-    return len({cell for cell in group if digit in cell}) == 1
+def only_one_cell_in_house_can_contain_digit(digit, house) -> bool:
+    return len({cell for cell in house if digit in cell}) == 1
 
 
 def cells_form_hidden_tuple(digits, candidate_tuple) -> bool:
@@ -677,8 +677,8 @@ def cells_form_hidden_tuple(digits, candidate_tuple) -> bool:
     return cells_individually_contain_at_least_two_of_digits and cells_together_contain_all_digits
 
 
-def cells_in_group_with_digits(digits, group):
-    empty_cells = {cell for cell in group if cell.is_empty}
+def cells_in_house_with_digits(digits, house):
+    empty_cells = {cell for cell in house if cell.is_empty}
     cells_with_digits = [
         {cell for cell in empty_cells if digit in cell} for digit in digits
     ]
@@ -686,22 +686,22 @@ def cells_in_group_with_digits(digits, group):
     return flattened_cells
 
 
-def perpendicular_groups(group_list: list[list[Cell]], group_type: str) -> list[list[Cell]]:
+def perpendicular_houses(house_list: list[list[Cell]], house_type: str) -> list[list[Cell]]:
     """Converts lists of cells grouped by row or column into lists
     of those same cells grouped by column or row, respectively."""
-    opposite_axis = LITERALS[group_type]["opposite_axis"]
-    groups = []
-    all_cells = [cell for group in group_list for cell in group]
+    opposite_axis = LITERALS[house_type]["opposite_axis"]
+    houses = []
+    all_cells = [cell for house in house_list for cell in house]
     axes = {getattr(cell, opposite_axis) for cell in all_cells}
     for axis in axes:
-        groups.append([cell for cell in all_cells if getattr(cell, opposite_axis) == axis])
-    return groups
+        houses.append([cell for cell in all_cells if getattr(cell, opposite_axis) == axis])
+    return houses
 
 
-def trimmed_fish_groups(candidate_groups, group_type, size) -> Optional[tuple]:
+def trimmed_fish_houses(candidate_houses, house_type, size) -> Optional[tuple]:
     """Return group of cells that could be an xwing, swordfish, or jellyfish."""
-    opposite_axis = LITERALS[group_type]["opposite_axis"]
-    for candidates in combinations(candidate_groups, r=size):
+    opposite_axis = LITERALS[house_type]["opposite_axis"]
+    for candidates in combinations(candidate_houses, r=size):
         total_axes = set()
         for line in candidates:
             total_axes.update([getattr(cell, opposite_axis) for cell in line])
@@ -796,7 +796,7 @@ def cells_form_naked_tuple(*cells) -> bool:
     """Return whether input cells cumulatively contain exactly as
     many possible digits as there are input cells."""
     pencil_marks = [cell.pencil_marks for cell in cells]
-    flattened_pms = {digit for group in pencil_marks for digit in group}
+    flattened_pms = {digit for house in pencil_marks for digit in house}
     if len(set.union(flattened_pms)) != len(cells):
         return False
     return True
@@ -809,11 +809,11 @@ def cells_share_axis(check_axis, *cells: Cell) -> bool:
     return len(axes) == 1
 
 
-def all_cells_in_group_contain_pencil_marks(group: Iterable[Cell], pencil_marks: set[int]) -> bool:
+def all_cells_in_house_contain_pencil_marks(house: Iterable[Cell], pencil_marks: set[int]) -> bool:
     """Return whether all cells in cells contain each digit in pencil_marks."""
     return min([
         cell.pencil_marks.issuperset(pencil_marks)
-        for cell in group
+        for cell in house
     ])
 
 
@@ -826,37 +826,37 @@ def clear_hidden_rectangle_pair(digit, pair, pencil_marks):
     return operated
 
 
-def clear_naked_tuples(group, tuple_cells):
-    non_members: set[Cell] = set(group) - set(tuple_cells)
+def clear_naked_tuples(house, tuple_cells):
+    non_members: set[Cell] = set(house) - set(tuple_cells)
     marks = [tuple(cell.pencil_marks) for cell in tuple_cells]
     options = {digit for pms in marks for digit in pms}
     if remove_digits_from_cells(options, *non_members):
         return True
 
 
-def cells_share_same_group(group_type, *cells) -> bool:
-    if group_type == "row":
+def cells_share_same_house(house_type, *cells) -> bool:
+    if house_type == "row":
         return cells_share_a_row(*cells)
-    elif group_type == "column":
+    elif house_type == "column":
         return cells_share_a_column(*cells)
     else:
-        raise ValueError(f"{group_type} is not a valid argument for"
-                         f" Solver.cells_share_same_group.")
+        raise ValueError(f"{house_type} is not a valid argument for"
+                         f" Solver.cells_share_same_house.")
 
 
-def cells_share_opposite_group(group_type, *cells) -> bool:
-    if group_type == "row":
+def cells_share_opposite_house(house_type, *cells) -> bool:
+    if house_type == "row":
         return cells_share_a_column(*cells)
-    elif group_type == "column":
+    elif house_type == "column":
         return cells_share_a_row(*cells)
     else:
-        raise ValueError(f"{group_type} is not a valid argument for"
-                         f"Solver.cells_share_opposite_group.")
+        raise ValueError(f"{house_type} is not a valid argument for"
+                         f"Solver.cells_share_opposite_house.")
 
 
-def clear_hidden_tuple(group, size) -> bool:
+def clear_hidden_tuple(house, size) -> bool:
     for digits in combinations(range(1, 10), r=size):
-        candidate_tuple = cells_in_group_with_digits(digits, group)
+        candidate_tuple = cells_in_house_with_digits(digits, house)
         if len(candidate_tuple) != size: continue
         if cells_form_hidden_tuple(digits, candidate_tuple):
             other_digits = set(range(1, 10)) - set(digits)
@@ -865,13 +865,13 @@ def clear_hidden_tuple(group, size) -> bool:
     return False
 
 
-def x_wing_if_it_has_fins(fin_group, x_wing_group) -> list:
+def x_wing_if_it_has_fins(fin_house, x_wing_house) -> list:
     """Return the x-wing hidden inside a finned x-wing if such an x-wing exists."""
-    for fin_0, fin_1 in combinations(fin_group, r=2):
+    for fin_0, fin_1 in combinations(fin_house, r=2):
         checktangle = [
-            x_wing_group[0],
+            x_wing_house[0],
             fin_0,
-            x_wing_group[1],
+            x_wing_house[1],
             fin_1
         ]
         if cells_form_a_rectangle(*checktangle):

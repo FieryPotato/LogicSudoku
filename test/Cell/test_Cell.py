@@ -18,11 +18,11 @@ class TestCell(unittest.TestCase):
         column = {(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8)}
         row = {(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)}
         box = {(1, 0), (2, 0), (0, 1), (1, 1), (1, 2), (0, 2), (2, 1), (2, 2)}
-        all_groups = set.union(*[column, row, box])
+        all_houses = set.union(*[column, row, box])
         self.assertEqual(column, test.visible_cells("column"))
         self.assertEqual(row, test.visible_cells("row"))
         self.assertEqual(box, test.visible_cells("box"))
-        self.assertEqual(all_groups, test.visible_cells())
+        self.assertEqual(all_houses, test.visible_cells())
 
     def test_sees(self):
         test_keys = [(0, 0), (0, 4), (4, 0), (4, 4), (7, 7), (8, 6)]

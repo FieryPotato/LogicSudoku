@@ -97,9 +97,9 @@ class Sudoku:
         """Return false if the sudoku has any duplicate digits in rows,
         columns, or boxes."""
         present_digits = set()
-        for group_type in "rows", "columns", "boxes":
-            for group in getattr(self, group_type):
-                for cell in group:
+        for house_type in "rows", "columns", "boxes":
+            for house in getattr(self, house_type):
+                for cell in house:
                     if not cell.is_empty:
                         if cell.digit in present_digits:
                             if return_cell is True:
@@ -215,11 +215,11 @@ class Sudoku:
                     bottom_right = self[top_right.x, bottom_left.y]
                     yield top_left, top_right, bottom_left, bottom_right
 
-    def group_contains_filled_digit(self, group_type, group_num, digit) -> bool:
+    def house_contains_filled_digit(self, house_type, house_num, digit) -> bool:
         """Return whether input box of self contains input digit."""
-        group_digits = {cell.digit for cell in getattr(self, group_type)(group_num) if not cell.is_empty}
-        return digit in group_digits
+        house_digits = {cell.digit for cell in getattr(self, house_type)(house_num) if not cell.is_empty}
+        return digit in house_digits
 
-    def cells_in_group_with_digit_possible(self, group_type, group_num, digit):
-        """Return cells in group that could contain digit."""
-        return {cell for cell in getattr(self, group_type)(group_num) if digit in cell}
+    def cells_in_house_with_digit_possible(self, house_type, house_num, digit):
+        """Return cells in house that could contain digit."""
+        return {cell for cell in getattr(self, house_type)(house_num) if digit in cell}

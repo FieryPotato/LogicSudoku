@@ -135,15 +135,15 @@ class Cell:
     def visible_cells(self, *args: str) -> set[tuple[int, int]]:
         """Return a set containing keys of each cell visible from this
         one (not including itself). If cells are given, return only visible
-        cells from groups in cells (Valid cells: "row", "column", "box")."""
+        cells from houses in cells (Valid cells: "row", "column", "box")."""
         if not args:
-            groups = "row", "column", "box"
+            houses = "row", "column", "box"
         else:
-            groups = args
+            houses = args
         keys = set()
-        for group_type in groups:
-            group = getattr(self, group_type)
-            keys.update(group)
+        for house_type in houses:
+            house = getattr(self, house_type)
+            keys.update(house)
         keys.remove(self.coordinates)
         return keys
 
