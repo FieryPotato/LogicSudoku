@@ -457,7 +457,7 @@ class Solver:
             axis = "y"
             group_type = "row"
         elif cells_share_a_box(*cells):
-            axis = "box_num"
+            axis = "group_num"
             group_type = "box"
         else:
             return False

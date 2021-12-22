@@ -35,9 +35,11 @@ class TestEmptyRectangleFunctions(unittest.TestCase):
         self.sudoku.post_init(edited)
         self.solver = Solver(self.sudoku)
 
-    def test_box_contains_filled_digit(self):
-        self.assertFalse(self.sudoku.box_contains_filled_digit(0, 1))
-        self.assertTrue(self.sudoku.box_contains_filled_digit(5, 8))
+    def test_group_contains_filled_digit(self):
+        self.assertFalse(self.sudoku.group_contains_filled_digit("box", group_num=0, digit=1))
+        self.assertTrue(self.sudoku.group_contains_filled_digit("box", group_num=5, digit=8))
+
+    # def find_cells_in_group_
 
 
 if __name__ == '__main__':

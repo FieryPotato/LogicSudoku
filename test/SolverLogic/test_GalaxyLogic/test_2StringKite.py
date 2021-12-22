@@ -1,6 +1,6 @@
 import unittest
 
-from src.Solver import Solver
+from src.Solver import Solver, strongly_connected_cell_chains, colour_pairs_for_strongly_connected_chains
 from src.Sudoku import Sudoku
 
 
