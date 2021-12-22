@@ -398,6 +398,7 @@ class Solver:
 
     def check_for_hidden_rectangle(self) -> bool:
         for rectangle in self.sudoku.rectangles():
+            if len({cell.box_num for cell in rectangle}) != 2: continue
             if cells_are_empty(*rectangle) and at_least_one_cell_has_only_two_options(*rectangle):
                 if self.check_for_hidden_rectangle_pairs(rectangle):
                     return True

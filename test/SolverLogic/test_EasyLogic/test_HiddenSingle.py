@@ -41,7 +41,7 @@ UNSOLVED_BOX: str = "12 9 7  4" \
 
 
 class TestHiddenSingle(unittest.TestCase):
-    """A HIDDEN_ROW single is top_left cell which contains top_left unique option in its
+    """A HIDDEN_ROW single is a cell which contains a unique option in its
     row, column, or box."""
 
     def test_solver_fills_hidden_singles_in_row(self) -> None:

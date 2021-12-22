@@ -16,7 +16,7 @@ class TestSudokuErrors(unittest.TestCase):
 
     def test_creating_sudoku_with_invalid_string_digits_raises_value_error(self) -> None:
         with self.assertRaises(ValueError):
-            invalid_str: str = "top_left" * 81
+            invalid_str: str = "a" * 81
             Sudoku.from_string(invalid_str)
 
     def test_creating_sudoku_with_duplicates_in_row_raises_value_error(self) -> None:

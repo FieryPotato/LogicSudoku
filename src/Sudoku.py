@@ -215,7 +215,11 @@ class Sudoku:
                     bottom_right = self[top_right.x, bottom_left.y]
                     yield top_left, top_right, bottom_left, bottom_right
 
-    def group_contains_filled_digit(self, group, group_num, digit) -> bool:
+    def group_contains_filled_digit(self, group_type, group_num, digit) -> bool:
         """Return whether input box of self contains input digit."""
-        box_digits = {cell.digit for cell in getattr(self, group)(group_num) if not cell.is_empty}
-        return digit in box_digits
+        group_digits = {cell.digit for cell in getattr(self, group_type)(group_num) if not cell.is_empty}
+        return digit in group_digits
+
+    def cells_in_group_with_digit_possible(self, group_type, group_num, digit):
+        """Return cells in group that could contain digit."""
+        return {cell for cell in getattr(self, group_type)(group_num) if digit in cell}
