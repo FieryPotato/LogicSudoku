@@ -425,8 +425,10 @@ class Solver:
             check_axis = LITERALS[house_type]["check_axis"]
             single_house = LITERALS[house_type]["single_house"]
 
-            house = getattr(self.sudoku, single_house)(getattr(opposite, check_axis))
-            if not self.cells_are_strongly_connected_by_digit(digit, *house):
+            group = {cell
+                     for cell in getattr(self.sudoku, single_house)(getattr(opposite, check_axis))
+                     if digit in cell}
+            if not self.cells_are_strongly_connected_by_digit(digit, *group):
                 break
         else:
             digit_to_remove = focus.pencil_marks - {digit}
