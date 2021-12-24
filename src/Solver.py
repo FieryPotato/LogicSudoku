@@ -412,9 +412,9 @@ class Solver:
             if len(pencil_marks) == 2:
                 house = {*rectangle} - {check_cell}
                 if all_cells_in_house_contain_pencil_marks(house, pencil_marks):
-                    opposite = {opp
-                                for opp in rectangle
-                                if opp.x != check_cell.x and opp.y != check_cell.y}.pop()
+                    opposite = {cell
+                                for cell in rectangle
+                                if cell.x != check_cell.x and cell.y != check_cell.y}.pop()
                     for digit in pencil_marks:
                         if self.clear_single_hidden_rectangle(digit, check_cell, opposite):
                             return True
@@ -451,6 +451,8 @@ class Solver:
     def cells_are_strongly_connected_by_digit(self, digit: int, *cells: Cell) -> bool:
         """Return whether input cells are the only two cells in their
         row, or column that can be digit."""
+        if len(cells) != 2:
+            return False
         if cells_share_a_column(*cells):
             axis = "x"
             house_type = "column"
@@ -531,6 +533,64 @@ class Solver:
         affected_cells -= set(fin_house).union(set(x_wing_house))
 
         return affected_cells
+
+    def find_empty_rectangle_house(self, house_type, rectangle) -> int:
+        a = {0, 1, 2}
+        b = {3, 4, 5}
+        c = {6, 7, 8}
+        check_axis = LITERALS[house_type]["check_axis"]
+
+        house_nums = {getattr(cell, check_axis) for cell in rectangle}
+        for num_set in a, b, c:
+            if len(num := (num_set - house_nums)) == 1:
+                return num.pop()
+
+    def check_for_empty_rectangle(self) -> bool:
+        for box in self.sudoku.boxes:
+            unfilled_digits = {i for i in range(1, 10)} - {cell.digit for cell in box if not cell.is_empty}
+            for digit in unfilled_digits:
+                cells_without_digit = {cell for cell in box if digit not in cell}
+                if len(cells_without_digit) < 4: continue
+                for quadruple in combinations(cells_without_digit, r=4):
+                    if cells_form_a_rectangle(*quadruple):
+                        relevant_row_num = self.find_empty_rectangle_house("row", quadruple)
+                        relevant_col_num = self.find_empty_rectangle_house("column", quadruple)
+                        target_cell = self.find_empty_rectangle_perp_sc_cell(relevant_row_num, relevant_col_num, digit)
+                        if target_cell is None: continue
+                        if remove_digits_from_cells(digit, target_cell):
+                            return True
+        return False
+
+    def find_empty_rectangle_perp_sc_cell(self, row_num, column_num, digit) -> Optional[Cell]:
+        rectangle_box_num = self.sudoku[column_num, row_num].box_num
+        for house_type in "row", "column":
+            check_axis = LITERALS[house_type]["check_axis"]
+            single_house = LITERALS[house_type]["single_house"]
+            opposite_axis = LITERALS[house_type]["opposite_axis"]
+            opposite_house = LITERALS[house_type]["opposite_house"]
+            er_house_num = row_num if house_type == "row" else column_num
+            er_opp_house_num = column_num if house_type == "row" else row_num
+            digit_cells = {cell
+                           for cell in getattr(self.sudoku, house_type)(er_house_num)
+                           if digit in cell and cell not in self.sudoku.box(rectangle_box_num)}
+            for cell_1 in digit_cells:
+                perp_group = {cell
+                              for cell in getattr(self.sudoku, opposite_house)(getattr(cell_1, opposite_axis))
+                              if digit in cell and cell not in self.sudoku.box(rectangle_box_num)}
+                for cell_2 in perp_group:
+                    contra_perp_group = {cell
+                                         for cell in getattr(self.sudoku, single_house)(getattr(cell_2, check_axis))
+                                         if digit in cell}
+                    if len(contra_perp_group) != 2:
+                        continue
+                    if min([cell.box_num == er_house_num for cell in contra_perp_group]):
+                        continue
+                    contra_cell = next(iter(contra_perp_group - {cell_2}))
+                    if contra_cell in self.sudoku.box(rectangle_box_num):
+                        continue
+                    if getattr(contra_cell, opposite_axis) == er_opp_house_num:
+                        return cell_1
+            return None
 
 
 def remove_duplicate_chains(chains: list[list[Cell]]) -> None:

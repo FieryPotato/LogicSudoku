@@ -67,15 +67,22 @@ class Sudoku:
         return True
 
     def __setitem__(self, key, value) -> None:
+        if key not in self.cell_dict:
+            raise KeyError(f"{key} is not a valid cell key.")
         self.cell_dict[key] = value
         return None
 
     def __getitem__(self, *args) -> Cell:
         if len(args) == 1:
             return self.cell_dict[args[0]]
-        return self.cell_dict[args]
+        elif len(args) == 2:
+            return self.cell_dict[args]
+        else:
+            raise KeyError(f"{args} is not a valid cell key.")
 
     def __delitem__(self, key) -> None:
+        if key not in self.cell_dict:
+            raise KeyError(f"{key} is not a valid cell key.")
         self.cell_dict[key].clear()
         return None
 
@@ -206,7 +213,7 @@ class Sudoku:
             self[key].started_empty = True
 
     def rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
-        """Yield cells arranged in a rectangle"""
+        """Yield cells arranged in a rectangle."""
         for row in self.rows:
             for top_left, top_right in combinations(row, r=2):
                 for bottom_left in [self[key]
