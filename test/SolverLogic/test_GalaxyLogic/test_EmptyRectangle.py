@@ -1,6 +1,6 @@
 import unittest
 
-from src.Solver import Solver
+from src.Solver import Solver, find_empty_rectangle_house
 from src.Sudoku import Sudoku
 
 
@@ -50,8 +50,8 @@ class TestEmptyRectangleFunctions(unittest.TestCase):
         rectangle = {self.sudoku[k] for k in [(7, 1), (8, 1), (7, 2), (8, 2)]}
         relevant_col_num = 6
         relevant_row_num = 0
-        self.assertEqual(relevant_row_num, self.solver.find_empty_rectangle_house("row", rectangle))
-        self.assertEqual(relevant_col_num, self.solver.find_empty_rectangle_house("column", rectangle))
+        self.assertEqual(relevant_row_num, find_empty_rectangle_house("row", rectangle))
+        self.assertEqual(relevant_col_num, find_empty_rectangle_house("column", rectangle))
 
     def test_find_empty_rectangle_perp_SC_cells(self):
         relevant_row_num = 0

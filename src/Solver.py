@@ -39,6 +39,8 @@ LITERALS = {
 }
 
 
+
+
 class Solver:
     def __init__(self, sudoku: Sudoku):
         sudoku.update_pencil_marks()
@@ -56,7 +58,6 @@ class Solver:
 
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
                        self.try_hard_logic, self.try_brutal_logic)
-
     def main(self) -> bool:
         if not self.is_solved:
             backup = None
@@ -536,17 +537,6 @@ class Solver:
 
         return affected_cells
 
-    def find_empty_rectangle_house(self, house_type, rectangle) -> int:
-        a = {0, 1, 2}
-        b = {3, 4, 5}
-        c = {6, 7, 8}
-        check_axis = LITERALS[house_type]["check_axis"]
-
-        house_nums = {getattr(cell, check_axis) for cell in rectangle}
-        for num_set in a, b, c:
-            if len(num := (num_set - house_nums)) == 1:
-                return num.pop()
-
     def check_for_empty_rectangle(self) -> bool:
         for box in self.sudoku.boxes:
             unfilled_digits = {i for i in range(1, 10)} - {cell.digit for cell in box if not cell.is_empty}
@@ -555,8 +545,8 @@ class Solver:
                 if len(cells_without_digit) < 4: continue
                 for quadruple in combinations(cells_without_digit, r=4):
                     if cells_form_a_rectangle(*quadruple):
-                        relevant_row_num = self.find_empty_rectangle_house("row", quadruple)
-                        relevant_col_num = self.find_empty_rectangle_house("column", quadruple)
+                        relevant_row_num = find_empty_rectangle_house("row", quadruple)
+                        relevant_col_num = find_empty_rectangle_house("column", quadruple)
                         target_cell = self.find_empty_rectangle_perp_sc_cell(relevant_row_num, relevant_col_num, digit)
                         if target_cell is None: continue
                         if remove_digits_from_cells(digit, target_cell):
@@ -593,8 +583,6 @@ class Solver:
                     if getattr(contra_cell, opposite_axis) == er_opp_house_num:
                         return cell_1
             return None
-
-
 def remove_duplicate_chains(chains: list[list[Cell]]) -> None:
     """Remove colour_chains from the input that are either too short or
     duplicates (but reversed)."""
@@ -939,3 +927,15 @@ def x_wing_if_it_has_fins(fin_house, x_wing_house) -> list:
         if cells_form_a_rectangle(*checktangle):
             return checktangle
     return []
+
+
+def find_empty_rectangle_house(house_type, rectangle) -> int:
+    a = {0, 1, 2}
+    b = {3, 4, 5}
+    c = {6, 7, 8}
+    check_axis = LITERALS[house_type]["check_axis"]
+
+    house_nums = {getattr(cell, check_axis) for cell in rectangle}
+    for num_set in a, b, c:
+        if len(num := (num_set - house_nums)) == 1:
+            return num.pop()
