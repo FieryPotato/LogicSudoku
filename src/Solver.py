@@ -54,10 +54,12 @@ class Solver:
         self.hard_logic = self.check_for_ywing, self.check_for_avoidable_rectangle
         self.brutal_logic = (self.check_for_xyzwings, self.check_for_unique_rectangle,
                              self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
-        self.galaxy_brain_logic = (self.check_for_skyscraper,)
+        self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_2_string_kite,
+                                   self.check_for_empty_rectangle, self.check_for_finned_xwings)
 
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
-                       self.try_hard_logic, self.try_brutal_logic)
+                       self.try_hard_logic, self.try_brutal_logic, self.try_galaxy_logic)
+
     def main(self) -> bool:
         if not self.is_solved:
             backup = None
@@ -95,6 +97,12 @@ class Solver:
 
     def try_brutal_logic(self) -> bool:
         for strategy in self.brutal_logic:
+            if strategy():
+                return True
+        return False
+
+    def try_galaxy_logic(self) -> bool:
+        for strategy in self.galaxy_brain_logic:
             if strategy():
                 return True
         return False
@@ -582,7 +590,9 @@ class Solver:
                         continue
                     if getattr(contra_cell, opposite_axis) == er_opp_house_num:
                         return cell_1
-            return None
+        return None
+
+
 def remove_duplicate_chains(chains: list[list[Cell]]) -> None:
     """Remove colour_chains from the input that are either too short or
     duplicates (but reversed)."""

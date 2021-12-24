@@ -57,21 +57,33 @@ class TestEmptyRectangleFunctions(unittest.TestCase):
         relevant_row_num = 0
         relevant_col_num = 6
         expected = self.sudoku[5, 0]
-        self.assertEqual(expected, self.solver.find_empty_rectangle_perp_sc_cell(relevant_row_num, relevant_col_num, digit=1))
+        self.assertEqual(expected,
+                         self.solver.find_empty_rectangle_perp_sc_cell(relevant_row_num, relevant_col_num, digit=1))
+
 
 class TestEmptyRectangleIntegration(unittest.TestCase):
     def setUp(self):
-        unsolved = " 79 4 132" \
-                   "14  739 6" \
-                   "3  9 1 7 " \
-                   "2    4 6 " \
-                   "   7 6   " \
-                   " 6   2 95" \
-                   " 8   93 7" \
-                   "73 4   19" \
-                   "9 1 376  "
-        self.sudoku = Sudoku.from_string(unsolved)
-        edited = {
+        unsolved_row = " 79 4 132" \
+                       "14  739 6" \
+                       "3  9 1 7 " \
+                       "2    4 6 " \
+                       "   7 6   " \
+                       " 6   2 95" \
+                       " 8   93 7" \
+                       "73 4   19" \
+                       "9 1 376  "
+        unsolved_col = "54 327 86" \
+                       " 32658 4 " \
+                       "7869    5" \
+                       " 541  86 " \
+                       "61    5  " \
+                       "8   6541 " \
+                       "365  9   " \
+                       "      65 " \
+                       " 7 5 6   "
+        self.row_sudoku = Sudoku.from_string(unsolved_row)
+        self.col_sudoku = Sudoku.from_string(unsolved_col)
+        row_edited = {
             (4, 2): {5},
             (1, 3): {5},
             (3, 3): {1},
@@ -87,13 +99,26 @@ class TestEmptyRectangleIntegration(unittest.TestCase):
             (2, 7): {5},
             (7, 8): {5}
         }
-        self.sudoku.post_init(edited)
-        self.solver = Solver(self.sudoku)
+        col_edited = {
+            (6, 2): {1},
+            (2, 4): {9},
+            (2, 5): {9}
+        }
+        self.row_sudoku.post_init(row_edited)
+        self.col_sudoku.post_init(col_edited)
+        self.row_solver = Solver(self.row_sudoku)
+        self.col_solver = Solver(self.col_sudoku)
 
-    def test_solver_clears_empty_rectangle(self):
+    def test_solver_clears_empty_rectangle_in_row(self):
         digit = 2
-        cleared = self.sudoku[3, 8]
-        self.assertTrue(self.solver.check_for_empty_rectangle())
+        cleared = self.row_sudoku[3, 8]
+        self.assertTrue(self.row_solver.check_for_empty_rectangle())
+        self.assertFalse(digit in cleared)
+
+    def test_solver_clears_empty_rectangle_in_col(self):
+        digit = 2
+        cleared = self.col_sudoku[3, 5]
+        self.assertTrue(self.col_solver.check_for_empty_rectangle())
         self.assertFalse(digit in cleared)
 
 
