@@ -43,6 +43,9 @@ class TestSkyscraper(unittest.TestCase):
         for key in cleared_keys:
             self.assertFalse(cleared_digit in sudoku[key])
 
+    def test_solver_clears_skyscraper_in_columns(self):
+        pass
+
 
 
 if __name__ == '__main__':

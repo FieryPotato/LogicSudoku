@@ -54,7 +54,7 @@ class Solver:
         self.hard_logic = self.check_for_ywing, self.check_for_avoidable_rectangle
         self.brutal_logic = (self.check_for_xyzwings, self.check_for_unique_rectangle,
                              self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
-        self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_2_string_kite,
+        self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_colour_chain,
                                    self.check_for_empty_rectangle, self.check_for_finned_xwings)
 
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
@@ -498,7 +498,7 @@ class Solver:
                 result.update({cell for cell in seen if cell.is_empty})
         return result
 
-    def check_for_2_string_kite(self) -> bool:
+    def check_for_colour_chain(self) -> bool:
         for digit in range(1, 10):
             strongly_connected_pairs = self.find_strongly_connected_pairs_with_digit(digit)
             if not strongly_connected_pairs: continue

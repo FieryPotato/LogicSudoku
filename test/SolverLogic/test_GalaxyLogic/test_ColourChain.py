@@ -4,7 +4,7 @@ from src.Solver import Solver, strongly_connected_cell_chains, colour_pairs_for_
 from src.Sudoku import Sudoku
 
 
-class Test_2StringKite_Methods(unittest.TestCase):
+class Test_Colour_Chain_Methods(unittest.TestCase):
     test_str = "5 8 4    " \
                "427693158" \
                "3 6  84  " \
@@ -67,8 +67,8 @@ class Test_2StringKite_Methods(unittest.TestCase):
         self.colour_chains = [
             [
                 [self.sudoku[key] for key in chain]
-                for chain in pair]
-            for pair in self.colour_chain_keys
+                for chain in pair
+            ] for pair in self.colour_chain_keys
         ]
 
     def test_find_strongly_connected_pairs_with_digit(self):
@@ -91,7 +91,7 @@ class Test_2StringKite_Methods(unittest.TestCase):
             colour_pairs_for_strongly_connected_chains(self.strongly_connected_chains)
         )
 
-    def test_find_cells_seen_by_kite(self):
+    def test_find_cells_seen_by_chain(self):
         seen_keys = {
             (1, 3), (8, 4), (1, 5), (4, 7), (8, 5), (7, 5),
         }
@@ -102,7 +102,7 @@ class Test_2StringKite_Methods(unittest.TestCase):
         )
 
 
-class Test_2StringKite_Integration(unittest.TestCase):
+class Test_Colour_Chain_Integration(unittest.TestCase):
     test_str = "    58   " \
                "5  3 12  " \
                " 8  4   5" \
@@ -140,11 +140,11 @@ class Test_2StringKite_Integration(unittest.TestCase):
         self.sudoku.post_init(self.edited)
         self.solver = Solver(self.sudoku)
 
-    def test_solver_clears_2StringKite(self):
+    def test_solver_clears_colour_chain(self):
         digit = 7
         cell = self.sudoku[7, 7]
 
-        self.assertTrue(self.solver.check_for_2_string_kite())
+        self.assertTrue(self.solver.check_for_colour_chain())
 
         self.assertFalse(digit in cell)
 
