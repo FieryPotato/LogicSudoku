@@ -53,7 +53,7 @@ class Solver:
         self.brutal_logic = (self.check_for_xyzwings, self.check_for_unique_rectangle,
                              self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
         self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_colour_chain,
-                                   self.check_for_empty_rectangle, self.check_for_finned_xwings)
+                                   self.check_for_empty_rectangle)
 
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
                        self.try_hard_logic, self.try_brutal_logic, self.try_galaxy_logic)
@@ -128,7 +128,7 @@ class Solver:
             for digit, house_type in product(cell.pencil_marks, RCB):
                 axis = LITERALS[house_type]["check_axis"]
                 house = getattr(self.sudoku, house_type)(getattr(cell, axis))
-                if only_one_cell_in_house_can_contain_digit(digit, house):
+                if only_one_cell_in_group_can_contain_digit(digit, house):
                     cell.fill(digit)
                     self.sudoku.update_pencil_marks()
                     return True
@@ -246,49 +246,45 @@ class Solver:
 
     def check_for_fish(self) -> bool:
         """
-        If the only places for a digit appear in 2, 3, or 4 rows and
-        those cells share the same number of columns, then other cells
-        in those columns cannot contain that digit. Likewise in the
-        opposite direction.
+        If n rows contain n cells with a digit and those cells lie on
+        the same n columns, then other cells in those columns can't
+        contain that digit. Likewise in the opposite direction. This
+        includes x-wings, swordfish, and jellyfish.
+
+        If one and only one of those rows contains more than n cells
+        with the digit and those cells all share a box with one of the
+        cells that shares a column as above, then other cells in that
+        column not in that row but that are in the box can't contain
+        that digit. This includes finned x-wings, finned swordfish, and
+        finned jellyfish.
+        :return:
         """
-        sizes = 2, 3, 4
-        for size, house_type, digit in product(sizes, RC, range(1, 10)):
-            candidate_houses = self.fish_candidate_houses(digit, house_type, size)
-            fish_houses = trimmed_fish_houses(candidate_houses, house_type, size)
-            if not fish_houses: continue
-            if self.clear_fish(digit, fish_houses, house_type):
-                return True
+        sizes = [2, 3, 4]
+        for size, digit, house_type in product(sizes, range(1, 10), RC):
+            fish_candidate_groups = combinations(self.sudoku.houses_with_digit(house_type, digit), r=size)
+            for fish_house_group in fish_candidate_groups:
+                candidates = [[cell for cell in house if digit in cell] for house in fish_house_group]
+                if min([2 <= len(candidate) <= size for candidate in candidates]):
+                    if self.solve_proper_fish(digit, house_type, candidates):
+                        return True
         return False
 
-    def clear_fish(self, digit, fish_houses, house_type) -> bool:
+    def solve_proper_fish(self, digit: int, house_type: str, candidates: list[list[Cell]]) -> bool:
         operated = False
         opposite_axis = LITERALS[house_type]["opposite_axis"]
-        opposite_house = LITERALS[house_type]["opposite_house"]
+        opposite_house_type = LITERALS[house_type]["opposite_house"]
 
-        perpendicular_fish_houses = perpendicular_houses(fish_houses, house_type)
-
-        for perp_house in perpendicular_fish_houses:
-            house_index = (getattr(next(iter(perp_house)), opposite_axis))
-            house = getattr(self.sudoku, opposite_house)(house_index)
-            cells = [cell for cell in house if cell not in perp_house]
-            if remove_digits_from_cells(digit, *cells):
-                operated = True
+        size = len(candidates)
+        fish_cells = {cell for group in candidates for cell in group}
+        opposite_house_nums = {getattr(cell, opposite_axis) for cell in fish_cells}
+        if len(opposite_house_nums) == size:
+            for house_num in opposite_house_nums:
+                house = getattr(self.sudoku, opposite_house_type)(house_num)
+                affected_cells = {cell for cell in house if cell not in fish_cells}
+                if remove_digits_from_cells(digit, *affected_cells):
+                    operated = True
         return operated
 
-    def fish_candidate_houses(self, digit: int, house_type: str, size: int) -> list[list[Cell]]:
-        """
-        Given a digit, house type, and size, return a list of lists
-        containing cells in houses where each cell contains the digit,
-        and the number of cells containing that digit is between 2 and
-        size.
-        """
-        iter_house = LITERALS[house_type]["iter_house"]
-        candidate_houses = []
-        for house in getattr(self.sudoku, iter_house):
-            candidate_cells = [cell for cell in house if digit in cell]
-            if 2 <= len(candidate_cells) <= size:
-                candidate_houses.append(candidate_cells)
-        return candidate_houses
 
     def check_for_ywing(self) -> bool:
         """
@@ -628,56 +624,6 @@ class Solver:
                 return True
         return False
 
-    def check_for_finned_xwings(self) -> bool:
-        """
-        If cells would form an x-wing if not for an extra cell that
-        shares a box with one of the others, we can still clear cells
-        from that x-wing as long as they share a box with the extra
-        cell.
-        """
-        for digit, house_type in product(range(1, 10), RC):
-            iter_house = LITERALS[house_type]["iter_house"]
-            for house_pair in combinations(getattr(self.sudoku, iter_house), r=2):
-                if (finned_houses := finned_x_wing_houses(digit, *house_pair)) is None:
-                    continue
-
-                x_wing_house, fin_house = finned_houses
-                if (affected_cells := self.finned_x_wing_affected_cells(house_type, x_wing_house, fin_house)) is None:
-                    continue
-                if remove_digits_from_cells(digit, *affected_cells):
-                    return True
-        return False
-
-    def finned_x_wing_affected_cells(self, house_type: str, x_wing_house: list[Cell], fin_house: list[Cell]) -> \
-    Optional[set[Cell]]:
-        """
-        Return cells seen by the x-wing that share a box with the fin.
-        """
-        if not (finned_x_wing := x_wing_if_it_has_fins(fin_house, x_wing_house)):
-            return None
-        fins: set[Cell] = set(fin_house) - set(finned_x_wing)
-        for cell in set(fin_house) - set(fins):
-            if cells_share_a_box(cell, *fins):
-                affected_finned_cell: Cell = cell
-                break
-        else:
-            return None
-
-        return self.get_affected_cell(affected_finned_cell, fin_house, house_type, x_wing_house)
-
-    def get_affected_cell(self, affected_finned_cell, fin_house, house_type, x_wing_house):
-        """
-        Returns the cells in the fin house seen by the cells in the x_wing house.
-        """
-        opposite_house = LITERALS[house_type]["opposite_house"]
-        opposite_axis = LITERALS[house_type]["opposite_axis"]
-        affected_box: list[Cell] = getattr(self.sudoku, "box")(affected_finned_cell.box_num)
-        affected_axis: int = getattr(affected_finned_cell, opposite_axis)
-        affected_non_box_house: list[Cell] = getattr(self.sudoku, opposite_house)(affected_axis)
-        affected_cells = {cell for cell in affected_box if cell in affected_non_box_house}
-        affected_cells -= set(fin_house).union(set(x_wing_house))
-        return affected_cells
-
     def check_for_empty_rectangle(self) -> bool:
         """
         If the cells in a house that cannot be a digit form a
@@ -827,27 +773,6 @@ def strongly_connected_cell_chains(pairs: set[tuple[Cell, Cell]]):
     return match_endpoints_with_adjacencies(adjacencies, endpoints)
 
 
-def finned_x_wing_houses(digit, a: list[Cell], b: list[Cell]) -> Optional[tuple[list[Cell], list[Cell]]]:
-    """
-    Return two line houses if they might contain a finned x-wing.
-    Otherwise return two empty lists.
-    """
-    x_wing_house = []
-    fin_house = []
-    for house in a, b:
-        if len([cell for cell in house if digit in cell]) == 2:
-            x_wing_house = house
-        elif len([cell for cell in house if digit in cell]) in {3, 4}:
-            fin_house = house
-        else:
-            break
-    x_wing_house: list[Cell] = [cell for cell in x_wing_house if digit in cell]
-    fin_house: list[Cell] = [cell for cell in fin_house if digit in cell]
-    if x_wing_house and fin_house:
-        return x_wing_house, fin_house
-    return None
-
-
 def remove_digits_from_cells(digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
     """
     Removes digits from cells if the digits exist.
@@ -882,8 +807,8 @@ def cells_form_a_rectangle(*cells: Cell) -> bool:
     return False
 
 
-def only_one_cell_in_house_can_contain_digit(digit, house) -> bool:
-    return len({cell for cell in house if digit in cell}) == 1
+def only_one_cell_in_group_can_contain_digit(digit, group) -> bool:
+    return len({cell for cell in group if digit in cell}) == 1
 
 
 def cells_form_hidden_tuple(digits, candidate_tuple) -> bool:
@@ -913,18 +838,6 @@ def cells_in_house_with_digits(digits: Iterable[int], house: list[Cell]):
     ]
     flattened_cells = {cell for _list in cells_with_digits for cell in _list}
     return flattened_cells
-
-
-def perpendicular_houses(house_list: list[list[Cell]], house_type: str) -> list[list[Cell]]:
-    """Converts lists of cells grouped by row or column into lists
-    of those same cells grouped by column or row, respectively."""
-    opposite_axis = LITERALS[house_type]["opposite_axis"]
-    houses = []
-    all_cells = [cell for house in house_list for cell in house]
-    axes = {getattr(cell, opposite_axis) for cell in all_cells}
-    for axis in axes:
-        houses.append([cell for cell in all_cells if getattr(cell, opposite_axis) == axis])
-    return houses
 
 
 def trimmed_fish_houses(candidate_houses, house_type, size) -> Optional[tuple]:

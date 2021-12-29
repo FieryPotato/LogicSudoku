@@ -37,7 +37,7 @@ class Test_FinnedXWing(unittest.TestCase):
         digit = 8
         cell = self.sudoku[1, 3]
 
-        self.assertTrue(self.solver.check_for_finned_xwings())
+        self.assertTrue(self.solver.check_for_fish())
 
         self.assertFalse(digit in cell)
 

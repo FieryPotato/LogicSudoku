@@ -164,7 +164,7 @@ class Sudoku:
             cell.pencil_marks = set()
 
     @classmethod
-    def from_string(cls, string) -> "Sudoku":
+    def from_string(cls, string, edited=None) -> "Sudoku":
         """Return a sudoku whose cells in order appear in an 81-character string."""
         if len(string) < 81:
             raise ValueError("Your sudoku contains fewer than 81 digits.")
@@ -179,6 +179,8 @@ class Sudoku:
         if not new.is_legal():
             coordinates = new.is_legal(return_cell=True)
             raise ValueError(f"Your sudoku contains a duplicate at {coordinates}.")
+        if edited is not None:
+            new.post_init(edited)
         return new
 
     def update_pencil_marks(self) -> None:
@@ -230,3 +232,9 @@ class Sudoku:
     def cells_in_house_with_digit_possible(self, house_type, house_num, digit):
         """Return cells in house that could contain digit."""
         return {cell for cell in getattr(self, house_type)(house_num) if digit in cell}
+
+    def houses_with_digit(self, house_type: str, digit: int) -> Generator[list[Cell], None, None]:
+        iter_house_type = house_type + "s"
+        for house in getattr(self, iter_house_type):
+            if len([cell for cell in house if digit in cell]):
+                yield house
