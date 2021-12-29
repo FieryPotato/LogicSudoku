@@ -270,21 +270,23 @@ class Solver:
         return False
 
     def solve_proper_fish(self, digit: int, house_type: str, candidates: list[list[Cell]]) -> bool:
-        operated = False
-        opposite_axis = LITERALS[house_type]["opposite_axis"]
-        opposite_house_type = LITERALS[house_type]["opposite_house"]
-
         size = len(candidates)
         fish_cells = {cell for group in candidates for cell in group}
-        opposite_house_nums = {getattr(cell, opposite_axis) for cell in fish_cells}
-        if len(opposite_house_nums) == size:
-            for house_num in opposite_house_nums:
-                house = getattr(self.sudoku, opposite_house_type)(house_num)
-                affected_cells = {cell for cell in house if cell not in fish_cells}
-                if remove_digits_from_cells(digit, *affected_cells):
-                    operated = True
-        return operated
+        opposite_axis = LITERALS[house_type]["opposite_axis"]
+        perpendicular_house_nums = {getattr(cell, opposite_axis) for cell in fish_cells}
+        if len(perpendicular_house_nums) == size:
+            return self.clear_proper_fish(digit, fish_cells, perpendicular_house_nums, house_type)
+        return False
 
+    def clear_proper_fish(self, digit: int, fish_cells: set[Cell], perp_house_nums: set[int], house_type: str):
+        operated = False
+        opposite_house_type = LITERALS[house_type]["opposite_house"]
+        for house_num in perp_house_nums:
+            house = getattr(self.sudoku, opposite_house_type)(house_num)
+            affected_cells = {cell for cell in house if cell not in fish_cells}
+            if remove_digits_from_cells(digit, *affected_cells):
+                operated = True
+        return operated
 
     def check_for_ywing(self) -> bool:
         """
