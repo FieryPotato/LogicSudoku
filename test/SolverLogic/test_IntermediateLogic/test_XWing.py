@@ -24,19 +24,20 @@ UNSOLVED_ROW = "8    2 3 " \
                "   2  68 " \
                " 32 8    "
 
-UNSOLVED_COLUMN = "29  6  45" \
-                  "645  9  2" \
-                  "  125496 " \
-                  "16 92 45 " \
-                  " 245 16 9" \
-                  " 59 462 1" \
-                  "932675814" \
-                  "416398527" \
-                  "5  412396"
+
+UNSOLVED_COLUMN = " 9    465" \
+                  "8 46   7 " \
+                  "67 94  1 " \
+                  "2 64  58 " \
+                  "7    61 2" \
+                  " 8   2  6" \
+                  "   561 9 " \
+                  " 6    351" \
+                  "5     62 "
 
 
 class TestXWing(unittest.TestCase):
-    def test_solver_clears_cells_in_columns(self):
+    def test_solver_clears_row_x_wings(self):
         sudoku = Sudoku.from_string(UNSOLVED_ROW)
         solver = Solver(sudoku)
         keys_to_clear = {(0, 3), (3, 0), (3, 6)}
@@ -61,11 +62,11 @@ class TestXWing(unittest.TestCase):
         for key in keys_to_clear:
             self.assertFalse(cleared_digit in sudoku[key].pencil_marks)
 
-    def test_solver_clears_cells_in_rows(self):
+    def test_solver_clears_column_x_wings(self):
         sudoku = Sudoku.from_string(UNSOLVED_COLUMN)
         solver = Solver(sudoku)
-        keys_to_clear = {(8, 3)}
-        cleared_digit = 3
+        keys_to_clear = {(4, 0), (4, 5), (1, 8)}
+        cleared_digit = 1
 
         self.assertTrue(solver.check_for_fish())
 

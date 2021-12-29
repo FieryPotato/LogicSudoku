@@ -267,9 +267,15 @@ class Solver:
                 if min([2 <= len(candidate) <= size for candidate in candidates]):
                     if self.solve_proper_fish(digit, house_type, candidates):
                         return True
+                elif min([2 <= len(candidate) <= size + 2 for candidate in candidates]):
+                    if self.solve_finned_fish(digit, house_type, candidates):
+                        return True
         return False
 
     def solve_proper_fish(self, digit: int, house_type: str, candidates: list[list[Cell]]) -> bool:
+        """
+        Checks for x-wings, swordfish, and jellyfish on digit in candidates.
+        """
         size = len(candidates)
         fish_cells = {cell for group in candidates for cell in group}
         opposite_axis = LITERALS[house_type]["opposite_axis"]
@@ -279,6 +285,10 @@ class Solver:
         return False
 
     def clear_proper_fish(self, digit: int, fish_cells: set[Cell], perp_house_nums: set[int], house_type: str):
+        """
+        Clears digit from pencil marks affected by x-wings, swordfish,
+        and jellyfish. Return false if no changes were made.
+        """
         operated = False
         opposite_house_type = LITERALS[house_type]["opposite_house"]
         for house_num in perp_house_nums:
@@ -287,6 +297,48 @@ class Solver:
             if remove_digits_from_cells(digit, *affected_cells):
                 operated = True
         return operated
+
+    def solve_finned_fish(self, digit: int, house_type: str, candidates: list[list[Cell]]) -> bool:
+        """
+        Checks for finned x-wings, swordfish, and jellyfish on digit in candidates.
+        """
+        opposite_axis = LITERALS[house_type]["opposite_axis"]
+        size = len(candidates)
+
+        candidates_cells = {cell for house in candidates for cell in house}
+        fish_perp_house_nums = {getattr(cell, opposite_axis) for cell in candidates_cells}
+        fish_by_perp_house = [
+            [cell for cell in candidates_cells
+             if getattr(cell, opposite_axis) == house_num]
+            for house_num in fish_perp_house_nums
+        ]
+        proper_fish_perp_candidates = [
+            group for group in fish_by_perp_house
+            if 1 <= len(group) <= size
+        ]
+        perp_candidate_groups = combinations(proper_fish_perp_candidates, r=size)
+        for perp_group in perp_candidate_groups:
+            if self.clear_finned_fish(digit, opposite_axis, candidates_cells, perp_group):
+                return True
+        return False
+
+    def clear_finned_fish(self, digit, opposite_axis, candidates_cells, perp_group) -> bool:
+        """
+        Clears digit from pencil marks affected by finned fish. Return
+        false if no changes were made.
+        """
+        flat_proper_fish = {cell for house in perp_group for cell in house}
+        proper_fish_perp_house_nums = {getattr(cell, opposite_axis) for cell in flat_proper_fish}
+        fin_cells = candidates_cells - flat_proper_fish
+        if len(affected_box_num := {cell.box_num for cell in fin_cells}) == 1:
+            affected_box = self.sudoku.box(affected_box_num.pop())
+            affected_cells = {cell
+                              for cell in affected_box
+                              if getattr(cell, opposite_axis) in proper_fish_perp_house_nums
+                              and cell not in candidates_cells}
+            if remove_digits_from_cells(digit, *affected_cells):
+                return True
+        return False
 
     def check_for_ywing(self) -> bool:
         """
