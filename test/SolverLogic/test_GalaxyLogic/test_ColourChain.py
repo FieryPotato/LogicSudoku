@@ -144,7 +144,7 @@ class Test_Colour_Chain_Integration(unittest.TestCase):
         digit = 7
         cell = self.sudoku[7, 7]
 
-        self.assertTrue(self.solver.check_for_colour_chain())
+        self.assertTrue(self.solver.check_for_two_colour_logic())
 
         self.assertFalse(digit in cell)
 

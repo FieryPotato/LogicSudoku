@@ -52,7 +52,7 @@ class Solver:
         self.hard_logic = self.check_for_ywing, self.check_for_avoidable_rectangle
         self.brutal_logic = (self.check_for_xyzwings, self.check_for_unique_rectangle,
                              self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
-        self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_colour_chain,
+        self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_two_colour_logic,
                                    self.check_for_empty_rectangle)
 
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
@@ -670,7 +670,7 @@ class Solver:
                 result.update({cell for cell in seen if cell.is_empty})
         return result
 
-    def check_for_colour_chain(self) -> bool:
+    def check_for_two_colour_logic(self) -> bool:
         """
         In a chain of strongly connected cells, there are two
         possibilities: either every even cell contains the strongly
@@ -683,10 +683,16 @@ class Solver:
             if not strongly_connected_pairs: continue
             strongly_connected_chains = strongly_connected_cell_chains(strongly_connected_pairs)
             coloured_chains = colour_pairs_for_strongly_connected_chains(strongly_connected_chains)
-            seen_cells = self.cells_seen_by_colour_chains(coloured_chains)
-            if remove_digits_from_cells(digit, *seen_cells):
+            if self.clear_colour_contradiction(digit, coloured_chains):
+                return True
+            if self.clear_colour_chain(digit, coloured_chains):
                 return True
         return False
+
+    def clear_colour_chain(self, digit, coloured_chains):
+        seen_cells = self.cells_seen_by_colour_chains(coloured_chains)
+        if remove_digits_from_cells(digit, *seen_cells):
+            return True
 
     def check_for_empty_rectangle(self) -> bool:
         """
@@ -749,6 +755,15 @@ class Solver:
                         return cell_1
         return None
 
+    def clear_colour_contradiction(self, digit: int, coloured_chains):
+        for chain_pair in coloured_chains:
+            for chain in chain_pair:
+                if len(chain) <= 1: continue
+                contradiction = max([c_1.sees(c_2) for c_1, c_2 in combinations(chain, r=2)])
+                if contradiction:
+                    if remove_digits_from_cells(digit, *chain):
+                        return True
+        return False
 
 def remove_duplicate_chains(chains: list[list[Cell]]) -> None:
     """Remove colour_chains from the input that are either too short or
