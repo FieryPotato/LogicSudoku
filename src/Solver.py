@@ -264,12 +264,16 @@ class Solver:
             fish_candidate_groups = combinations(self.sudoku.houses_with_digit(house_type, digit), r=size)
             for fish_house_group in fish_candidate_groups:
                 candidates = [[cell for cell in house if digit in cell] for house in fish_house_group]
-                if min([2 <= len(candidate) <= size for candidate in candidates]):
-                    if self.solve_proper_fish(digit, house_type, candidates):
-                        return True
-                elif min([2 <= len(candidate) <= size + 2 for candidate in candidates]):
-                    if self.solve_finned_fish(digit, house_type, candidates):
-                        return True
+                if min([2 <= len(candidate) <= size + 2 for candidate in candidates]):
+                    check_axis = LITERALS[house_type]["check_axis"]
+                    opposite_axis = LITERALS[house_type]["opposite_axis"]
+                    if len({getattr(cell, check_axis) for house in candidates for cell in house}) \
+                            == len({getattr(cell, opposite_axis) for house in candidates for cell in house}):
+                        if self.solve_proper_fish(digit, house_type, candidates):
+                            return True
+                    else:
+                        if self.solve_finned_fish(digit, house_type, candidates):
+                            return True
         return False
 
     def solve_proper_fish(self, digit: int, house_type: str, candidates: list[list[Cell]]) -> bool:
@@ -303,8 +307,8 @@ class Solver:
         Checks for finned x-wings, swordfish, and jellyfish on digit in candidates.
         """
         opposite_axis = LITERALS[house_type]["opposite_axis"]
+        check_axis = LITERALS[house_type]["check_axis"]
         size = len(candidates)
-
         candidates_cells = {cell for house in candidates for cell in house}
         fish_perp_house_nums = {getattr(cell, opposite_axis) for cell in candidates_cells}
         fish_by_perp_house = [
@@ -312,12 +316,10 @@ class Solver:
              if getattr(cell, opposite_axis) == house_num]
             for house_num in fish_perp_house_nums
         ]
-        proper_fish_perp_candidates = [
-            group for group in fish_by_perp_house
-            if 1 <= len(group) <= size
-        ]
-        perp_candidate_groups = combinations(proper_fish_perp_candidates, r=size)
+        perp_candidate_groups = combinations(fish_by_perp_house, r=size)
         for perp_group in perp_candidate_groups:
+            if len({getattr(cell, check_axis) for house in perp_group for cell in house}) != size:
+                continue
             if self.clear_finned_fish(digit, opposite_axis, candidates_cells, perp_group):
                 return True
         return False
@@ -330,12 +332,20 @@ class Solver:
         flat_proper_fish = {cell for house in perp_group for cell in house}
         proper_fish_perp_house_nums = {getattr(cell, opposite_axis) for cell in flat_proper_fish}
         fin_cells = candidates_cells - flat_proper_fish
+        fin_boxes = {cell.box_num for cell in fin_cells}
+        non_fin_boxes = {cell.box_num for cell in flat_proper_fish}
+        if not fin_boxes.intersection(non_fin_boxes):
+            return False
+
         if len(affected_box_num := {cell.box_num for cell in fin_cells}) == 1:
             affected_box = self.sudoku.box(affected_box_num.pop())
             affected_cells = {cell
                               for cell in affected_box
                               if getattr(cell, opposite_axis) in proper_fish_perp_house_nums
                               and cell not in candidates_cells}
+            affected_cells -= {cell
+                               for cell in affected_cells
+                               if len([f for f in flat_proper_fish if f.sees(cell)]) <= 1}
             if remove_digits_from_cells(digit, *affected_cells):
                 return True
         return False
