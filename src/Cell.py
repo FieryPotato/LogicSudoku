@@ -50,7 +50,7 @@ class Cell:
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, self.__class__): return False
-        for attribute in ("coordinates", "digit", "pencil_marks"):
+        for attribute in ("coordinates", "digit", "pencil_marks", "started_empty"):
             if getattr(self, attribute) != getattr(other, attribute):
                 return False
         return True
@@ -113,9 +113,11 @@ class Cell:
         """Fill the cell with digit and updates pencil_marks."""
         if digit == " ":
             self.digit: str = digit
+        elif digit == 0:
+            self.digit: str = " "
         else:
             self.digit: int = int(digit)
-            self.pencil_marks: set = set()
+            self.pencil_marks: set = {digit}
         return None
 
     def clear(self) -> None:

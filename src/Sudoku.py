@@ -163,26 +163,6 @@ class Sudoku:
         else:
             cell.pencil_marks = set()
 
-    @classmethod
-    def from_string(cls, string, edited=None) -> "Sudoku":
-        """Return a sudoku whose cells in order appear in an 81-character string."""
-        if len(string) < 81:
-            raise ValueError("Your sudoku contains fewer than 81 digits.")
-        elif len(string) > 81:
-            raise ValueError("Your sudoku contains more than 81 digits.")
-        new = cls()
-        for i, key in enumerate(CELL_KEYS):
-            digit = string[i]
-            cell = new[key]
-            cell.fill(digit)
-            cell.started_empty = False
-        if not new.is_legal():
-            coordinates = new.is_legal(return_cell=True)
-            raise ValueError(f"Your sudoku contains a duplicate at {coordinates}.")
-        if edited is not None:
-            new.post_init(edited)
-        return new
-
     def update_pencil_marks(self) -> None:
         """Update all pencil marks in the puzzle based only on cell/row/box
          logic."""
@@ -213,6 +193,7 @@ class Sudoku:
                 digits = set()
             self[key].pencil_marks -= digits
             self[key].started_empty = True
+        self.update_pencil_marks()
 
     def rectangles(self) -> Generator[tuple[Cell, Cell, Cell, Cell], None, None]:
         """Yield cells arranged in a rectangle."""
@@ -224,7 +205,8 @@ class Sudoku:
                     bottom_right = self[top_right.x, bottom_left.y]
                     yield top_left, top_right, bottom_left, bottom_right
 
-    def house_contains_filled_digit(self, digit: int, house: list[Cell]) -> bool:
+    @staticmethod
+    def house_contains_filled_digit(digit: int, house: list[Cell]) -> bool:
         """Return whether input house of self contains input digit."""
         house_digits = {cell.digit for cell in house if not cell.is_empty}
         return digit in house_digits
@@ -234,3 +216,47 @@ class Sudoku:
         for house in getattr(self, iter_house_type):
             if len([cell for cell in house if digit in cell]):
                 yield house
+
+    @classmethod
+    def from_string(cls, string, edited=None) -> "Sudoku":
+        """Return a sudoku whose cells in order appear in an 81-character string."""
+        if len(string) < 81:
+            raise ValueError("Your sudoku contains fewer than 81 digits.")
+        elif len(string) > 81:
+            raise ValueError("Your sudoku contains more than 81 digits.")
+        new = cls()
+        for i, key in enumerate(CELL_KEYS):
+            digit = string[i]
+            cell = new[key]
+            cell.fill(digit)
+            cell.started_empty = False
+        if not new.is_legal():
+            coordinates = new.is_legal(return_cell=True)
+            raise ValueError(f"Your sudoku contains a duplicate at {coordinates}.")
+        if edited is not None:
+            new.post_init(edited)
+        return new
+
+    @classmethod
+    def from_json(cls, data) -> "Sudoku":
+        """Construct and return a sudoku from a json data structure."""
+        new = cls()
+        if "cells" in data:
+            cell_dict: dict = data["cells"]
+            for k, v in cell_dict.items():
+                key = eval(k)
+                value = Cell(key)
+                digit = v
+                value.fill(digit)
+                new.cell_dict[key] = value
+            for cell in new:
+                if not cell.is_empty:
+                    cell.started_empty = False
+        if "pencil marks" in data:
+            pencil_marks_data = data["pencil marks"]
+            new_pencil_marks = {eval(k): set(v) for k, v in pencil_marks_data.items()}
+            new.post_init(new_pencil_marks)
+        new.update_pencil_marks()
+        return new
+
+
