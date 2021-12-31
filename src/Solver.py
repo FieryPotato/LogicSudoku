@@ -177,25 +177,36 @@ class Solver:
         two of those cells share a column, then any cell which sees
         both cells that don't share a column cannot contain the
         strongly connecting digit. Likewise in the opposite direction.
+
+        This also works if one of the rows has more than two cells, as
+        long as all the cells in that row that don't share that column
+        share a box.
         """
-        for digit in range(1, 10):
-            for house_type in RC:
-                iter_house = LITERALS[house_type]["iter_house"]
-                houses = getattr(self.sudoku, iter_house)
-                for house_pair in combinations(houses, r=2):
-                    trimmed = [{cell for cell in house_pair[n] if digit in cell} for n in range(2)]
-                    if not min([len(g) == 2 for g in trimmed]): continue
-                    if self.clear_skyscraper(digit, trimmed, house_type):
-                        return True
+        for digit, house_type in product(range(1, 10), RC):
+            opposite_axis = LITERALS[house_type]["opposite_axis"]
+            houses_with_digit = self.sudoku.houses_with_digit(house_type, digit)
+            house_pairs = combinations(houses_with_digit, r=2)
+            for house_pair in house_pairs:
+                a = cells_in_house_with_digits({digit}, house_pair[0])
+                b = cells_in_house_with_digits({digit}, house_pair[1])
+                pair_house = [house for house in (a, b) if len(house) == 2]
+                if not pair_house:
+                    continue
+                flat_house_pair = {cell for house in (a, b) for cell in house}
+                opp_house_nums = {getattr(cell, opposite_axis) for cell in flat_house_pair}
+                if self.clear_skyscraper(digit, flat_house_pair, opp_house_nums, opposite_axis):
+                    return True
         return False
 
-    def clear_skyscraper(self, digit, house_pair, house_type) -> bool:
-        for pair in product(*house_pair):
-            if cells_share_opposite_house(house_type, *pair):
-                skyscraper = set(pair)
-                seers = (set(house_pair[0]).union(set(house_pair[1]))) - set(skyscraper)
-                cells = {self.sudoku[key] for key in Cell.intersection(*seers)}
-                if remove_digits_from_cells(digit, *cells):
+    def clear_skyscraper(self, digit, cells, house_nums, axis) -> bool:
+        for house_num in house_nums:
+            if len(base := {cell
+                            for cell in cells
+                            if getattr(cell, axis) == house_num}) == 2:
+                skyscrapers = cells - base
+                affected_keys = Cell.intersection(*skyscrapers)
+                affected_cells = {self.sudoku[key] for key in affected_keys}
+                if remove_digits_from_cells(digit, *affected_cells):
                     return True
         return False
 
@@ -764,6 +775,7 @@ class Solver:
                     if remove_digits_from_cells(digit, *chain):
                         return True
         return False
+
 
 def remove_duplicate_chains(chains: list[list[Cell]]) -> None:
     """Remove colour_chains from the input that are either too short or

@@ -25,7 +25,7 @@ ROW = " 84  61 9" \
 
 
 class TestSkyscraper(unittest.TestCase):
-    def test_solver_clears_skyscraper_columns(self):
+    def test_solver_clears_skyscraper_in_columns(self):
         sudoku = Sudoku.from_string(COLUMN)
         edited = {
             (2, 3): {9},
@@ -53,7 +53,7 @@ class TestSkyscraper(unittest.TestCase):
         for key in cleared_keys:
             self.assertFalse(cleared_digit in sudoku[key])
 
-    def test_solver_clears_skyscraper_in_columns(self):
+    def test_solver_clears_skyscraper_in_rows(self):
         sudoku = Sudoku.from_string(ROW)
         edited = {
             (4, 0): {2, 3},
@@ -78,6 +78,31 @@ class TestSkyscraper(unittest.TestCase):
         }
         sudoku.post_init(edited)
 
+
+class TestFinnedSkyscraper(unittest.TestCase):
+    def setUp(self) -> None:
+        unsolved = " 1 4  375" \
+                   "738159426" \
+                   "254736981" \
+                   "5   7  6 " \
+                   "    9    " \
+                   "  7 1   3" \
+                   "3  96   8" \
+                   "  5 4 6  " \
+                   " 6   1 3 "
+        edited = {
+            (6, 6): {7},
+            (8, 7): {7}
+        }
+        self.sudoku = Sudoku.from_string(unsolved, edited)
+        self.solver = Solver(self.sudoku)
+
+    def test_solver_clears_finned_skyscraper(self):
+        digit = 9
+        cell = self.sudoku[0, 5]
+
+        self.assertTrue(self.solver.check_for_skyscraper())
+        self.assertFalse(digit in cell)
 
 
 

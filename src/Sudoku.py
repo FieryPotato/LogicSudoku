@@ -224,14 +224,10 @@ class Sudoku:
                     bottom_right = self[top_right.x, bottom_left.y]
                     yield top_left, top_right, bottom_left, bottom_right
 
-    def house_contains_filled_digit(self, house_type, house_num, digit) -> bool:
-        """Return whether input box of self contains input digit."""
-        house_digits = {cell.digit for cell in getattr(self, house_type)(house_num) if not cell.is_empty}
+    def house_contains_filled_digit(self, digit: int, house: list[Cell]) -> bool:
+        """Return whether input house of self contains input digit."""
+        house_digits = {cell.digit for cell in house if not cell.is_empty}
         return digit in house_digits
-
-    def cells_in_house_with_digit_possible(self, house_type, house_num, digit):
-        """Return cells in house that could contain digit."""
-        return {cell for cell in getattr(self, house_type)(house_num) if digit in cell}
 
     def houses_with_digit(self, house_type: str, digit: int) -> Generator[list[Cell], None, None]:
         iter_house_type = house_type + "s"

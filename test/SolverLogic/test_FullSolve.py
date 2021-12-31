@@ -93,6 +93,26 @@ BRUTAL_SOLVED = "536481279" \
                 "263975148" \
                 "158642937"
 
+GALAXY_UNSOLVED = "  98    3" \
+                  "    9146 " \
+                  "1     7  " \
+                  "34   2 7 " \
+                  "         " \
+                  " 2 3 6 48" \
+                  "     3  1" \
+                  " 3 41    " \
+                  "2    93  "
+
+GALAXY_SOLVED = "469827513" \
+                "783591462" \
+                "152634789" \
+                "346982175" \
+                "897145236" \
+                "521376948" \
+                "674253891" \
+                "935418627" \
+                "218769354"
+
 
 @unittest.skip("Run only separately.")
 class TestFullSolve(unittest.TestCase):
@@ -124,6 +144,12 @@ class TestFullSolve(unittest.TestCase):
         self.assertTrue(solver.main())
         self.assertEqual(solved, solver.sudoku)
 
+    def test_galaxy_solve(self):
+        unsolved = Sudoku.from_string(GALAXY_UNSOLVED)
+        solved = Sudoku.from_string(GALAXY_SOLVED)
+        solver = Solver(unsolved)
+        self.assertTrue(solver.main())
+        self.assertEqual(solved, solver.sudoku)
 
 
 if __name__ == '__main__':
