@@ -1,6 +1,6 @@
 """
 If two, three, or four digits can only be placed in that many cells in
-a row, column or box (i.e. two digits across two cells, three across
+a row, column or box (left_col.e. two digits across two cells, three across
 three, etc.) then pencil marks for any other digits can be eliminated
 from those cells.
 """

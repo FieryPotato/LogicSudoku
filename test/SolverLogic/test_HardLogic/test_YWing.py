@@ -2,7 +2,7 @@
 If three cells meet the following criteria:
 - Cells A, B, and C each contain only 2 possible options;
 - Cells A, B, and C share exactly one option with each of the others;
-    - i.e. pencil marks are A: x, y; B: y, z; C: x, z.
+    - left_col.e. pencil marks are A: x, y; B: y, z; C: x, z.
 - Cell A sees each of B and C, but B and C do not see each other;
 
 Then cells which see both B and C can have z cleared from their options.

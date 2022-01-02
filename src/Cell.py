@@ -57,7 +57,7 @@ class Cell:
 
     def __ne__(self, other) -> bool:
         if not isinstance(other, self.__class__): return False
-        for attribute in ("coordinates", "digit", "pencil_marks"):
+        for attribute in ("coordinates", "digit", "pencil_marks", "started_empty"):
             if getattr(self, attribute) != getattr(other, attribute):
                 return True
         return False
@@ -69,6 +69,30 @@ class Cell:
         """Iterates through cell pencil_marks."""
         for digit in self.pencil_marks:
             yield digit
+
+    def __contains__(self, digit) -> bool:
+        """Return whether digit is in pencil_marks."""
+        return digit in self.pencil_marks
+
+    def __add__(self, other) -> int:
+        s_digit = 0 if self.is_empty else self.digit
+        o_digit = 0 if other.is_empty else other.digit
+        return s_digit + o_digit
+
+    def __sub__(self, other) -> int:
+        s_digit = 0 if self.is_empty else self.digit
+        o_digit = 0 if other.is_empty else other.digit
+        return s_digit - o_digit
+
+    def __mul__(self, other) -> int:
+        s_digit = 0 if self.is_empty else self.digit
+        o_digit = 0 if other.is_empty else other.digit
+        return s_digit * o_digit
+
+    def __int__(self) -> int:
+        if self.is_empty:
+            return 0
+        return self.digit
 
     @property
     def is_empty(self) -> bool:
