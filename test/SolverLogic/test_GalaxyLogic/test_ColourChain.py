@@ -76,7 +76,7 @@ class Test_Colour_Chain_Methods(unittest.TestCase):
 
         self.assertEqual(
             self.strongly_connected_9_pair_cells,
-            self.solver.find_strongly_connected_pairs_with_digit(digit)
+            self.sudoku.strongly_connected_pairs_with_digit(digit)
         )
 
     def test_find_strongly_connected_chains(self):

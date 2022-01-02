@@ -3,6 +3,7 @@ from typing import ItemsView, Union, KeysView, Iterator, Generator, Iterable
 
 from src.Cell import Cell
 
+RCB_ITER = "rows", "columns", "boxes"
 CELL_KEYS: list = [(j, i) for i, j in product(range(9), repeat=2)]
 BOX_MAP: dict = {
     0: ((0, 0), (1, 0), (2, 0),
@@ -390,3 +391,16 @@ class Sudoku:
         else:
             raise ValueError(f"{house_type} is not a valid argument for"
                              f"Solver.cells_share_opposite_house.")
+
+    def strongly_connected_pairs_with_digit(self, digit: int) -> set[tuple[Cell, Cell]]:
+        """
+        Return a set containing tuples of cells which are strongly
+        connected by digit.
+        """
+        pairs = []
+        for house_type in RCB_ITER:
+            for house in getattr(self, house_type):
+                cells_with_digit = {cell for cell in house if digit in cell}
+                if len(cells_with_digit) == 2:
+                    pairs.append(tuple(cells_with_digit))
+        return set(pairs)
