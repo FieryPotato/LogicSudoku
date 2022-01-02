@@ -54,6 +54,7 @@ class Solver:
                              self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
         self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_two_colour_logic,
                                    self.check_for_empty_rectangle)
+        self.set_logic = (self.check_for_phistomephel_singles,)
 
         self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
                        self.try_hard_logic, self.try_brutal_logic, self.try_galaxy_logic)
@@ -269,6 +270,34 @@ class Solver:
                             return True
         return False
 
+    def check_for_phistomephel_singles(self) -> bool:
+        """
+        In a completed sudoku, one will find that the digits in the 16
+        cells in the 2x2 boxes in each corner of the grid are identical
+        to the digits in the 16 cells surrounding the center box. This
+        relationship between cells also exists for other configurations
+        of cells.
+
+        Configurations of digits that violate this fact can be
+        discarded.
+        """
+        for corners, ring in self.sudoku.phistomephel_sets():
+            empty_corners = [cell for cell in corners if cell.is_empty]
+            if len(empty_corners) > 1:
+                continue
+            empty_rings = [cell for cell in ring if cell.is_empty]
+            if len(empty_rings) > 1:
+                continue
+            if empty_corners == empty_rings:
+                continue
+            missing_ring_digit = list_diff([cell.digit for cell in corners],
+                                           [cell.digit for cell in ring]).pop()
+            missing_corner_digit = list_diff([cell.digit for cell in ring],
+                                             [cell.digit for cell in corners]).pop()
+            if self.clear_phistomephel_singles(empty_corners, empty_rings, missing_ring_digit, missing_corner_digit):
+                return True
+        return False
+
     def check_for_pointing_rectangle(self) -> bool:
         """
         If a pair of cells could form part of an illegal rectangle, but
@@ -479,6 +508,22 @@ class Solver:
             if self.remove_digits_from_cells(digit, *affected_cells):
                 return True
         return False
+
+    @staticmethod
+    def clear_phistomephel_singles(empty_corners: list[Cell], empty_rings: list[Cell],
+                                  missing_ring_digit, missing_corner_digit) -> bool:
+        operated = False
+        if len(empty_corners) == 1:
+            empty_corner: Cell = empty_corners.pop()
+            missing_digit: int = missing_corner_digit.pop()
+            empty_corner.fill(missing_digit)
+            operated = True
+        if len(empty_rings) == 1:
+            empty_ring: Cell = empty_rings.pop()
+            missing_digit: int = missing_ring_digit.pop()
+            empty_ring.fill(missing_digit)
+            operated = True
+        return operated
 
     def clear_pointing_rectangle(self, pointing_pair, extra_digits, house) -> bool:
         operated = False

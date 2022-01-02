@@ -8,6 +8,7 @@ columns.
 
 import unittest
 
+from src.Solver import Solver
 from src.Sudoku import Sudoku
 
 
@@ -60,6 +61,46 @@ class Test_Phistomephel_Prerequisites(unittest.TestCase):
         self.assertEqual(first_ring_cells, result[0][1])
         self.assertEqual(last_corner_cells, result[-1][0])
         self.assertEqual(last_ring_cells, result[-1][1])
+
+
+class TestPhistomephelSingleDigitPlacement(unittest.TestCase):
+    def setUp(self):
+        self.missing_ring = "64     32" \
+                            "35     79" \
+                            "  83295  " \
+                            "  1   2  " \
+                            "  4   9  " \
+                            "  5   3  " \
+                            "  35 64  " \
+                            "51     23" \
+                            "48     95"
+
+        self.missing_corner = "3 5   8 7" \
+                              " 7 254 3 " \
+                              "9 4     2" \
+                              " 3     7 " \
+                              " 4     2 " \
+                              " 8     6 " \
+                              "2 3   7 5" \
+                              " 6 529 8 " \
+                              "4 8   2 6"
+
+    def test_solver_fills_missing_ring_digit(self):
+        sudoku = Sudoku.from_string(self.missing_ring)
+        solver = Solver(sudoku)
+        missing_cell = sudoku[4, 6]
+        digit = 7
+        self.assertTrue(solver.check_for_phistomephel_singles())
+        self.assertEqual(digit, missing_cell.digit)
+
+    def test_solver_fills_missing_corner_digit(self):
+        sudoku = Sudoku.from_string(self.missing_corner)
+        solver = Solver(sudoku)
+        missing_cell = sudoku[6, 2]
+        digit = 6
+        self.assertTrue(solver.check_for_phistomephel_singles())
+        self.assertEqual(digit, missing_cell.digit)
+
 
 
 if __name__ == '__main__':
