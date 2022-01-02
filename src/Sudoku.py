@@ -1,5 +1,5 @@
-from itertools import product, combinations
-from typing import ItemsView, Union, KeysView, Iterator, Generator, Optional
+from itertools import product, combinations, permutations
+from typing import ItemsView, Union, KeysView, Iterator, Generator, Iterable
 
 from src.Cell import Cell
 
@@ -285,10 +285,10 @@ class Sudoku:
 
         sets = []
         for a, b, c, d in product(
-            [i for i in lc],
-            [i for i in rc],
-            [i for i in tr],
-            [i for i in br]
+                [i for i in lc],
+                [i for i in rc],
+                [i for i in tr],
+                [i for i in br]
         ):
             sets.append(self.single_phistomephel_set(a, b, c, d))
 
@@ -325,3 +325,68 @@ class Sudoku:
         ring = set.union(box_1, box_3, box_5, box_7, box_9)
 
         return corners, ring
+
+    @staticmethod
+    def cells_share_a_row(*cells: Cell) -> bool:
+        return len({cell.y for cell in cells}) == 1
+
+    @staticmethod
+    def cells_share_a_column(*cells: Cell) -> bool:
+        return len({cell.x for cell in cells}) == 1
+
+    @staticmethod
+    def cells_share_a_box(*cells: Cell) -> bool:
+        return len({cell.box_num for cell in cells}) == 1
+
+    @staticmethod
+    def cells_form_a_rectangle(*cells: Cell) -> bool:
+        """Return whether input cells form a rectangle."""
+        if len(cells) != 4: return False
+        for order in permutations(cells, r=4):
+            a, b, c, d = order
+            if a.x == c.x and a.y == b.y and d.x == b.x and d.y == c.y:
+                return True
+        return False
+
+    @staticmethod
+    def cells_in_group_with_digits(digits: Iterable[int], group: list[Cell]):
+        """
+        Return a list of cells in input house that contain each digit in
+        digits.
+        """
+        empty_cells = {cell for cell in group if cell.is_empty}
+        cells_with_digits = [
+            {cell for cell in empty_cells if digit in cell} for digit in digits
+        ]
+        flattened_cells = {cell for _list in cells_with_digits for cell in _list}
+        return flattened_cells
+
+    def cells_share_same_house(self, house_type, *cells) -> bool:
+        """
+        Return whether cells share a row or column.
+
+        A helper function that allows iteration over houses; c.f.
+        Solver.cells_share_opposite_house.
+        """
+        if house_type == "row":
+            return self.cells_share_a_row(*cells)
+        elif house_type == "column":
+            return self.cells_share_a_column(*cells)
+        else:
+            raise ValueError(f"{house_type} is not a valid argument for"
+                             f" Solver.cells_share_same_house.")
+
+    def cells_share_opposite_house(self, house_type, *cells) -> bool:
+        """
+        Return whether cells share a row or column opposite the input group.
+
+        A helper function that allows iteration over houses; c.f.
+        Solver.cells_share_same_house.
+        """
+        if house_type == "row":
+            return self.cells_share_a_column(*cells)
+        elif house_type == "column":
+            return self.cells_share_a_row(*cells)
+        else:
+            raise ValueError(f"{house_type} is not a valid argument for"
+                             f"Solver.cells_share_opposite_house.")

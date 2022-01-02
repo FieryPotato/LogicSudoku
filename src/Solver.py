@@ -1,6 +1,6 @@
 from collections.abc import Iterable
-from copy import deepcopy
-from itertools import combinations, product, permutations
+from copy import deepcopy, copy
+from itertools import combinations, product
 from typing import Optional, Generator, Union, Any
 
 from src.Cell import Cell
@@ -128,7 +128,7 @@ class Solver:
             for digit, house_type in product(cell.pencil_marks, RCB):
                 axis = LITERALS[house_type]["check_axis"]
                 house = getattr(self.sudoku, house_type)(getattr(cell, axis))
-                if only_one_cell_in_group_can_contain_digit(digit, house):
+                if self.only_one_cell_in_group_can_contain_digit(digit, house):
                     cell.fill(digit)
                     self.sudoku.update_pencil_marks()
                     return True
@@ -144,8 +144,8 @@ class Solver:
                 empty_cells = [cell for cell in house if cell.is_empty]
                 candidate_tuples = combinations(empty_cells, r=size)
                 for candidate_tuple in candidate_tuples:
-                    if cells_form_naked_tuple(*candidate_tuple):
-                        if clear_naked_tuples(house, candidate_tuple):
+                    if self.cells_from_naked_tuple(*candidate_tuple):
+                        if self.clear_naked_tuples(house, candidate_tuple):
                             return True
         return False
 
@@ -159,7 +159,7 @@ class Solver:
                 cells_with_digit = {cell
                                     for cell in house
                                     if digit in cell}
-                if cells_share_a_box(*cells_with_digit):
+                if Sudoku.cells_share_a_box(*cells_with_digit):
                     if self.clear_locked_candidate(cells_with_digit, digit):
                         return True
         return False
@@ -167,7 +167,7 @@ class Solver:
     def clear_locked_candidate(self, locked_candidate, digit) -> bool:
         box_num = next(iter(locked_candidate)).box_num
         affected = set(self.sudoku.box(box_num)) - locked_candidate
-        if remove_digits_from_cells(digit, *affected):
+        if self.remove_digits_from_cells(digit, *affected):
             return True
         return False
 
@@ -187,8 +187,8 @@ class Solver:
             houses_with_digit = self.sudoku.houses_with_digit(house_type, digit)
             house_pairs = combinations(houses_with_digit, r=2)
             for house_pair in house_pairs:
-                a = cells_in_house_with_digits({digit}, house_pair[0])
-                b = cells_in_house_with_digits({digit}, house_pair[1])
+                a = Sudoku.cells_in_group_with_digits({digit}, house_pair[0])
+                b = Sudoku.cells_in_group_with_digits({digit}, house_pair[1])
                 pair_house = [house for house in (a, b) if len(house) == 2]
                 if not pair_house:
                     continue
@@ -206,7 +206,7 @@ class Solver:
                 skyscrapers = cells - base
                 affected_keys = Cell.intersection(*skyscrapers)
                 affected_cells = {self.sudoku[key] for key in affected_keys}
-                if remove_digits_from_cells(digit, *affected_cells):
+                if self.remove_digits_from_cells(digit, *affected_cells):
                     return True
         return False
 
@@ -219,7 +219,7 @@ class Solver:
         for digit, box in product(range(1, 10), self.sudoku.boxes):
             pointing = {cell for cell in box if digit in cell}
             pointed = self.cells_seen_by_pointing_tuple(pointing)
-            if remove_digits_from_cells(digit, *pointed):
+            if self.remove_digits_from_cells(digit, *pointed):
                 return True
         return False
 
@@ -231,9 +231,9 @@ class Solver:
         :param pointing: Set of cells that share a box and digit.
         :return: Set of cells that share a row or column and a digit.
         """
-        if cells_share_a_row(*pointing):
+        if Sudoku.cells_share_a_row(*pointing):
             pointed = set(self.sudoku.row(next(iter(pointing)).y))
-        elif cells_share_a_column(*pointing):
+        elif Sudoku.cells_share_a_column(*pointing):
             pointed = set(self.sudoku.column(next(iter(pointing)).x))
         else:
             return set()
@@ -251,7 +251,7 @@ class Solver:
             iter_house = LITERALS[house_type]["iter_house"]
             houses = getattr(self.sudoku, iter_house)
             for house in houses:
-                if clear_hidden_tuple(house, size):
+                if self.clear_hidden_tuple(house, size):
                     return True
         return False
 
@@ -309,7 +309,7 @@ class Solver:
         for house_num in perp_house_nums:
             house = getattr(self.sudoku, opposite_house_type)(house_num)
             affected_cells = {cell for cell in house if cell not in fish_cells}
-            if remove_digits_from_cells(digit, *affected_cells):
+            if self.remove_digits_from_cells(digit, *affected_cells):
                 operated = True
         return operated
 
@@ -357,7 +357,7 @@ class Solver:
             affected_cells -= {cell
                                for cell in affected_cells
                                if len([f for f in flat_proper_fish if f.sees(cell)]) <= 1}
-            if remove_digits_from_cells(digit, *affected_cells):
+            if self.remove_digits_from_cells(digit, *affected_cells):
                 return True
         return False
 
@@ -369,7 +369,7 @@ class Solver:
         contain their shared digit.
         """
         triples = self.find_ywing_triples()
-        if ywings := find_valid_ywings(triples):
+        if ywings := self.find_valid_ywings(triples):
             for ywing in ywings:
                 if self.clear_ywing(ywing):
                     return True
@@ -381,7 +381,7 @@ class Solver:
         shared_digit: int = wing_a.pencil_marks.intersection(wing_b.pencil_marks).pop()
         affected_cells = {cell for cell in self.sudoku
                           if (cell.sees(wing_a) and cell.sees(wing_b))}
-        if remove_digits_from_cells(shared_digit, *affected_cells):
+        if self.remove_digits_from_cells(shared_digit, *affected_cells):
             return True
         return operated
 
@@ -412,7 +412,7 @@ class Solver:
         to a sudoku with more than one correct solution.
         """
         for rectangle in self.sudoku.rectangles():
-            if rectangle_is_avoidable(rectangle):
+            if self.rectangle_is_avoidable(rectangle):
                 yield rectangle
 
     def check_for_avoidable_rectangle(self) -> bool:
@@ -421,7 +421,7 @@ class Solver:
         cannot contain identical digits across both diagonals.
         """
         for rectangle in self.potential_avoidable_rectangles():
-            if clear_avoidable_rectangle(*rectangle):
+            if self.clear_avoidable_rectangle(*rectangle):
                 return True
         return False
 
@@ -439,9 +439,9 @@ class Solver:
         return False
 
     def clear_xyzwing(self, index, triple):
-        shared_digit = xyzwing_triple_shared_digit(index, triple)
+        shared_digit = self.xyzwing_triple_shared_digit(index, triple)
         affected_cells = self.xyzwing_affected_cells(shared_digit, triple)
-        if remove_digits_from_cells(shared_digit, *affected_cells):
+        if self.remove_digits_from_cells(shared_digit, *affected_cells):
             return True
         return False
 
@@ -486,7 +486,7 @@ class Solver:
         for box in self.sudoku.boxes:
             pairs = [cell for cell in box if len(cell.pencil_marks) == 2]
             for a, b in combinations(pairs, r=2):
-                if cells_form_naked_tuple(a, b):
+                if self.cells_from_naked_tuple(a, b):
                     cell, target = self.unique_rectangle_cell_and_target(a, b)
 
                     if cell is not None and target is not None:
@@ -495,35 +495,50 @@ class Solver:
                             return True
         return False
 
-    def unique_rectangle_cell_and_target(self, a, b):
+    def unique_rectangle_cell_and_target(self, a, b) -> tuple[Optional[Cell], Optional[Cell]]:
         """Given cell_a, cell_b that share a row or column in the same box
         and have identical pencil_marks, return a cell (if any) that shares a
         column or row (respectively) with one of them and the cell that
         completes the rectangle."""
-        cell, target = None, None
-        # a and b share a row
         if a.y == b.y:
-            for cell in [self.sudoku[k] for k in a.column if k != a.coordinates]:
-                if cell.pencil_marks == a.pencil_marks:
-                    target = self.sudoku[(b.x, cell.y)]
-                    break
-            else:
-                for cell in [self.sudoku[k] for k in b.column if k != b.coordinates]:
-                    if cell.pencil_marks == b.pencil_marks:
-                        target = self.sudoku[(a.x, cell.y)]
-                        break
-        # a and b share a column
+            cell, target = self.unique_rectangle_cell_and_target_share_a_row(a, b)
         elif a.x == b.x:
-            for cell in [self.sudoku[k] for k in a.row if k != a.coordinates]:
-                if cell.pencil_marks == a.pencil_marks:
-                    target = self.sudoku[(cell.x, b.y)]
-                    break
-            else:
-                for cell in [self.sudoku[k] for k in b.row if k != b.coordinates]:
-                    if cell.pencil_marks == a.pencil_marks:
-                        target = self.sudoku[(cell.x, a.y)]
-                        break
+            cell, target = self.unique_rectangle_cell_and_target_share_a_column(a, b)
+        else:
+            return None, None
         return cell, target
+
+    def unique_rectangle_cell_and_target_share_a_column(self, a, b) -> tuple[Cell, Cell]:
+        final_cell = None
+        target = None
+        for cell in [self.sudoku[k] for k in a.row if k != a.coordinates]:
+            if cell.pencil_marks == a.pencil_marks:
+                target = self.sudoku[(cell.x, b.y)]
+                final_cell = cell
+                break
+        else:
+            for cell in [self.sudoku[k] for k in b.row if k != b.coordinates]:
+                if cell.pencil_marks == a.pencil_marks:
+                    target = self.sudoku[(cell.x, a.y)]
+                    final_cell = cell
+                    break
+        return final_cell, target
+
+    def unique_rectangle_cell_and_target_share_a_row(self, a, b) -> tuple[Cell, Cell]:
+        final_cell = None
+        target = None
+        for cell in [self.sudoku[k] for k in a.column if k != a.coordinates]:
+            if cell.pencil_marks == a.pencil_marks:
+                target = self.sudoku[(b.x, cell.y)]
+                final_cell = cell
+                break
+        else:
+            for cell in [self.sudoku[k] for k in b.column if k != b.coordinates]:
+                if cell.pencil_marks == b.pencil_marks:
+                    target = self.sudoku[(a.x, cell.y)]
+                    final_cell = cell
+                    break
+        return final_cell, target
 
     def check_for_pointing_rectangle(self) -> bool:
         """
@@ -539,7 +554,7 @@ class Solver:
                 for key in a.column:
                     c = self.sudoku[key]
                     d = self.sudoku[(b.x, c.y)]
-                    digits = pointing_rectangle_digits(a, b, c, d)
+                    digits = self.pointing_rectangle_digits(a, b, c, d)
                     if not digits: continue
                     if self.clear_pointing_rectangle((c, d), digits, "row"):
                         return True
@@ -547,7 +562,7 @@ class Solver:
                 for key in a.row:
                     c = self.sudoku[key]
                     d = self.sudoku[(c.x, b.y)]
-                    digits = pointing_rectangle_digits(a, b, c, d)
+                    digits = self.pointing_rectangle_digits(a, b, c, d)
                     if not digits: continue
                     if self.clear_pointing_rectangle((c, d), digits, "column"):
                         return True
@@ -621,14 +636,14 @@ class Solver:
         for house_type, pair in product(RC, combinations(rectangle, r=2)):
             check_axis = LITERALS[house_type]["check_axis"]
 
-            if cells_share_axis(check_axis, *pair) and cells_form_naked_tuple(*pair):
+            if cells_share_axis(check_axis, *pair) and self.cells_from_naked_tuple(*pair):
                 pencil_marks = pair[0].pencil_marks
                 opposite_pair: set[Cell, Cell] = {*rectangle} - {*pair}
                 if all_cells_in_house_contain_pencil_marks(opposite_pair, pencil_marks) is False:
                     continue
                 for digit in pencil_marks:
                     if self.cells_are_strongly_connected_by_digit(digit, *opposite_pair):
-                        if clear_hidden_rectangle_pair(digit, opposite_pair, pencil_marks):
+                        if self.clear_hidden_rectangle_pair(digit, opposite_pair, pencil_marks):
                             return True
 
     def cells_are_strongly_connected_by_digit(self, digit: int, *cells: Cell) -> bool:
@@ -638,13 +653,13 @@ class Solver:
         """
         if len(cells) != 2:
             return False
-        if cells_share_a_column(*cells):
+        if Sudoku.cells_share_a_column(*cells):
             axis = "x"
             house_type = "column"
-        elif cells_share_a_row(*cells):
+        elif Sudoku.cells_share_a_row(*cells):
             axis = "y"
             house_type = "row"
-        elif cells_share_a_box(*cells):
+        elif Sudoku.cells_share_a_box(*cells):
             axis = "house_num"
             house_type = "box"
         else:
@@ -692,8 +707,8 @@ class Solver:
         for digit in range(1, 10):
             strongly_connected_pairs = self.find_strongly_connected_pairs_with_digit(digit)
             if not strongly_connected_pairs: continue
-            strongly_connected_chains = strongly_connected_cell_chains(strongly_connected_pairs)
-            coloured_chains = colour_pairs_for_strongly_connected_chains(strongly_connected_chains)
+            strongly_connected_chains = self.strongly_connected_cell_chains(strongly_connected_pairs)
+            coloured_chains = self.colour_pairs_for_strongly_connected_chains(strongly_connected_chains)
             if self.clear_colour_contradiction(digit, coloured_chains):
                 return True
             if self.clear_colour_chain(digit, coloured_chains):
@@ -702,7 +717,7 @@ class Solver:
 
     def clear_colour_chain(self, digit, coloured_chains):
         seen_cells = self.cells_seen_by_colour_chains(coloured_chains)
-        if remove_digits_from_cells(digit, *seen_cells):
+        if self.remove_digits_from_cells(digit, *seen_cells):
             return True
 
     def check_for_empty_rectangle(self) -> bool:
@@ -720,12 +735,12 @@ class Solver:
                 cells_without_digit = {cell for cell in box if digit not in cell}
                 if len(cells_without_digit) < 4: continue
                 for quadruple in combinations(cells_without_digit, r=4):
-                    if cells_form_a_rectangle(*quadruple):
-                        relevant_row_num = find_empty_rectangle_house("row", quadruple)
-                        relevant_col_num = find_empty_rectangle_house("column", quadruple)
+                    if Sudoku.cells_form_a_rectangle(*quadruple):
+                        relevant_row_num = self.find_empty_rectangle_house("row", quadruple)
+                        relevant_col_num = self.find_empty_rectangle_house("column", quadruple)
                         target_cell = self.find_empty_rectangle_perp_sc_cell(relevant_row_num, relevant_col_num, digit)
                         if target_cell is None: continue
-                        if remove_digits_from_cells(digit, target_cell):
+                        if self.remove_digits_from_cells(digit, target_cell):
                             return True
         return False
 
@@ -772,250 +787,279 @@ class Solver:
                 if len(chain) <= 1: continue
                 contradiction = max([c_1.sees(c_2) for c_1, c_2 in combinations(chain, r=2)])
                 if contradiction:
-                    if remove_digits_from_cells(digit, *chain):
+                    if self.remove_digits_from_cells(digit, *chain):
                         return True
         return False
 
+    @staticmethod
+    def remove_duplicate_chains(chains: list[list[Cell]]) -> None:
+        """Remove colour_chains from the input that are either too short or
+        (perhaps reversed) duplicates."""
+        for x, y in combinations(chains, r=2):
+            if len(x) == len(y):
+                if x in chains and len(x) <= 2:
+                    chains.remove(x)
+                if y in chains and x == y[::-1]:
+                    chains.remove(y)
 
-def remove_duplicate_chains(chains: list[list[Cell]]) -> None:
-    """Remove colour_chains from the input that are either too short or
-    (perhaps reversed) duplicates."""
-    for x, y in combinations(chains, r=2):
-        if len(x) == len(y):
-            if x in chains and len(x) <= 2:
-                chains.remove(x)
-            if y in chains and x == y[::-1]:
-                chains.remove(y)
+    @staticmethod
+    def strongly_connected_chain_adjacent_cells(pairs) -> dict[Cell, set[Cell]]:
+        """Return a dictionary mapping each cell appearing in pairs to each
+        cell it shares a pair with."""
+        flat_cells = {cell for pair in pairs for cell in pair}
+        chain_dict = {
+            cell: set()
+            for cell in flat_cells
+        }
+        for k in chain_dict:
+            pairs_with_k = [set(pair) for pair in pairs if k in pair]
+            for pair in pairs_with_k:
+                chain_dict[k].update(pair - {k})
+        return chain_dict
 
-
-def strongly_connected_chain_adjacent_cells(pairs) -> dict[Cell, set[Cell]]:
-    """Return a dictionary mapping each cell appearing in pairs to each
-    cell it shares a pair with."""
-    flat_cells = {cell for pair in pairs for cell in pair}
-    chain_dict = {
-        cell: set()
-        for cell in flat_cells
-    }
-    for k in chain_dict:
-        pairs_with_k = [set(pair) for pair in pairs if k in pair]
-        for pair in pairs_with_k:
-            chain_dict[k].update(pair - {k})
-    return chain_dict
-
-
-def colour_pairs_for_strongly_connected_chains(chains: list[list[Cell]]) -> list[list[list[Cell]]]:
-    """
-    Separates each chain in chains into its odd and even elements.
-    :param chains: List of chains of strongly connected cells.
-    """
-    result = []
-    for chain in chains:
-        evens = []
-        odds = []
-        for i, cell in enumerate(chain):
-            if i % 2 == 0:
-                evens.append(cell)
-            elif i % 2 == 1:
-                odds.append(cell)
-        result.append([evens, odds])
-    return result
-
-
-def match_endpoints_with_adjacencies(adjacencies, endpoints):
-    """
-    Match each endpoint cell with adjacent cells and return the
-    results after pruning duplicates.
-    """
-    chains = [[cell] for cell in endpoints]
-    while (
-            max([chain[0] == chain[-1] or chain[-1] not in endpoints
-                 for chain in chains])
-    ):
-        no_change_counter = 0
+    @staticmethod
+    def colour_pairs_for_strongly_connected_chains(chains: list[list[Cell]]) -> list[list[list[Cell]]]:
+        """
+        Separates each chain in chains into its odd and even elements.
+        :param chains: List of chains of strongly connected cells.
+        """
+        result = []
         for chain in chains:
-            cell: Cell = chain[-1]
-            connected: set[Cell] = {c for c in adjacencies[cell]}
-            for checked in chain:
-                connected -= {checked}
-            if len(connected) == 0:
-                no_change_counter += 1
-                continue
-            elif len(connected) == 1:
-                chain.append(next(iter(connected)))
-            else:
-                chains.remove(chain)
-                for other_cell in connected:
-                    new_chain = [_cell for _cell in chain]
-                    new_chain.append(other_cell)
-                    chains.append(new_chain)
-        if no_change_counter == len(chains):
-            break
-    remove_duplicate_chains(chains)
-    return chains
+            evens = []
+            odds = []
+            for i, cell in enumerate(chain):
+                if i % 2 == 0:
+                    evens.append(cell)
+                elif i % 2 == 1:
+                    odds.append(cell)
+            result.append([evens, odds])
+        return result
 
+    def match_endpoints_with_adjacencies(self, adjacencies, endpoints):
+        """
+        Match each endpoint cell with adjacent cells and return the
+        results after pruning duplicates.
+        """
+        chains = [[cell] for cell in endpoints]
+        while (
+                max([chain[0] == chain[-1] or chain[-1] not in endpoints
+                     for chain in chains])
+        ):
+            no_change_counter = 0
+            for chain in chains:
+                cell: Cell = chain[-1]
+                connected: set[Cell] = {c for c in adjacencies[cell]}
+                for checked in chain:
+                    connected -= {checked}
+                if len(connected) == 0:
+                    no_change_counter += 1
+                    continue
+                elif len(connected) == 1:
+                    chain.append(next(iter(connected)))
+                else:
+                    chains.remove(chain)
+                    for other_cell in connected:
+                        new_chain = [_cell for _cell in chain]
+                        new_chain.append(other_cell)
+                        chains.append(new_chain)
+            if no_change_counter == len(chains):
+                break
+        self.remove_duplicate_chains(chains)
+        return chains
 
-def strongly_connected_cell_chains(pairs: set[tuple[Cell, Cell]]):
-    """
-    Return a list of lists of cells which form a chain of three or
-    more cells that are strongly connected.
-    """
-    adjacencies: dict = strongly_connected_chain_adjacent_cells(pairs)
-    endpoints = {k for k, v in adjacencies.items() if len(v) == 1}
-    return match_endpoints_with_adjacencies(adjacencies, endpoints)
+    def strongly_connected_cell_chains(self, pairs: set[tuple[Cell, Cell]]):
+        """
+        Return a list of lists of cells which form a chain of three or
+        more cells that are strongly connected.
+        """
+        adjacencies: dict = self.strongly_connected_chain_adjacent_cells(pairs)
+        endpoints = {k for k, v in adjacencies.items() if len(v) == 1}
+        return self.match_endpoints_with_adjacencies(adjacencies, endpoints)
 
+    @staticmethod
+    def remove_digits_from_cells(digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
+        """
+        Removes digits from cells if the digits exist.
+        Returns False if no changes were made.
+        """
+        operated = False
+        for cell in cells:
+            if cell.remove(digits):
+                operated = True
+        return operated
 
-def remove_digits_from_cells(digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
-    """
-    Removes digits from cells if the digits exist.
-    Returns False if no changes were made.
-    """
-    operated = False
-    for cell in cells:
-        if cell.remove(digits):
-            operated = True
-    return operated
+    @staticmethod
+    def only_one_cell_in_group_can_contain_digit(digit, group) -> bool:
+        return len({cell for cell in group if digit in cell}) == 1
 
+    @staticmethod
+    def cells_form_hidden_tuple(digits, candidate_tuple) -> bool:
+        """
+        If input cells individually contain two of input digits and
+        together contain all three digits, then they are a hidden tuple.
+        """
+        digits = set(digits)
+        cells_individually_contain_at_least_two_of_digits = min(
+            [len(cell.pencil_marks.intersection(digits)) >= 2
+             for cell in candidate_tuple]
+        )
+        cells_together_contain_all_digits = digits.issubset(
+            set.union(*[cell.pencil_marks for cell in candidate_tuple])
+        )
+        return cells_individually_contain_at_least_two_of_digits and cells_together_contain_all_digits
 
-def cells_share_a_row(*cells: Cell) -> bool:
-    return len({cell.y for cell in cells}) == 1
+    @staticmethod
+    def trimmed_fish_houses(candidate_houses, house_type, size) -> Optional[tuple]:
+        """Return group of cells that could be an xwing, swordfish, or jellyfish."""
+        opposite_axis = LITERALS[house_type]["opposite_axis"]
+        for candidates in combinations(candidate_houses, r=size):
+            total_axes = set()
+            for line in candidates:
+                total_axes.update([getattr(cell, opposite_axis) for cell in line])
+            if len(total_axes) == size:
+                return candidates
+        return None
 
-
-def cells_share_a_column(*cells: Cell) -> bool:
-    return len({cell.x for cell in cells}) == 1
-
-
-def cells_share_a_box(*cells: Cell) -> bool:
-    return len({cell.box_num for cell in cells}) == 1
-
-
-def cells_form_a_rectangle(*cells: Cell) -> bool:
-    """Return whether input cells form a rectangle."""
-    if len(cells) != 4: return False
-    for order in permutations(cells, r=4):
-        a, b, c, d = order
-        if a.x == c.x and a.y == b.y and d.x == b.x and d.y == c.y:
+    @staticmethod
+    def rectangle_is_avoidable(rectangle) -> bool:
+        """Return true if filling in the rectangle improperly would
+         break uniqueness."""
+        if (min([cell.started_empty for cell in rectangle])
+                and len({cell.box_num for cell in rectangle}) == 2
+                and len([cell for cell in rectangle if cell.is_empty]) == 1):
             return True
-    return False
 
+    @staticmethod
+    def pointing_rectangle_digits(a: Cell, b: Cell, c: Cell, d: Cell) -> set:
+        """
+        Return digits, if any, that are in a pointing rectangle made up of
+        input cells.
+        """
+        if c.is_empty:
+            if c.pencil_marks.issuperset(a.pencil_marks):
+                if d.is_empty:
+                    if d.pencil_marks.issuperset(b.pencil_marks):
+                        return set.union(
+                            *[c.pencil_marks - a.pencil_marks, d.pencil_marks - a.pencil_marks]
+                        )
 
-def only_one_cell_in_group_can_contain_digit(digit, group) -> bool:
-    return len({cell for cell in group if digit in cell}) == 1
+    @staticmethod
+    def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:
+        """Return triple's shared digit if input triple is a viable xyzwing;
+        returns None otherwise."""
+        axis = triple[index]
+        wings = [triple[x] for x in {0, 1, 2} - {index}]
+        if min([axis.sees(cell) for cell in wings]):
+            pencil_marks = [cell.pencil_marks for cell in triple]
+            intersection = set.intersection(*pencil_marks)
+            if len(set.union(*pencil_marks)) == 3 and len(set.intersection(*pencil_marks)) == 1:
+                return intersection.pop()
+        return None
 
+    @staticmethod
+    def find_valid_ywings(triples) -> list[Optional[list[Cell, Cell]]]:
+        """Return either an empty list or a list containing pairs of
+        cells which are the wings of ywings."""
+        ywings = []
+        for a, b, c in triples:
+            if a.sees(b):
+                if a.sees(c):
+                    if not b.sees(c):
+                        ywings.append([b, c])
+                elif b.sees(c):
+                    ywings.append([a, c])
+            elif a.sees(c) and b.sees(c):
+                ywings.append([a, b])
+        return ywings
 
-def cells_form_hidden_tuple(digits, candidate_tuple) -> bool:
-    """
-    If input cells individually contain two of input digits and
-    together contain all three digits, then they are a hidden tuple.
-    """
-    digits = set(digits)
-    cells_individually_contain_at_least_two_of_digits = min(
-        [len(cell.pencil_marks.intersection(digits)) >= 2
-         for cell in candidate_tuple]
-    )
-    cells_together_contain_all_digits = digits.issubset(
-        set.union(*[cell.pencil_marks for cell in candidate_tuple])
-    )
-    return cells_individually_contain_at_least_two_of_digits and cells_together_contain_all_digits
+    @staticmethod
+    def clear_avoidable_rectangle(top_left, top_right, bot_left, bot_right) -> bool:
+        operated = False
+        if top_left.digit == bot_right.digit:
+            if top_right.is_empty and not bot_left.is_empty:
+                if bot_left.digit in top_right.pencil_marks:
+                    top_right.pencil_marks.remove(bot_left.digit)
+                    operated = True
+            elif bot_left.is_empty and not top_right.is_empty:
+                if top_right.digit in bot_left.pencil_marks:
+                    bot_left.pencil_marks.remove(top_right.digit)
+                    operated = True
+        elif top_right.digit == bot_left.digit:
+            if top_left.is_empty and not bot_right.is_empty:
+                if bot_right.digit in top_left.pencil_marks:
+                    top_left.pencil_marks.remove(bot_right.digit)
+                    operated = True
+            elif bot_right.is_empty and not top_left.is_empty:
+                if top_left.digit in bot_right.pencil_marks:
+                    bot_right.pencil_marks.remove(top_left.digit)
+                    operated = True
+        return operated
 
-
-def cells_in_house_with_digits(digits: Iterable[int], house: list[Cell]):
-    """
-    Return a list of cells in input house that contain each digit in
-    digits.
-    """
-    empty_cells = {cell for cell in house if cell.is_empty}
-    cells_with_digits = [
-        {cell for cell in empty_cells if digit in cell} for digit in digits
-    ]
-    flattened_cells = {cell for _list in cells_with_digits for cell in _list}
-    return flattened_cells
-
-
-def trimmed_fish_houses(candidate_houses, house_type, size) -> Optional[tuple]:
-    """Return group of cells that could be an xwing, swordfish, or jellyfish."""
-    opposite_axis = LITERALS[house_type]["opposite_axis"]
-    for candidates in combinations(candidate_houses, r=size):
-        total_axes = set()
-        for line in candidates:
-            total_axes.update([getattr(cell, opposite_axis) for cell in line])
-        if len(total_axes) == size:
-            return candidates
-    return None
-
-
-def rectangle_is_avoidable(rectangle) -> bool:
-    """Return true if filling in the rectangle improperly would
-     break uniqueness."""
-    if (min([cell.started_empty for cell in rectangle])
-            and len({cell.box_num for cell in rectangle}) == 2
-            and len([cell for cell in rectangle if cell.is_empty]) == 1):
+    @staticmethod
+    def cells_from_naked_tuple(*cells) -> bool:
+        """Return whether input cells cumulatively contain exactly as
+        many possible digits as there are input cells."""
+        pencil_marks = [cell.pencil_marks for cell in cells]
+        flattened_pms = {digit for house in pencil_marks for digit in house}
+        if len(set.union(flattened_pms)) != len(cells):
+            return False
         return True
 
-
-def pointing_rectangle_digits(a: Cell, b: Cell, c: Cell, d: Cell) -> set:
-    """
-    Return digits, if any, that are in a pointing rectangle made up of
-    input cells.
-    """
-    if c.is_empty:
-        if c.pencil_marks.issuperset(a.pencil_marks):
-            if d.is_empty:
-                if d.pencil_marks.issuperset(b.pencil_marks):
-                    return set.union(
-                        *[c.pencil_marks - a.pencil_marks, d.pencil_marks - a.pencil_marks]
-                    )
-
-
-def xyzwing_triple_shared_digit(index, triple: tuple[Cell, Cell, Cell]) -> Optional[int]:
-    """Return triple's shared digit if input triple is a viable xyzwing;
-    returns None otherwise."""
-    axis = triple[index]
-    wings = [triple[x] for x in {0, 1, 2} - {index}]
-    if min([axis.sees(cell) for cell in wings]):
-        pencil_marks = [cell.pencil_marks for cell in triple]
-        intersection = set.intersection(*pencil_marks)
-        if len(set.union(*pencil_marks)) == 3 and len(set.intersection(*pencil_marks)) == 1:
-            return intersection.pop()
-    return None
-
-
-def find_valid_ywings(triples) -> list[Optional[list[Cell, Cell]]]:
-    """Return either an empty list or a list containing pairs of
-    cells which are the wings of ywings."""
-    ywings = []
-    for a, b, c in triples:
-        if a.sees(b):
-            if a.sees(c):
-                if not b.sees(c):
-                    ywings.append([b, c])
-            elif b.sees(c):
-                ywings.append([a, c])
-        elif a.sees(c) and b.sees(c):
-            ywings.append([a, b])
-    return ywings
-
-
-def clear_avoidable_rectangle(top_left, top_right, bot_left, bot_right) -> bool:
-    operated = False
-    if top_left.digit == bot_right.digit:
-        if top_right.is_empty and not bot_left.is_empty:
-            if bot_left.digit in top_right.pencil_marks:
-                top_right.pencil_marks.remove(bot_left.digit)
+    @staticmethod
+    def clear_hidden_rectangle_pair(digit, pair, pencil_marks):
+        operated = False
+        removed_digit = next(iter(d for d in pencil_marks if d != digit))
+        for focus in pair:
+            if focus.remove(removed_digit):
                 operated = True
-        elif bot_left.is_empty and not top_right.is_empty:
-            if top_right.digit in bot_left.pencil_marks:
-                bot_left.pencil_marks.remove(top_right.digit)
-                operated = True
-    elif top_right.digit == bot_left.digit:
-        if top_left.is_empty and not bot_right.is_empty:
-            if bot_right.digit in top_left.pencil_marks:
-                top_left.pencil_marks.remove(bot_right.digit)
-                operated = True
-        elif bot_right.is_empty and not top_left.is_empty:
-            if top_left.digit in bot_right.pencil_marks:
-                bot_right.pencil_marks.remove(top_left.digit)
-                operated = True
-    return operated
+        return operated
+
+    def clear_naked_tuples(self, house, tuple_cells):
+        non_members: set[Cell] = set(house) - set(tuple_cells)
+        marks = [tuple(cell.pencil_marks) for cell in tuple_cells]
+        options = {digit for pms in marks for digit in pms}
+        if self.remove_digits_from_cells(options, *non_members):
+            return True
+
+    def clear_hidden_tuple(self, house, size) -> bool:
+        for digits in combinations(range(1, 10), r=size):
+            candidate_tuple = Sudoku.cells_in_group_with_digits(digits, house)
+            if len(candidate_tuple) != size: continue
+            if self.cells_form_hidden_tuple(digits, candidate_tuple):
+                other_digits = set(range(1, 10)) - set(digits)
+                if self.remove_digits_from_cells(other_digits, *candidate_tuple):
+                    return True
+        return False
+
+    @staticmethod
+    def x_wing_if_it_has_fins(fin_house, x_wing_house) -> list:
+        """Return the x-wing hidden inside a finned x-wing if such an x-wing exists."""
+        for fin_0, fin_1 in combinations(fin_house, r=2):
+            checktangle = [
+                x_wing_house[0],
+                fin_0,
+                x_wing_house[1],
+                fin_1
+            ]
+            if Sudoku.cells_form_a_rectangle(*checktangle):
+                return checktangle
+        return []
+
+    @staticmethod
+    def find_empty_rectangle_house(house_type, rectangle) -> int:
+        """
+        Return the house_num that the cells which share a row or column in
+        an empty rectangle box share.
+        """
+        a = {0, 1, 2}
+        b = {3, 4, 5}
+        c = {6, 7, 8}
+        check_axis = LITERALS[house_type]["check_axis"]
+
+        house_nums = {getattr(cell, check_axis) for cell in rectangle}
+        for num_set in a, b, c:
+            if len(num := (num_set - house_nums)) == 1:
+                return num.pop()
 
 
 def at_least_one_cell_has_only_two_options(*cells) -> bool:
@@ -1027,16 +1071,6 @@ def at_least_one_cell_has_only_two_options(*cells) -> bool:
 def cells_are_empty(*cells) -> bool:
     """Return whether each cell in cells is empty."""
     return min([cell.is_empty for cell in cells])
-
-
-def cells_form_naked_tuple(*cells) -> bool:
-    """Return whether input cells cumulatively contain exactly as
-    many possible digits as there are input cells."""
-    pencil_marks = [cell.pencil_marks for cell in cells]
-    flattened_pms = {digit for house in pencil_marks for digit in house}
-    if len(set.union(flattened_pms)) != len(cells):
-        return False
-    return True
 
 
 def cells_share_axis(check_axis, *cells: Cell) -> bool:
@@ -1054,91 +1088,18 @@ def all_cells_in_house_contain_pencil_marks(house: Iterable[Cell], pencil_marks:
     ])
 
 
-def clear_hidden_rectangle_pair(digit, pair, pencil_marks):
-    operated = False
-    removed_digit = next(iter(d for d in pencil_marks if d != digit))
-    for focus in pair:
-        if focus.remove(removed_digit):
-            operated = True
-    return operated
-
-
-def clear_naked_tuples(house, tuple_cells):
-    non_members: set[Cell] = set(house) - set(tuple_cells)
-    marks = [tuple(cell.pencil_marks) for cell in tuple_cells]
-    options = {digit for pms in marks for digit in pms}
-    if remove_digits_from_cells(options, *non_members):
-        return True
-
-
-def cells_share_same_house(house_type, *cells) -> bool:
+def list_diff(checked_against: list, check_list: list) -> list:
     """
-    Return whether cells share a row or column.
-
-    A helper function that allows iteration over houses; c.f.
-    Solver.cells_share_opposite_house.
+    Return a list containing all elements in checked_against that
+    don't appear in check_list. Duplicates matter.
     """
-    if house_type == "row":
-        return cells_share_a_row(*cells)
-    elif house_type == "column":
-        return cells_share_a_column(*cells)
-    else:
-        raise ValueError(f"{house_type} is not a valid argument for"
-                         f" Solver.cells_share_same_house.")
-
-
-def cells_share_opposite_house(house_type, *cells) -> bool:
-    """
-    Return whether cells share a row or column opposite the input group.
-
-    A helper function that allows iteration over houses; c.f.
-    Solver.cells_share_same_house.
-    """
-    if house_type == "row":
-        return cells_share_a_column(*cells)
-    elif house_type == "column":
-        return cells_share_a_row(*cells)
-    else:
-        raise ValueError(f"{house_type} is not a valid argument for"
-                         f"Solver.cells_share_opposite_house.")
-
-
-def clear_hidden_tuple(house, size) -> bool:
-    for digits in combinations(range(1, 10), r=size):
-        candidate_tuple = cells_in_house_with_digits(digits, house)
-        if len(candidate_tuple) != size: continue
-        if cells_form_hidden_tuple(digits, candidate_tuple):
-            other_digits = set(range(1, 10)) - set(digits)
-            if remove_digits_from_cells(other_digits, *candidate_tuple):
-                return True
-    return False
-
-
-def x_wing_if_it_has_fins(fin_house, x_wing_house) -> list:
-    """Return the x-wing hidden inside a finned x-wing if such an x-wing exists."""
-    for fin_0, fin_1 in combinations(fin_house, r=2):
-        checktangle = [
-            x_wing_house[0],
-            fin_0,
-            x_wing_house[1],
-            fin_1
-        ]
-        if cells_form_a_rectangle(*checktangle):
-            return checktangle
-    return []
-
-
-def find_empty_rectangle_house(house_type, rectangle) -> int:
-    """
-    Return the house_num that the cells which share a row or column in
-    an empty rectangle box share.
-    """
-    a = {0, 1, 2}
-    b = {3, 4, 5}
-    c = {6, 7, 8}
-    check_axis = LITERALS[house_type]["check_axis"]
-
-    house_nums = {getattr(cell, check_axis) for cell in rectangle}
-    for num_set in a, b, c:
-        if len(num := (num_set - house_nums)) == 1:
-            return num.pop()
+    copy_against = copy(checked_against)
+    copy_list = copy(check_list)
+    difference = []
+    for item in checked_against:
+        copy_against.remove(item)
+        if item in copy_list:
+            copy_list.remove(item)
+        else:
+            difference.append(item)
+    return difference
