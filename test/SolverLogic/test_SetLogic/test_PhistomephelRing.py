@@ -12,7 +12,7 @@ from src.Solver import Solver
 from src.Sudoku import Sudoku
 
 
-class Test_Phistomephel_Prerequisites(unittest.TestCase):
+class Test_PhistomephelInSudoku(unittest.TestCase):
     def setUp(self):
         self.sudoku = Sudoku()
 
@@ -100,7 +100,6 @@ class TestPhistomephelSingleDigitPlacement(unittest.TestCase):
         digit = 6
         self.assertTrue(solver.check_for_phistomephel_singles())
         self.assertEqual(digit, missing_cell.digit)
-
 
 
 if __name__ == '__main__':

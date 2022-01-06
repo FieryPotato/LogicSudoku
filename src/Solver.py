@@ -290,11 +290,12 @@ class Solver:
                 continue
             if empty_corners == empty_rings:
                 continue
-            missing_ring_digit = list_diff([cell.digit for cell in corners],
-                                           [cell.digit for cell in ring]).pop()
-            missing_corner_digit = list_diff([cell.digit for cell in ring],
-                                             [cell.digit for cell in corners]).pop()
-            if self.clear_phistomephel_singles(empty_corners, empty_rings, missing_ring_digit, missing_corner_digit):
+            missing_ring_digit: int = list_diff([cell.digit for cell in corners],
+                                                [cell.digit for cell in ring]).pop()
+            missing_corner_digit: int = list_diff([cell.digit for cell in ring],
+                                                  [cell.digit for cell in corners]).pop()
+            if self.clear_phistomephel_singles(empty_corners, empty_rings,
+                                               missing_ring_digit, missing_corner_digit):
                 return True
         return False
 
@@ -407,6 +408,35 @@ class Solver:
                             return True
         return False
 
+    def check_for_vdw_square_singles(self) -> bool:
+        """
+        Aad Van De Wetering proved that the square consisting of the
+        first five rows and first five columns is identical in
+        composition to the square consisting of the last four rows and
+        last four columns plus one full set of the digits 1-9. Removing
+        the full box from both sets leaves us with two caret-shaped
+        regions which share the same relation.
+        """
+        full_set = [i for i in range(1, 10)]
+        for major, minor in self.sudoku.vdw_squares():
+            major_filled = [cell for cell in major if not cell.is_empty]
+            minor_filled = [cell for cell in minor if not cell.is_empty]
+            major_digits = [cell.digit for cell in major_filled]
+            minor_digits = [cell.digit for cell in minor_filled]
+            if len(major_filled) == 15 and len(minor_filled) == 7:
+                major_expected = [cell.digit for cell in minor_filled] + [i for i in range(1, 10)]
+                digit = list_diff(major_expected, major_digits).pop()
+                empty_cell = {cell for cell in major if cell.is_empty}.pop()
+                empty_cell.fill(digit)
+                return True
+            if len(major_filled) == 16 and len(minor_filled) == 6:
+                major_digits_minus_full_set = list_diff(major_digits, full_set)
+                digit = list_diff(major_digits_minus_full_set, minor_digits).pop()
+                empty_cell = {cell for cell in minor if cell.is_empty}.pop()
+                empty_cell.fill(digit)
+                return True
+        return False
+
     def check_for_xyzwings(self) -> bool:
         """
         If a cell contains only three options and sees two other cells
@@ -511,16 +541,16 @@ class Solver:
 
     @staticmethod
     def clear_phistomephel_singles(empty_corners: list[Cell], empty_rings: list[Cell],
-                                  missing_ring_digit, missing_corner_digit) -> bool:
+                                   missing_ring_digit, missing_corner_digit) -> bool:
         operated = False
         if len(empty_corners) == 1:
             empty_corner: Cell = empty_corners.pop()
-            missing_digit: int = missing_corner_digit.pop()
+            missing_digit: int = missing_corner_digit
             empty_corner.fill(missing_digit)
             operated = True
         if len(empty_rings) == 1:
             empty_ring: Cell = empty_rings.pop()
-            missing_digit: int = missing_ring_digit.pop()
+            missing_digit: int = missing_ring_digit
             empty_ring.fill(missing_digit)
             operated = True
         return operated

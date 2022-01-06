@@ -35,6 +35,43 @@ BOX_MAP: dict = {
         (6, 8), (7, 8), (8, 8))
 }
 
+# Van De Wetering Squares
+vdw_map = {
+    "top": {
+        "keys": [(4, 0), (4, 1), (4, 2), (4, 3)],
+        "parity": 2
+
+    },
+    "bottom": {
+        "keys": [(4, 5), (4, 6), (4, 7), (4, 8)],
+        "parity": 3
+    },
+    "left": {
+        "keys": [(0, 4), (1, 4), (2, 4), (3, 4)],
+        "parity": 5
+    },
+    "right": {
+        "keys": [(5, 4), (6, 4), (7, 4), (8, 4)],
+        "parity": 7
+    }
+}
+vdw_even_inner_keys = [[(3, 0), (3, 1), (3, 2), (3, 3), (2, 3), (1, 3), (0, 3)],
+                       [(8, 5), (7, 5), (6, 5), (5, 5), (5, 6), (5, 7), (5, 8)]]
+vdw_odd_inner_keys = [[(5, 0), (5, 1), (5, 2), (5, 3), (6, 3), (7, 3), (8, 3)],
+                      [(0, 5), (1, 5), (2, 5), (3, 5), (3, 6), (3, 7), (3, 8)]]
+vdw_key_map = {
+    10: vdw_even_inner_keys,
+    14: vdw_odd_inner_keys,
+    15: vdw_odd_inner_keys,
+    21: vdw_even_inner_keys,
+}
+vdw_index_map = {
+    10: 0,
+    14: 0,
+    15: 1,
+    21: 1
+}
+
 
 class Sudoku:
     def __init__(self) -> None:
@@ -404,3 +441,45 @@ class Sudoku:
                 if len(cells_with_digit) == 2:
                     pairs.append(tuple(cells_with_digit))
         return set(pairs)
+
+    def single_vdw_square(self, vertical: str, horizontal: str) -> tuple[set[Cell], set[Cell]]:
+        """
+        Aad Van De Wetering proved that if you take the first 5
+        columns in a sudoku as a set and compare them to the bottom 4
+        rows, the 5 columns contain identical digits to the digits in
+        the rows plus one set of the digits 1–9 (obviously). The non-
+        trivial extension of this is to have all cells that appear in
+        both sets cancel each other out, such that we have two opposed
+        v-shapes in opposite corners of the sudoku, one of which is one
+        square thick and the other two squares. These v's also share
+        the relation of being equal to the other plus one complete set
+        of the digits 1-9.
+
+        :param vertical: "top" or "bottom"
+        :param horizontal: "left" or "right"
+        :return: {large square set}, {small square set}
+        """
+        vertical_cells = {self[key] for key in vdw_map[vertical]["keys"]}
+        horizontal_cells = {self[key] for key in vdw_map[horizontal]["keys"]}
+        parity = vdw_map[vertical]["parity"] * vdw_map[horizontal]["parity"]
+        diagonal_keys = vdw_key_map[parity]
+        diagonal_major_index = vdw_index_map[parity]
+        diagonal_minor_index = 1 if diagonal_major_index == 0 else 0
+        diagonal_major = {self[key] for key in diagonal_keys[diagonal_major_index]}
+        large_square = {self[4, 4]}.union(diagonal_major, vertical_cells, horizontal_cells)
+        small_square = {self[key] for key in diagonal_keys[diagonal_minor_index]}
+        return large_square, small_square
+
+    def vdw_squares(self, vertical=None, horizontal=None) -> \
+            Union[list[tuple[set[Cell], set[Cell]]], tuple[set[Cell], set[Cell]]]:
+        if min(isinstance(vertical, str), isinstance(horizontal, str)) is True:
+            return self.single_vdw_square(vertical, horizontal)
+
+        verticals = "top", "bottom" if vertical is None else [vertical]
+        horizontals = "left", "right" if horizontal is None else [horizontal]
+
+        squares = []
+        for v, h in product([v for v in verticals], [h for h in horizontals]):
+            squares.append(self.single_vdw_square(v, h))
+
+        return squares
