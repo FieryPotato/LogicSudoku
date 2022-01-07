@@ -256,8 +256,15 @@ class Sudoku:
                 yield house
 
     @classmethod
-    def from_string(cls, string: str, edited: dict=None) -> "Sudoku":
-        """Return a sudoku whose cells in order appear in an 81-character string."""
+    def from_string(cls, string: str, edited: dict = None) -> "Sudoku":
+        """
+        Return a sudoku whose cells in order appear in an 81-character
+        string. Spaces mark empty cells, and the \n character can be
+        used to break up lines for ease of formatting.
+
+        If edited is supplied, then for each key in edited, remove all
+        digits in edited[key] from sudoku[key].
+        """
         string = string.replace("\n", "")
         if len(string) < 81:
             raise ValueError("Your sudoku contains fewer than 81 digits.")
@@ -278,7 +285,28 @@ class Sudoku:
 
     @classmethod
     def from_json(cls, data) -> "Sudoku":
-        """Construct and return a sudoku from a json data structure."""
+        """
+        Construct and return a sudoku from a json data structure. The
+        data should have the following character:
+
+        {
+            "cells": {
+                ([key; eg. 0, 0]): [int in range(1, 10)],
+                etc.
+            },
+            "pencil marks": {
+                ([key]): [[list of ints in range(1, 10)]],
+                etc.
+            }
+        }
+
+        Key, value pairs in "cells" fill the cells in sudoku at those
+        keys with value. Key, value pairs in "pencil marks" remove the
+        digits in value from the cell at key.
+
+        If loading from file, keys should be strings that eval() to
+        tuples that contain two ints, eg.: "(6, 9)".
+        """
         new = cls()
         if "cells" in data:
             cell_dict: dict = data["cells"]
