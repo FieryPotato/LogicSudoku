@@ -256,8 +256,9 @@ class Sudoku:
                 yield house
 
     @classmethod
-    def from_string(cls, string, edited=None) -> "Sudoku":
+    def from_string(cls, string: str, edited: dict=None) -> "Sudoku":
         """Return a sudoku whose cells in order appear in an 81-character string."""
+        string = string.replace("\n", "")
         if len(string) < 81:
             raise ValueError("Your sudoku contains fewer than 81 digits.")
         elif len(string) > 81:
