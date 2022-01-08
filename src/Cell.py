@@ -1,6 +1,6 @@
 import itertools
 
-from typing import Union, Generator
+from typing import Generator
 
 BOX_MAP: dict = {
     0: ((0, 0), (1, 0), (2, 0),
@@ -34,13 +34,14 @@ BOX_MAP: dict = {
 
 
 class Cell:
+
     def __init__(self, coordinates: tuple[int, int], digit=" ") -> None:
         self.coordinates: tuple = coordinates
         self.x: int = coordinates[0]
         self.y: int = coordinates[1]
-        self.digit: Union[int, str] = digit
-        self.pencil_marks = {i for i in range(1, 10)}
-        self.started_empty = True
+        self.digit: int | str = digit
+        self.pencil_marks: set[int] = {i for i in range(1, 10)}
+        self.started_empty: bool = True
 
     def __repr__(self) -> str:
         return f"Cell({self.coordinates}: {self.digit})"
@@ -63,7 +64,7 @@ class Cell:
         return False
 
     def __bool__(self) -> bool:
-        return self.digit != " "
+        return not self.is_empty
 
     def __iter__(self) -> Generator[int, None, None]:
         """Iterates through cell pencil_marks."""
@@ -133,7 +134,7 @@ class Cell:
         """Return this cell's ordinal column number."""
         return self.x
 
-    def fill(self, digit: Union[int, str]) -> None:
+    def fill(self, digit: int | str) -> None:
         """Fill the cell with digit and updates pencil_marks."""
         if digit == " ":
             self.digit: str = digit
@@ -182,7 +183,7 @@ class Cell:
                    self.y == other.y,
                    self.box_num == other.box_num)
 
-    def remove(self, pencil_marks: Union[set, int, list]) -> bool:
+    def remove(self, pencil_marks: set | int | list) -> bool:
         """Remove input set from self.pencil_marks;
         return True if a change was made, and False if not."""
         if type(pencil_marks) in (list, tuple, int):

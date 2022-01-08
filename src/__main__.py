@@ -1,5 +1,5 @@
-from GUI.tkinter import App
+from GUI.Interface import Application
 
 if __name__ == "__main__":
-    gui = App()
+    gui = Application()
     gui.mainloop()

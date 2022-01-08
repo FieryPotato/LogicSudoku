@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from copy import deepcopy, copy
 from itertools import combinations, product
-from typing import Optional, Generator, Union, Any
+from typing import Optional, Generator, Any
 
 from src.Cell import Cell
 from src.Sudoku import Sudoku
@@ -690,7 +690,7 @@ class Solver:
             return False
         return True
 
-    def cells_seen_by_colour_chains(self, colour_chains: list[list[list[Cell]]]) -> set[Union[Cell, Any]]:
+    def cells_seen_by_colour_chains(self, colour_chains: list[list[list[Cell]]]) -> set[Cell | Any]:
         """
         Return cells which are seen by two or more cells of different
         colours from colour chains.
@@ -920,7 +920,7 @@ class Solver:
             return True
 
     @staticmethod
-    def remove_digits_from_cells(digits: Union[int, Iterable[int]], *cells: Cell) -> bool:
+    def remove_digits_from_cells(digits: int | Iterable[int], *cells: Cell) -> bool:
         """
         Removes digits from cells if the digits exist.
         Returns False if no changes were made.

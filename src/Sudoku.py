@@ -1,5 +1,5 @@
 from itertools import product, combinations, permutations
-from typing import ItemsView, Union, KeysView, Iterator, Generator, Iterable
+from typing import ItemsView, KeysView, Iterator, Generator, Iterable
 
 from src.Cell import Cell
 
@@ -138,7 +138,7 @@ class Sudoku:
                 return False
         return True
 
-    def is_legal(self, return_cell=False) -> Union[bool, tuple[int, int]]:
+    def is_legal(self, return_cell=False) -> bool | tuple[int, int]:
         """Return false if the sudoku has any duplicate digits in rows,
         columns, or boxes."""
         present_digits = set()
@@ -184,7 +184,7 @@ class Sudoku:
         self[coordinates].fill(value)
         return None
 
-    def get_cell(self, coordinates) -> Union[int, str]:
+    def get_cell(self, coordinates) -> int | str:
         """Return the digit in input coordinates' cell."""
         return self[coordinates].digit
 
@@ -328,7 +328,7 @@ class Sudoku:
 
     def phistomephel_sets(self, left_col: int = None, right_col: int = None,
                           top_row: int = None, bot_row: int = None) -> \
-            Union[list[tuple[set[Cell], set[Cell]]], tuple[set[Cell], set[Cell]]]:
+            list[tuple[set[Cell], set[Cell]]] | tuple[set[Cell], set[Cell]]:
         """
         Return a list of pairs of sets that are a consequence of
         Phistomephel's Theorem. If no params are None, then instead
@@ -500,7 +500,7 @@ class Sudoku:
         return large_square, small_square
 
     def vdw_squares(self, vertical=None, horizontal=None) -> \
-            Union[list[tuple[set[Cell], set[Cell]]], tuple[set[Cell], set[Cell]]]:
+            list[tuple[set[Cell], set[Cell]]] | tuple[set[Cell], set[Cell]]:
         if min(isinstance(vertical, str), isinstance(horizontal, str)) is True:
             return self.single_vdw_square(vertical, horizontal)
 

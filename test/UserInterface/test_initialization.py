@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from src.GUI.tkinter import App
+from src.GUI.Interface import load_puzzle, Tk, Application
 from src.Sudoku import Sudoku
 
 
@@ -20,8 +20,7 @@ class TestLoadingSudoku(unittest.TestCase):
         )
         mock = "test/UserInterface/mock_files/initialization_LoadingSudoku_LoadingFromString.txt"
         with patch("tkinter.filedialog.askopenfilename", return_value=mock):
-            app = App()
-            actual = app.load_puzzle()
+            actual = load_puzzle()
             self.assertEqual(expected, actual)
 
     def test_loading_from_json(self):
@@ -48,15 +47,33 @@ class TestLoadingSudoku(unittest.TestCase):
         )
         mock = "test/UserInterface/mock_files/initialization_LoadingSudoku_LoadingFromJSON.json"
         with patch("tkinter.filedialog.askopenfilename", return_value=mock):
-            app = App()
-            actual = app.load_puzzle()
+            actual = load_puzzle()
             self.assertEqual(expected, actual)
 
     def test_loading_other_file_type_raises_value_error(self):
         mock = "test/UserInterface/mock_files/initialization_LoadingSudoku_InvalidFileType.jpg"
         with patch("tkinter.filedialog.askopenfilename", return_value=mock):
-            app = App()
-            self.assertRaises(ValueError, app.load_puzzle)
+            self.assertRaises(ValueError, load_puzzle)
+
+
+class TestInstantiatingGUI(unittest.TestCase):
+    def test_application_treats_tkCell_as_cell(self):
+        test_str = "         " \
+                   "123456789" \
+                   "         " \
+                   "         " \
+                   "         " \
+                   "         " \
+                   "         " \
+                   "         " \
+                   "         "
+
+        root = Tk()
+        test = Application(root)
+        test.pack()
+        with patch("src.GUI.Interface.load_puzzle", return_value=Sudoku.from_string(test_str)):
+            test.new_sudoku()
+            self.assertEqual(3, test.cell_dict[2, 1].digit)
 
 
 if __name__ == '__main__':
