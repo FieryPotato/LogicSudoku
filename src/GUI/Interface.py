@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 
+from src.Solver import Solver
 from src.Sudoku import Sudoku
 from src.Cell import Cell
 
@@ -17,11 +18,16 @@ class Application(tk.Tk):
         self.title("Sudoku")
         self.resizable(width=False, height=False)
         self.sudoku = tk_Sudoku(parent=self)
-        self.sudoku.grid(row=0, column=0, columnspan=2)
-        fill_button = tk.Button(self, text="Load", command=self.sudoku.new_sudoku)
-        fill_button.grid(row=1, column=0)
-        quit_button = tk.Button(self, text="Quit", command=self.destroy)
-        quit_button.grid(row=1, column=1)
+
+        buttons = {
+            "load": tk.Button(self, text="Load", command=self.sudoku.new_sudoku),
+            "solve": tk.Button(self, text="Solve", command=self.sudoku.solve),
+            "quit": tk.Button(self, text="Quit", command=self.destroy)
+        }
+
+        self.sudoku.grid(row=0, column=0, columnspan=len(buttons))
+        for i, button in enumerate(buttons):
+            buttons[button].grid(row=1, column=i)
 
 
 class tk_Sudoku(tk.Frame):
@@ -60,16 +66,6 @@ class tk_Sudoku(tk.Frame):
             hor_sep = tk.Frame(self, bd=5, height=3, background="black")
             hor_sep.grid(row=i, column=0, columnspan=span, sticky="ew")
 
-    def new_sudoku(self, init=False) -> None:
-        if init:
-            self.sudoku = Sudoku()
-            for k, v in self.sudoku.cell_dict.items():
-                self.cell_dict[k] = tk_Cell(v.coordinates, parent=self, controller=self.controller)
-        else:
-            self.sudoku = load_puzzle()
-            for k, v in self.cell_dict.items():
-                v.update_frames()
-
     def __getattr__(self, item):
         """Allows us to treat this window as the actual sudoku
         when convenient."""
@@ -77,6 +73,25 @@ class tk_Sudoku(tk.Frame):
             return self.__dict__[item]
         else:
             return getattr(self.sudoku, item)
+
+    def new_sudoku(self, init=False) -> None:
+        if init:
+            self.sudoku = Sudoku()
+            for k, v in self.sudoku.cell_dict.items():
+                self.cell_dict[k] = tk_Cell(v.coordinates, parent=self, controller=self.controller)
+        else:
+            self.sudoku = load_puzzle()
+            self.update_frames()
+
+    def update_frames(self):
+        for tk_cell in self.cell_dict.values():
+            tk_cell.update_frames()
+
+    def solve(self):
+        """Solves the current sudoku."""
+        solver = Solver(self.sudoku)
+        solver.main()
+        self.update_frames()
 
 
 class tk_Cell(tk.Frame):
@@ -173,7 +188,7 @@ class tk_Digit(tk.Frame):
         return self.parent.digit
 
 
-def load_puzzle() -> Sudoku:
+def load_puzzle() -> Sudoku | Exception:
     path: str = filedialog.askopenfilename(
         title="Select a file", filetypes=(("JSON files", "*.json"), ("text files", "*.txt"))
     )
