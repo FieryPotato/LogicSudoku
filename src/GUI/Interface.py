@@ -15,7 +15,7 @@ class Application(tk.Frame):
     def __init__(self, master=None, cnf={}, **kwargs):
         super().__init__(master, cnf)
         self.children = {}
-        self.puzzle: Sudoku = Sudoku()
+        self.sudoku: Sudoku = Sudoku()
         self.cell_dict: dict = {}
         self.new_sudoku(init=True)
         value: tk_Cell
@@ -24,11 +24,21 @@ class Application(tk.Frame):
 
     def new_sudoku(self, init=False) -> None:
         if init:
-            self.puzzle = Sudoku()
+            self.sudoku = Sudoku()
+            for k, v in self.sudoku.cell_dict.items():
+                self.cell_dict[k] = tk_Cell(v.coordinates, parent=self)
         else:
-            self.puzzle = load_puzzle()
-        for k, v in self.puzzle.cell_dict.items():
-            self.cell_dict[k] = tk_Cell(v.coordinates, parent=self)
+            self.sudoku = load_puzzle()
+            for k, v in self.cell_dict.items():
+                v.update_frames()
+
+    def __getattr__(self, item):
+        """Allows us to treat this window as the actual sudoku
+        when convenient."""
+        if item in self.__dict__:
+            return self.__dict__[item]
+        else:
+            return getattr(self.sudoku, item)
 
 
 class tk_Cell(tk.Frame):
@@ -39,10 +49,12 @@ class tk_Cell(tk.Frame):
         self.parent = parent
         self.controller = parent
         self.key = key
-        self.digit_label = tk_Digit(parent=self, controller=self.controller)
-        self.pm_frame = tk_PencilMarks(parent=self, controller=self.controller)
-        self.digit_label.grid(row=0, column=0, sticky="nsew")
-        self.pm_frame.grid(row=0, column=0, sticky="nsew")
+        self.frames = {}
+        for F in tk_PencilMarks, tk_Digit:
+            name = F.__name__
+            frame = F(parent=self, controller=self.controller)
+            self.frames[name] = frame
+            frame.grid(row=0, column=0, sticky="nsew")
         self.update_frames()
 
     def __getattr__(self, item):
@@ -56,15 +68,19 @@ class tk_Cell(tk.Frame):
 
     def update_frames(self) -> None:
         if self.is_empty:
-            self.pm_frame.tkraise()
-            self.pm_frame.update_values()
-        elif not self.is_empty:
-            self.digit_label.tkraise()
-            self.digit_label.update_values()
+            self.show_frame("tk_PencilMarks")
+        else:
+            self.show_frame("tk_Digit")
+
+    def show_frame(self, frame_name) -> None:
+        frame = self.frames[frame_name]
+        frame.tkraise()
+        frame.update_values()
 
     @property
     def cell(self) -> Cell:
-        return self.parent.puzzle.cell_dict[self.key]
+        """Return the cell object that this frame represents."""
+        return self.parent.sudoku.cell_dict[self.key]
 
 
 class tk_PencilMarks(tk.Frame):
@@ -104,15 +120,14 @@ class tk_Digit(tk.Frame):
         super().__init__(parent, cnf, **kwargs)
         self.parent = parent
         self.controller = controller
-        self.text = tk.StringVar(master=self, value=self.digit,
+        self.text = tk.StringVar(master=self, value=self.digit(),
                                  name=f"{parent.coordinates} Digit")
         self.label = tk.Label(master=self, textvariable=self.text, font=DIGIT)
         self.label.pack()
 
     def update_values(self) -> None:
-        self.text.set(self.parent.digit)
+        self.text.set(self.digit())
 
-    @property
     def digit(self) -> str:
         return self.parent.digit
 
