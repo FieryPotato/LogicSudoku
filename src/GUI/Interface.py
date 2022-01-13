@@ -1,76 +1,120 @@
 import json
-from tkinter import *
+import tkinter as tk
 from tkinter import filedialog
 
 from src.Sudoku import Sudoku
 from src.Cell import Cell
 
+PENCILMARK = ("Menlo", "14")
+DIGIT = ("Menlo", "51")
 
-class Application(Frame):
+
+class Application(tk.Frame):
     """Represents and displays a Sudoku in the GUI."""
-    def __init__(self, root):
-        super().__init__()
+
+    def __init__(self, master=None, cnf={}, **kwargs):
+        super().__init__(master, cnf)
+        self.children = {}
         self.puzzle: Sudoku = Sudoku()
         self.cell_dict: dict = {}
         self.new_sudoku(init=True)
         value: tk_Cell
         for value in self.cell_dict.values():
-            x = value.x
-            y = value.y
-            value.grid(row=y, column=x)
+            value.grid(row=value.y, column=value.x)
 
     def new_sudoku(self, init=False) -> None:
         if init:
             self.puzzle = Sudoku()
         else:
             self.puzzle = load_puzzle()
-        self.cell_dict = {k: tk_Cell(self.puzzle, v.coordinates, master=self) for k, v in self.puzzle.cell_dict.items()}
+        for k, v in self.puzzle.cell_dict.items():
+            self.cell_dict[k] = tk_Cell(v.coordinates, parent=self)
 
 
-class tk_Cell(Frame):
+class tk_Cell(tk.Frame):
     """Represents and displays Cells in the GUI."""
-    def __init__(self, sudoku, key, master, cnf={}, **kwargs):
-        super().__init__(master, cnf)
-        self.data: Cell = sudoku[key]
-        self.digit_label = tk_Digit(master=self)
-        self.pm_frame = tk_PencilMarks(master=self)
+
+    def __init__(self, key, parent, cnf={}, **kwargs):
+        super().__init__(parent, cnf, **kwargs)
+        self.parent = parent
+        self.controller = parent
+        self.key = key
+        self.digit_label = tk_Digit(parent=self, controller=self.controller)
+        self.pm_frame = tk_PencilMarks(parent=self, controller=self.controller)
+        self.digit_label.grid(row=0, column=0, sticky="nsew")
+        self.pm_frame.grid(row=0, column=0, sticky="nsew")
+        self.update_frames()
 
     def __getattr__(self, item):
         """Allows us to treat these representations as the actual cells
-        they're meant to represent when convenient."""
+        they're meant to represent when convenient (as long as nothing
+        clashes)."""
         if item in self.__dict__:
             return self.__dict__[item]
         else:
-            return getattr(self.data, item)
+            return getattr(self.cell, item)
+
+    def update_frames(self) -> None:
+        if self.is_empty:
+            self.pm_frame.tkraise()
+            self.pm_frame.update_values()
+        elif not self.is_empty:
+            self.digit_label.tkraise()
+            self.digit_label.update_values()
+
+    @property
+    def cell(self) -> Cell:
+        return self.parent.puzzle.cell_dict[self.key]
 
 
-class tk_PencilMarks(Frame):
+class tk_PencilMarks(tk.Frame):
     """Represents and displays pencil marks in a cell."""
-    def __init__(self, master: tk_Cell = None, cnf={}, **kwargs):
-        super().__init__(master, cnf)
-        self.data = master.pencil_marks
-        self.pm_dict = {}
-        for i in range(1, 10):
-            self.pm_dict[i] = {
-                "empty": bool(i in self.data),
-                "label": Label(master=self),
-                "text": StringVar()
-            }
-            self.pm_dict[i]["label"].config(text=self.pm_dict[i]["text"])
 
-        for k, v in self.pm_dict.items():
-            label = self.pm_dict[k]["label"]
-            pm_key = _ternary(k - 1) if k != 1 else "0"
+    def __init__(self, parent: tk_Cell = None, controller: Application = None, cnf={}, **kwargs):
+        super().__init__(parent, cnf, **kwargs)
+        self.controller = controller
+        self.parent = parent
+        self.pm_dict: dict = {}
+        for i in range(1, 10):
+            text_var = tk.StringVar(master=self, value=self.text_var_value(i),
+                                    name=f"{parent.coordinates} - {i} PM")
+            self.pm_dict[i] = {
+                "text": text_var,
+                "label": tk.Label(master=self, textvariable=text_var, font=PENCILMARK)
+            }
+            pm_key: str = _ternary(i - 1) if i != 1 else "0"
             assert len(coordinates := f"{int(pm_key):02d}") == 2
             y, x = coordinates
-            label.grid(row=y, column=x)
+            self.pm_dict[i]["label"].grid(row=y, column=x)
+
+    def text_var_value(self, digit) -> str:
+        if digit in self.parent.pencil_marks:
+            return digit
+        return " "
+
+    def update_values(self) -> None:
+        for digit, values in self.pm_dict.items():
+            values["text"].set(self.text_var_value(digit))
 
 
-class tk_Digit(Frame):
+class tk_Digit(tk.Frame):
     """Represents and displays digits in a cell."""
-    def __init__(self, master: tk_Cell = None, cnf={}, **kwargs):
-        super().__init__(master, cnf)
-        self.data = master.digit
+
+    def __init__(self, parent: tk_Cell = None, controller: Application = None, cnf={}, **kwargs):
+        super().__init__(parent, cnf, **kwargs)
+        self.parent = parent
+        self.controller = controller
+        self.text = tk.StringVar(master=self, value=self.digit,
+                                 name=f"{parent.coordinates} Digit")
+        self.label = tk.Label(master=self, textvariable=self.text, font=DIGIT)
+        self.label.pack()
+
+    def update_values(self) -> None:
+        self.text.set(self.parent.digit)
+
+    @property
+    def digit(self) -> str:
+        return self.parent.digit
 
 
 def load_puzzle() -> Sudoku:
@@ -85,7 +129,8 @@ def load_puzzle() -> Sudoku:
             contents = json.load(file)
             return Sudoku.from_json(contents)
         else:
-            raise ValueError(f"File {path} is not a valid file type. Please use .txt or .json.")
+            raise ValueError(f"File {path} does not have a supported file type. "
+                             f"Please use .txt or .json.")
 
 
 def _ternary(number: int) -> str:
@@ -98,14 +143,13 @@ def _ternary(number: int) -> str:
         return _ternary(int(quotient)) + str(int(remainder))
 
 
-
 def _test():
-    root = Tk()
+    root = tk.Tk()
     test = Application(root)
-    test.grid(row=0, rowspan=2)
-    fill_button = Button(root, text="Fill", command=load_puzzle)
+    test.grid(columnspan=2)
+    fill_button = tk.Button(root, text="Fill", command=test.new_sudoku)
     fill_button.grid(row=1, column=0)
-    quit_button = Button(root, text="QUIT", command=root.destroy)
+    quit_button = tk.Button(root, text="QUIT", command=root.destroy)
     quit_button.grid(row=1, column=1)
     root.mainloop()
 

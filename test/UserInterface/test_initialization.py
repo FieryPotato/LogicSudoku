@@ -1,7 +1,9 @@
+import io
+import sys
 import unittest
 from unittest.mock import patch
 
-from src.GUI.Interface import load_puzzle, Tk, Application
+from src.GUI.Interface import load_puzzle
 from src.Sudoku import Sudoku
 
 
@@ -55,25 +57,6 @@ class TestLoadingSudoku(unittest.TestCase):
         with patch("tkinter.filedialog.askopenfilename", return_value=mock):
             self.assertRaises(ValueError, load_puzzle)
 
-
-class TestInstantiatingGUI(unittest.TestCase):
-    def test_application_treats_tkCell_as_cell(self):
-        test_str = "         " \
-                   "123456789" \
-                   "         " \
-                   "         " \
-                   "         " \
-                   "         " \
-                   "         " \
-                   "         " \
-                   "         "
-
-        root = Tk()
-        test = Application(root)
-        test.pack()
-        with patch("src.GUI.Interface.load_puzzle", return_value=Sudoku.from_string(test_str)):
-            test.new_sudoku()
-            self.assertEqual(3, test.cell_dict[2, 1].digit)
 
 
 if __name__ == '__main__':

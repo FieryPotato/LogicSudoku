@@ -281,6 +281,7 @@ class Sudoku:
             raise ValueError(f"Your sudoku contains a duplicate at {coordinates}.")
         if edited is not None:
             new.post_init(edited)
+        new.update_pencil_marks()
         return new
 
     @classmethod

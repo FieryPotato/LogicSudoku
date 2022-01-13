@@ -138,10 +138,14 @@ class Cell:
         """Fill the cell with digit and updates pencil_marks."""
         if digit == " ":
             self.digit: str = digit
-        elif digit == 0:
+            return None
+        digit = int(digit)
+        if digit == 0:
             self.digit: str = " "
         else:
-            self.digit: int = int(digit)
+            if digit <= 0 or digit >= 10:
+                raise ValueError(f"{digit} must be between 1 and 9 (inclusive).")
+            self.digit: int = digit
             self.pencil_marks: set = {digit}
         return None
 
