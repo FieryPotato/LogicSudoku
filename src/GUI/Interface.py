@@ -29,15 +29,20 @@ class Application(tk.Tk):
         for i, button in enumerate(buttons):
             buttons[button].grid(row=1, column=i)
 
-    def solved_message(self, solved: bool) -> None:
+    def solved_message(self, solved: bool = None) -> None:
         solved_label = tk.Label(self, text="Solve successful.")
         unsolved_label = tk.Label(self, text="Solve unsuccessful.")
-        if solved:
-            solved_label.grid(row=0, column=10, sticky="n")
-            unsolved_label.grid_forget()
+        none_label = tk.Label(self, text="")
+        solved_label.grid(row=0, column=10, sticky="new")
+        unsolved_label.grid(row=0, column=10, sticky="new")
+        none_label.grid(row=0, column=10, sticky="new")
+        if solved is not None:
+            if solved:
+                solved_label.tkraise()
+            else:
+                unsolved_label.tkraise()
         else:
-            unsolved_label.grid(row=0, column=10, sticky="n")
-            solved_label.grid_forget()
+            none_label.tkraise()
 
 
 class tk_Sudoku(tk.Frame):
@@ -92,6 +97,7 @@ class tk_Sudoku(tk.Frame):
         else:
             self.sudoku = load_puzzle()
             self.update_frames()
+            self.controller.solved_message()
 
     def update_frames(self):
         for tk_cell in self.cell_dict.values():
