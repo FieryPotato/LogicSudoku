@@ -13,7 +13,9 @@ DIGIT = ("Menlo", "51")
 class Application(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.geometry("750x750")
+        self.geometry("750x645")
+        self.title("Sudoku")
+        self.resizable(width=False, height=False)
         self.sudoku = tk_Sudoku(parent=self)
         self.sudoku.grid(row=0, column=0, columnspan=2)
         fill_button = tk.Button(self, text="Load", command=self.sudoku.new_sudoku)
