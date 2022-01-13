@@ -29,12 +29,22 @@ class Application(tk.Tk):
         for i, button in enumerate(buttons):
             buttons[button].grid(row=1, column=i)
 
+    def solved_message(self, solved: bool) -> None:
+        solved_label = tk.Label(self, text="Solve successful.")
+        unsolved_label = tk.Label(self, text="Solve unsuccessful.")
+        if solved:
+            solved_label.grid(row=0, column=10, sticky="n")
+            unsolved_label.grid_forget()
+        else:
+            unsolved_label.grid(row=0, column=10, sticky="n")
+            solved_label.grid_forget()
+
 
 class tk_Sudoku(tk.Frame):
     """Represents and displays a Sudoku in the GUI."""
 
     def __init__(self, parent=None, cnf={}, **kwargs):
-        super().__init__(parent, cnf)
+        super().__init__(parent, cnf, **kwargs)
         self.parent = parent
         self.controller = parent
         self.children = {}
@@ -90,7 +100,8 @@ class tk_Sudoku(tk.Frame):
     def solve(self):
         """Solves the current sudoku."""
         solver = Solver(self.sudoku)
-        solver.main()
+        result = solver.main()
+        self.controller.solved_message(result)
         self.update_frames()
 
 
@@ -188,23 +199,20 @@ class tk_Digit(tk.Frame):
         return self.parent.digit
 
 
-def load_puzzle() -> Sudoku | Exception:
+def load_puzzle() -> Sudoku:
     path: str = filedialog.askopenfilename(
         title="Select a file", filetypes=(("JSON files", "*.json"), ("text files", "*.txt"))
     )
-    try:
-        with open(path, "r") as file:
-            if path.endswith(".txt"):
-                contents = file.read()
-                return Sudoku.from_string(contents)
-            elif path.endswith(".json"):
-                contents = json.load(file)
-                return Sudoku.from_json(contents)
-            else:
-                raise ValueError(f"File {path} does not have a supported file type. "
-                                 f"Please use .txt or .json.")
-    except FileNotFoundError as e:
-        return e
+    with open(path, "r") as file:
+        if path.endswith(".txt"):
+            contents = file.read()
+            return Sudoku.from_string(contents)
+        elif path.endswith(".json"):
+            contents = json.load(file)
+            return Sudoku.from_json(contents)
+        else:
+            raise ValueError(f"File {path} does not have a supported file type. "
+                             f"Please use .txt or .json.")
 
 
 def _ternary(number: int) -> str:
