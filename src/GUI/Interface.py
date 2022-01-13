@@ -35,10 +35,10 @@ class tk_Sudoku(tk.Frame):
         self.new_sudoku(init=True)
         span = 19
         box_borders = {0, 6, 12, 18}
-        cell: tk_Cell
-        for cell in self.cell_dict.values():
-            x = cell.x * 2
-            y = cell.y * 2
+        tk_cell: tk_Cell
+        for tk_cell in self.cell_dict.values():
+            x = tk_cell.x * 2
+            y = tk_cell.y * 2
             cell_x = x + 1
             cell_y = y + 1
             if x in box_borders:
@@ -51,7 +51,7 @@ class tk_Sudoku(tk.Frame):
             else:
                 hor_sep = ttk.Separator(self, orient="horizontal")
                 hor_sep.grid(row=y, column=0, columnspan=span, sticky="ew")
-            cell.grid(row=cell_y, column=cell_x)
+            tk_cell.grid(row=cell_y, column=cell_x)
         for i in box_borders:
             vert_sep = tk.Frame(self, bd=5, width=3, background="black")
             vert_sep.grid(row=0, column=i, rowspan=span, sticky="ns")
