@@ -1,12 +1,11 @@
-import io
-import sys
 import unittest
 from unittest.mock import patch
 
-from src.GUI.Interface import load_puzzle
+from src.GUI.Application import load_puzzle
 from src.Sudoku import Sudoku
 
 
+@unittest.skip("Run only when testing GUI")
 class TestLoadingSudoku(unittest.TestCase):
     def test_loading_from_string(self):
         expected = Sudoku.from_string(

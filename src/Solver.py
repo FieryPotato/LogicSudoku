@@ -67,14 +67,24 @@ class Solver:
         was successful.
         """
         if not self.is_solved:
-            backup = None
-            while backup != self.sudoku:
-                backup = deepcopy(self.sudoku)
-                for level in self.levels:
-                    if level():
-                        break
+            # backup = None
+            # while backup != self.sudoku:
+            while True:
+                # backup = deepcopy(self.sudoku)
+                if not self.step():
+                    break
             self.is_solved = self.sudoku.is_complete
         return self.is_solved
+
+    def step(self) -> bool:
+        """
+        Apply exactly one deduction and return whether the deduction
+        was successful.
+        """
+        for level in self.levels:
+            if level():
+                return True
+        return False
 
     def try_basic_logic(self) -> bool:
         for strategy in self.basic_logic:
