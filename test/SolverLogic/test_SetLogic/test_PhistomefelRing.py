@@ -1,5 +1,5 @@
 """
-Phistomephel's Theorem states that the set containing all cells in each
+Phistomefel's Theorem states that the set containing all cells in each
 2x2 corner of a sudoku grid is identical to the set containing all
 cells that line the outside of the center box. This sort of set
 relation exists for many other similar organizations of rows and
@@ -12,11 +12,11 @@ from src.Solver import Solver
 from src.Sudoku import Sudoku
 
 
-class Test_PhistomephelInSudoku(unittest.TestCase):
+class Test_PhistomefelInSudoku(unittest.TestCase):
     def setUp(self):
         self.sudoku = Sudoku()
 
-    def test_sudoku_generates_base_phistomephel_set(self):
+    def test_sudoku_generates_base_phistomefel_set(self):
         corner_keys = {
             (0, 0), (1, 0), (0, 1), (1, 1), (7, 0), (8, 0), (7, 1), (8, 1),
             (0, 7), (1, 7), (0, 8), (1, 8), (7, 7), (8, 7), (7, 8), (8, 8)
@@ -27,13 +27,13 @@ class Test_PhistomephelInSudoku(unittest.TestCase):
         }
         corner_cells = {self.sudoku[key] for key in corner_keys}
         ring_cells = {self.sudoku[key] for key in ring_keys}
-        multi_set = self.sudoku.phistomephel_sets(2, 6, 2, 6)
-        single_set = self.sudoku.single_phistomephel_set(2, 6, 2, 6)
+        multi_set = self.sudoku.phistomefel_sets(2, 6, 2, 6)
+        single_set = self.sudoku.single_phistomefel_set(2, 6, 2, 6)
         for result in multi_set, single_set:
             self.assertEqual(corner_cells, result[0])
             self.assertEqual(ring_cells, result[1])
 
-    def test_sudoku_gets_all_phistomephel_sets(self):
+    def test_sudoku_gets_all_phistomefel_sets(self):
         first_corner_keys = {
             (1, 1), (2, 1), (1, 2), (2, 2), (7, 1), (8, 1), (7, 2), (8, 2),
             (1, 7), (2, 7), (1, 8), (2, 8), (7, 7), (8, 7), (7, 8), (8, 8)
@@ -56,14 +56,14 @@ class Test_PhistomephelInSudoku(unittest.TestCase):
         last_corner_cells = {self.sudoku[key] for key in last_corner_keys}
         last_ring_cells = {self.sudoku[key] for key in last_ring_keys}
 
-        result = self.sudoku.phistomephel_sets()
+        result = self.sudoku.phistomefel_sets()
         self.assertEqual(first_corner_cells, result[0][0])
         self.assertEqual(first_ring_cells, result[0][1])
         self.assertEqual(last_corner_cells, result[-1][0])
         self.assertEqual(last_ring_cells, result[-1][1])
 
 
-class TestPhistomephelSingleDigitPlacement(unittest.TestCase):
+class TestPhistomefelSingleDigitPlacement(unittest.TestCase):
     def setUp(self):
         self.missing_ring = "64     32" \
                             "35     79" \
@@ -90,7 +90,7 @@ class TestPhistomephelSingleDigitPlacement(unittest.TestCase):
         solver = Solver(sudoku)
         missing_cell = sudoku[4, 6]
         digit = 7
-        self.assertTrue(solver.check_for_phistomephel_singles())
+        self.assertTrue(solver.check_for_phistomefel_singles())
         self.assertEqual(digit, missing_cell.digit)
 
     def test_solver_fills_missing_corner_digit(self):
@@ -98,7 +98,7 @@ class TestPhistomephelSingleDigitPlacement(unittest.TestCase):
         solver = Solver(sudoku)
         missing_cell = sudoku[6, 2]
         digit = 6
-        self.assertTrue(solver.check_for_phistomephel_singles())
+        self.assertTrue(solver.check_for_phistomefel_singles())
         self.assertEqual(digit, missing_cell.digit)
 
 

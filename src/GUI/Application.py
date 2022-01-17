@@ -14,35 +14,46 @@ DIGIT = ("Menlo", "51")
 class Application(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.geometry("750x645")
+        self.geometry("750x750")
         self.title("Sudoku")
         self.resizable(width=False, height=False)
         self.sudoku = tk_Sudoku(parent=self)
 
-        buttons = {
+        self.buttons = {
+            "clear": tk.Button(self, text="Clear Grid", command=self.sudoku.reset),
             "load": tk.Button(self, text="Load", command=self.sudoku.new_sudoku),
             "solve": tk.Button(self, text="Solve", command=self.sudoku.solve),
+            "step": tk.Button(self, text="Step", command=self.sudoku.step),
+            "update_pm": tk.Button(self, text="Update Pencil Marks", command=self.sudoku.update_pms),
             "quit": tk.Button(self, text="Quit", command=self.destroy)
         }
 
-        self.sudoku.grid(row=0, column=0, columnspan=len(buttons))
-        for i, button in enumerate(buttons):
-            buttons[button].grid(row=1, column=i)
+        self.step_label = tk.StringVar()
+        self.solution_labels = {
+            "solved": tk.Label(self, text="Solve Successful."),
+            "unsolved": tk.Label(self, text="Solve Unsuccessful"),
+            "message": tk.Label(self, textvariable=self.step_label)
+        }
 
-    def solved_message(self, solved: bool = None) -> None:
-        solved_label = tk.Label(self, text="Solve successful.")
-        unsolved_label = tk.Label(self, text="Solve unsuccessful.")
-        none_label = tk.Label(self, text="")
-        solved_label.grid(row=0, column=10, sticky="new")
-        unsolved_label.grid(row=0, column=10, sticky="new")
-        none_label.grid(row=0, column=10, sticky="new")
-        if solved is not None:
+        self.sudoku.grid(row=0, column=0, rowspan=len(self.buttons), sticky="nsew")
+        for i, button in enumerate(self.buttons):
+            self.buttons[button].grid(row=i, column=1)
+
+    def solved_message(self, solved: bool = None, message: str = None) -> None:
+        for label in self.solution_labels.values():
+            label.grid_forget()
+            if solved is None and message is None:
+                return
+        if message is None:
             if solved:
-                solved_label.tkraise()
+                label = self.solution_labels["solved"]
             else:
-                unsolved_label.tkraise()
+                label = self.solution_labels["unsolved"]
         else:
-            none_label.tkraise()
+            self.step_label.set(message)
+            label = self.solution_labels["message"]
+        assert label is not None
+        label.grid(row=len(self.buttons), column=0, sticky="new")
 
 
 class tk_Sudoku(tk.Frame):
@@ -56,6 +67,7 @@ class tk_Sudoku(tk.Frame):
         self.sudoku: Sudoku = Sudoku()
         self.cell_dict: dict = {}
         self.new_sudoku(init=True)
+        self.solver = None
         span = 19
         box_borders = {0, 6, 12, 18}
         tk_cell: tk_Cell
@@ -89,6 +101,9 @@ class tk_Sudoku(tk.Frame):
         else:
             return getattr(self.sudoku, item)
 
+    def __getitem__(self, item):
+        return self.sudoku[item]
+
     def new_sudoku(self, init=False) -> None:
         if init:
             self.sudoku = Sudoku()
@@ -99,15 +114,39 @@ class tk_Sudoku(tk.Frame):
             self.update_frames()
             self.controller.solved_message()
 
+    def reset(self) -> None:
+        self.sudoku = Sudoku()
+        self.update_frames()
+        self.controller.solved_message()
+
+    def update_pms(self):
+        self.update_pencil_marks()
+        self.update_frames()
+
     def update_frames(self):
         for tk_cell in self.cell_dict.values():
             tk_cell.update_frames()
 
     def solve(self):
         """Solves the current sudoku."""
-        solver = Solver(self.sudoku)
-        result = solver.main()
+        if self.solver is None:
+            self.solver = Solver(self.sudoku)
+        result = self.solver.main()
         self.controller.solved_message(result)
+        self.update_frames()
+
+    def step(self):
+        """Performs one logical step."""
+        if self.solver is None:
+            self.solver = Solver(self.sudoku)
+        result = self.solver.step(message=True)
+        if result is not None:
+            level = result[0]
+            strategy = result[1]
+            message = f"Applied {level} strategy: {strategy}."
+        else:
+            message = "No Step Was Taken."
+        self.controller.solved_message(message=message)
         self.update_frames()
 
 
@@ -121,12 +160,16 @@ class tk_Cell(tk.Frame):
         self.controller = controller
         self.key = key
         self.frames = {}
-        for F in tk_PencilMarks, tk_Digit:
+        for F in tk_PencilMarks, tk_Digit, DigitEntry:
             name = F.__name__
-            frame = F(parent=self, controller=self.controller)
+            frame = F(parent=self, controller=self.controller, width=0)
             self.frames[name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
         self.update_frames()
+
+        self.bind("<Enter>", lambda x: self.raise_digit_entry(override=False))
+        self.bind("<Leave>", lambda x: self.update_frames())
+        self.bind("<Button-1>", lambda x: self.raise_digit_entry(override=True))
 
     def __getattr__(self, item):
         """Allows us to treat these representations as the actual cells
@@ -147,6 +190,10 @@ class tk_Cell(tk.Frame):
         frame = self.frames[frame_name]
         frame.tkraise()
         frame.update_values()
+
+    def raise_digit_entry(self, override=False) -> None:
+        if self.is_empty or override is True:
+            self.show_frame("DigitEntry")
 
     @property
     def cell(self) -> Cell:
@@ -203,6 +250,31 @@ class tk_Digit(tk.Frame):
 
     def digit(self) -> str:
         return self.parent.digit
+
+
+class DigitEntry(tk.Entry):
+    """For inputting digits into the grid manually."""
+    def __init__(self, parent: tk_Cell = None, controller: Application = None, **kwargs):
+        super().__init__(master=parent, **kwargs)
+        self.parent = parent
+        self.config(font=DIGIT)
+        self.controller = controller
+        self.text = tk.StringVar()
+        self.bind("<Key>", self.key_press)
+        self.bind("<Enter>", lambda x: self.tkraise())
+
+    def key_press(self, event) -> None:
+        self.text.set(event.char)
+        self.update_values()
+        self.delete(0)
+
+    def update_values(self) -> None:
+        text = self.text.get()
+        if text.isdigit():
+            if int(text) in range(1, 10):
+                self.controller.sudoku[self.parent.coordinates].fill(text)
+                self.controller.sudoku.update_frames()
+        self.text.set("")
 
 
 def load_puzzle() -> Sudoku:

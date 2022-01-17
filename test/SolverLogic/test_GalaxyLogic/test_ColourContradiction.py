@@ -5,7 +5,7 @@ from src.Sudoku import Sudoku
 
 
 class TestColourContradiction(unittest.TestCase):
-    def setUp(self) -> None:
+    def test_solver_clears_colour_contradiction(self):
         unsolved = " 35  6  4" \
                    " 7  54   " \
                    "4  3  5  " \
@@ -30,15 +30,14 @@ class TestColourContradiction(unittest.TestCase):
             (4, 7): {1, 2},
             (8, 7): {1}
         }
-        self.sudoku = Sudoku.from_string(unsolved, edited)
-        self.solver = Solver(self.sudoku)
+        sudoku = Sudoku.from_string(unsolved, edited)
+        solver = Solver(sudoku)
 
-    def test_solver_clears_colour_contradiction(self):
         cleared_keys = {(2, 1), (8, 1), (5, 2), (1, 3), (0, 7)}
-        cleared_cells = {self.sudoku[key] for key in cleared_keys}
+        cleared_cells = {sudoku[key] for key in cleared_keys}
         digit = 2
 
-        self.assertTrue(self.solver.check_for_two_colour_logic())
+        self.assertTrue(solver.check_for_two_colour_logic())
         for cell in cleared_cells:
             self.assertFalse(digit in cell)
 

@@ -149,5 +149,55 @@ class Test_Colour_Chain_Integration(unittest.TestCase):
         self.assertFalse(digit in cell)
 
 
+class TestEdgeCases(unittest.TestCase):
+    def setUp(self):
+        self.sudoku = Sudoku.from_string(
+            "     264 "
+            "9   4  7 "
+            " 435   9 "
+            "536 1  8 "
+            " 9 26  3 "
+            " 7 853916"
+            "  9 2835 "
+            "     5 29"
+            " 254   67"
+        )
+        self.solver = Solver(self.sudoku)
+        self.sudoku.post_init({
+            (3, 0): {7},
+            (3, 1): {6},
+            (4, 1): {},
+            (6, 1): {8},
+            (7, 1): {},
+            (6, 2): {8},
+            (7, 2): {},
+            (2, 3): {},
+            (0, 4): {4},
+            (2, 4): {4},
+            (1, 5): {},
+            (3, 5): {},
+            (4, 5): {},
+            (5, 5): {},
+            (6, 5): {},
+            (2, 6): {},
+            (4, 6): {},
+            (7, 6): {},
+            (5, 7): {},
+            (7, 7): {},
+            (7, 8): {}
+        })
+
+    def test_solver_handles_chains_with_no_endpoints(self):
+        pair_key_pairs = {
+            ((4, 8), (5, 8)), ((5, 8), (5, 3)), ((5, 3), (3, 3)),
+            ((3, 3), (3, 0)), ((3, 0), (4, 0)), ((4, 0), (4, 8)),
+        }
+        pairs = {
+            tuple(self.sudoku[k] for k in pair)
+            for pair in pair_key_pairs
+        }
+        self.assertEqual([], self.solver.strongly_connected_cell_chains(pairs))
+
+
 if __name__ == '__main__':
     unittest.main()

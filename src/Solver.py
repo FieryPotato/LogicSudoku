@@ -45,19 +45,48 @@ class Solver:
         self.sudoku = sudoku
         self.is_solved = self.sudoku.is_complete
 
-        self.basic_logic = self.fill_naked_singles, self.fill_hidden_singles
-        self.easy_logic = (self.check_for_naked_tuple, self.check_for_locked_candidate,
-                           self.check_for_pointing_tuple)
-        self.intermediate_logic = self.check_for_hidden_tuple, self.check_for_fish
-        self.hard_logic = self.check_for_ywing, self.check_for_avoidable_rectangle
-        self.brutal_logic = (self.check_for_xyzwings, self.check_for_unique_rectangle,
-                             self.check_for_pointing_rectangle, self.check_for_hidden_rectangle)
-        self.galaxy_brain_logic = (self.check_for_skyscraper, self.check_for_two_colour_logic,
-                                   self.check_for_empty_rectangle)
-        self.set_logic = (self.check_for_phistomephel_singles,)
+        basic = {
+            "Naked Single": self.fill_naked_singles,
+            "Hidden Single": self.fill_hidden_singles,
+        }
+        easy = {
+            "Naked Tuple": self.check_for_naked_tuple,
+            "Locked Candidate": self.check_for_locked_candidate,
+            "Pointing Tuple": self.check_for_pointing_tuple
+        }
+        intermediate = {
+            "Hidden Tuple": self.check_for_hidden_tuple,
+            "Fish": self.check_for_fish
+        }
+        hard = {
+            "Y-Wing": self.check_for_ywing,
+            "Avoidable Rectangle": self.check_for_avoidable_rectangle
+        }
+        brutal = {
+            "XYZ-Wing": self.check_for_xyzwings,
+            "Unique Rectangle": self.check_for_unique_rectangle,
+            "Pointing Rectangle": self.check_for_pointing_rectangle,
+            "Hidden Rectangle": self.check_for_hidden_rectangle
+        }
+        galaxy = {
+            "Skyscraper": self.check_for_skyscraper,
+            "Colour Chain": self.check_for_two_colour_logic,
+            "Empty Rectangle": self.check_for_empty_rectangle
+        }
+        set_logic = {
+            "Phistomefel Single": self.check_for_phistomefel_singles,
+            "Van De Wetering Square Single": self.check_for_vdw_square_singles
+        }
 
-        self.levels = (self.try_basic_logic, self.try_easy_logic, self.try_intermediate_logic,
-                       self.try_hard_logic, self.try_brutal_logic, self.try_galaxy_logic)
+        self.levels = {
+            "basic": basic,
+            "easy": easy,
+            "intermediate": intermediate,
+            "hard": hard,
+            "brutal": brutal,
+            "galaxy": galaxy,
+            "set": set_logic
+        }
 
     # Super-methods
 
@@ -76,51 +105,21 @@ class Solver:
             self.is_solved = self.sudoku.is_complete
         return self.is_solved
 
-    def step(self) -> bool:
+    def step(self, message=False) -> bool | tuple[str, str]:
         """
         Apply exactly one deduction and return whether the deduction
         was successful.
         """
-        for level in self.levels:
-            if level():
-                return True
-        return False
-
-    def try_basic_logic(self) -> bool:
-        for strategy in self.basic_logic:
-            if strategy():
-                return True
-        return False
-
-    def try_easy_logic(self) -> bool:
-        for strategy in self.easy_logic:
-            if strategy():
-                return True
-        return False
-
-    def try_intermediate_logic(self) -> bool:
-        for strategy in self.intermediate_logic:
-            if strategy():
-                return True
-        return False
-
-    def try_hard_logic(self) -> bool:
-        for strategy in self.hard_logic:
-            if strategy():
-                return True
-        return False
-
-    def try_brutal_logic(self) -> bool:
-        for strategy in self.brutal_logic:
-            if strategy():
-                return True
-        return False
-
-    def try_galaxy_logic(self) -> bool:
-        for strategy in self.galaxy_brain_logic:
-            if strategy():
-                return True
-        return False
+        for level_name, level in self.levels.items():
+            for strat_name, strategy in level.items():
+                if strategy():
+                    if message is False:
+                        return True
+                    return level_name, strat_name
+        if message is False:
+            return False
+        else:
+            return None
 
     # Main Solver Logic Methods
 
@@ -280,7 +279,7 @@ class Solver:
                             return True
         return False
 
-    def check_for_phistomephel_singles(self) -> bool:
+    def check_for_phistomefel_singles(self) -> bool:
         """
         In a completed sudoku, one will find that the digits in the 16
         cells in the 2x2 boxes in each corner of the grid are identical
@@ -291,7 +290,7 @@ class Solver:
         Configurations of digits that violate this fact can be
         discarded.
         """
-        for corners, ring in self.sudoku.phistomephel_sets():
+        for corners, ring in self.sudoku.phistomefel_sets():
             empty_corners = [cell for cell in corners if cell.is_empty]
             if len(empty_corners) > 1:
                 continue
@@ -304,8 +303,7 @@ class Solver:
                                                 [cell.digit for cell in ring]).pop()
             missing_corner_digit: int = list_diff([cell.digit for cell in ring],
                                                   [cell.digit for cell in corners]).pop()
-            if self.clear_phistomephel_singles(empty_corners, empty_rings,
-                                               missing_ring_digit, missing_corner_digit):
+            if self.clear_phistomefel_singles(empty_corners, empty_rings, missing_ring_digit, missing_corner_digit):
                 return True
         return False
 
@@ -550,8 +548,8 @@ class Solver:
         return False
 
     @staticmethod
-    def clear_phistomephel_singles(empty_corners: list[Cell], empty_rings: list[Cell],
-                                   missing_ring_digit, missing_corner_digit) -> bool:
+    def clear_phistomefel_singles(empty_corners: list[Cell], empty_rings: list[Cell],
+                                  missing_ring_digit, missing_corner_digit) -> bool:
         operated = False
         if len(empty_corners) == 1:
             empty_corner: Cell = empty_corners.pop()
@@ -848,7 +846,7 @@ class Solver:
             return True
         return operated
 
-    def match_endpoints_with_adjacencies(self, adjacencies, endpoints):
+    def match_endpoints_with_adjacencies(self, adjacencies, endpoints) -> list:
         """
         Match each endpoint cell with adjacent cells and return the
         results after pruning duplicates.
@@ -1021,6 +1019,8 @@ class Solver:
         """
         adjacencies: dict = self.strongly_connected_chain_adjacent_cells(pairs)
         endpoints = {k for k, v in adjacencies.items() if len(v) == 1}
+        if not endpoints:
+            return []
         return self.match_endpoints_with_adjacencies(adjacencies, endpoints)
 
     @staticmethod

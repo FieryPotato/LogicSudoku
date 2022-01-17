@@ -25,7 +25,7 @@ class TestSolverStep(unittest.TestCase):
         self.assertFalse(sudoku[0, 0].is_empty)
 
 
-# @unittest.skip("Run only separately")
+@unittest.skip("Run only separately")
 class TestFullSolve(unittest.TestCase):
     easy_unsolved = "6    85  " \
                     "  8 97  3" \

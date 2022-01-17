@@ -4,8 +4,7 @@ from src.GUI.Application import Application
 from src.Sudoku import Sudoku
 
 
-# Uncomment skip when not working on GUI
-# @unittest.skip("Do not test unless testing GUI")
+@unittest.skip("Do not test unless testing GUI")
 class testGUISolver(unittest.TestCase):
     def test_gui_is_connected_to_solver(self):
         app = Application()
