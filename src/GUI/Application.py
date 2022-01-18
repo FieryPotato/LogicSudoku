@@ -245,6 +245,7 @@ class tk_Digit(tk.Frame):
                                  name=f"{parent.coordinates} Digit")
         self.label = tk.Label(master=self, textvariable=self.text, font=DIGIT)
         self.label.pack()
+        self.bind("<Enter>", lambda x: self.parent.raise_digit_entry(override=self.parent.started_empty))
 
     def update_values(self) -> None:
         self.text.set(self.digit())
@@ -262,7 +263,7 @@ class DigitEntry(tk.Entry):
         self.controller = controller
         self.text = tk.StringVar()
         self.bind("<Key>", self.key_press)
-        self.bind("<Enter>", lambda x: self.tkraise())
+        self.bind("<Enter>", self.raise_digit)
 
     def key_press(self, event) -> None:
         self.text.set(event.char)
@@ -276,6 +277,11 @@ class DigitEntry(tk.Entry):
                 self.controller.sudoku[self.parent.coordinates].fill(text)
                 self.controller.sudoku.update_frames()
         self.text.set("")
+
+    def raise_digit(self, event) -> None:
+        if not self.parent.started_empty:
+            self.tkraise()
+
 
 
 def load_puzzle() -> Sudoku:
