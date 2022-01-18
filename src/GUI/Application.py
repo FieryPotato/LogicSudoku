@@ -110,6 +110,8 @@ class tk_Sudoku(tk.Frame):
             for k, v in self.sudoku.cell_dict.items():
                 self.cell_dict[k] = tk_Cell(v.coordinates, parent=self, controller=self.controller)
         else:
+            for key in self.cell_dict.keys():
+                self.sudoku.cell_dict[key] = Cell(key)
             self.sudoku = load_puzzle()
             self.update_frames()
             self.controller.solved_message()
@@ -129,8 +131,7 @@ class tk_Sudoku(tk.Frame):
 
     def solve(self):
         """Solves the current sudoku."""
-        if self.solver is None:
-            self.solver = Solver(self.sudoku)
+        self.solver = Solver(self.sudoku)
         result = self.solver.main()
         self.controller.solved_message(result)
         self.update_frames()
