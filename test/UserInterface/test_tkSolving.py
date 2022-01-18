@@ -5,7 +5,7 @@ from src.GUI.Application import Application
 from src.Sudoku import Sudoku
 
 
-# @unittest.skip("Do not test unless testing GUI")
+@unittest.skip("Do not test unless testing GUI")
 class testGUISolver(unittest.TestCase):
     def test_gui_is_connected_to_solver(self):
         app = Application()
@@ -56,16 +56,16 @@ class testGUISolver(unittest.TestCase):
                      ' 1  8    ' \
                      '8  17 2  ' \
                      '  2   1 7'
-        # unsolved_2 = "    7 5 3" \
-        #              "4 8    1 " \
-        #              "     289 " \
-        #              " 4  957 8" \
-        #              "  7 2 9  " \
-        #              "8 5 4  2 " \
-        #              "3 6      " \
-        #              " 8 3   72" \
-        #              "2 4 1    "
-        sudokus = [Sudoku.from_string(unsolved_1) for _ in range(2)]
+        unsolved_2 = "    7 5 3" \
+                     "4 8    1 " \
+                     "     289 " \
+                     " 4  957 8" \
+                     "  7 2 9  " \
+                     "8 5 4  2 " \
+                     "3 6      " \
+                     " 8 3   72" \
+                     "2 4 1    "
+        sudokus = [Sudoku.from_string(unsolved_1), Sudoku.from_string(unsolved_2)]
         with patch("src.GUI.Application.load_puzzle", side_effect=sudokus):
             app = Application()
             for _ in range(2):
