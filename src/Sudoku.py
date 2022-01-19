@@ -519,5 +519,6 @@ class Sudoku:
         seen_digits = {cell.digit for cell in seen_cells}
         if digit not in seen_digits:
             target.fill(digit)
-            self.update_pencil_marks()
 
+    def clear(self, x, y) -> None:
+        self[x, y].clear()

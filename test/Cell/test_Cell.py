@@ -66,3 +66,11 @@ class TestCell(unittest.TestCase):
         test_cell.remove({1, 3, 5, 7, 9})
         for i in range(1, 10, 2):
             self.assertFalse(i in test_cell)
+
+    def test_clearing_cell_clears_pencil_marks(self):
+        x, y, digit = 3, 3, 3
+        cell = self.sudoku[x, y]
+        cell.fill(digit)
+        cell.clear()
+        self.assertTrue(cell.is_empty)
+        self.assertEqual(cell.pencil_marks, {i for i in range(1, 10)})

@@ -22,6 +22,7 @@ class Application(tk.Tk):
         self.buttons = {
             "clear": tk.Button(self, text="Clear Grid", command=self.sudoku.reset),
             "load": tk.Button(self, text="Load", command=self.sudoku.new_sudoku),
+            "update": tk.Button(self, text="Update Pencil Marks", command=self.sudoku.update_pms),
             "solve": tk.Button(self, text="Solve", command=self.sudoku.solve),
             "step": tk.Button(self, text="Step", command=self.sudoku.step),
             "quit": tk.Button(self, text="Quit", command=self.destroy)
@@ -276,12 +277,13 @@ class DigitEntry(tk.Entry):
             if int(text) in range(1, 10):
                 self.controller.sudoku.fill(*self.parent.coordinates, text)
                 self.controller.sudoku.update_frames()
+        elif text == "":
+            self.controller.sudoku.clear(*self.parent.coordinates)
         self.text.set("")
 
     def raise_digit(self, event) -> None:
         if not self.parent.started_empty:
             self.tkraise()
-
 
 
 def load_puzzle() -> Sudoku:

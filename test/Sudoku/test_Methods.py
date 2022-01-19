@@ -85,6 +85,22 @@ class TestSudokuMethods(unittest.TestCase):
         sudoku.fill(x, y, digit)
         self.assertNotEqual(digit, sudoku[x, y].digit)
 
+    def test_clearing_sudoku_cell_resets_it(self):
+        sudoku = Sudoku.from_string(
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+        )
+        x, y, digit = 1, 2, 3
+        sudoku.fill(x, y, digit)
+        sudoku.clear(x, y)
+        self.assertTrue(sudoku[x, y].is_empty)
 
 
 class TestSudokuProperties(unittest.TestCase):

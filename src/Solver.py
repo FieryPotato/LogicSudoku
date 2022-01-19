@@ -96,10 +96,7 @@ class Solver:
         was successful.
         """
         if not self.is_solved:
-            # backup = None
-            # while backup != self.sudoku:
             while True:
-                # backup = deepcopy(self.sudoku)
                 if not self.step():
                     break
             self.is_solved = self.sudoku.is_complete

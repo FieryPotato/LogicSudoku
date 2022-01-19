@@ -93,6 +93,7 @@ class Cell:
     def __int__(self) -> int:
         if self.is_empty:
             return 0
+        assert isinstance(self.digit, int)
         return self.digit
 
     @property
@@ -138,7 +139,7 @@ class Cell:
         """Fill the cell with digit and updates pencil_marks."""
         if digit == " ":
             self.digit: str = digit
-            return None
+            return
         digit = int(digit)
         if digit == 0:
             self.digit: str = " "
@@ -147,12 +148,13 @@ class Cell:
                 raise ValueError(f"{digit} must be between 1 and 9 (inclusive).")
             self.digit: int = digit
             self.pencil_marks: set = {digit}
-        return None
+        return
 
     def clear(self) -> None:
         """Empty the cell."""
         self.digit = " "
-        return None
+        self.pencil_marks = {i for i in range(1, 10)}
+        return
 
     def has_same_options_as(self, other: "Cell") -> bool:
         """Return whether this cell's pencil_marks are identical to other's."""
