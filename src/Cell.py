@@ -165,8 +165,7 @@ class Cell:
 
     def visible_cells(self, *args: str) -> set[tuple[int, int]]:
         """Return a set containing keys of each cell visible from this
-        one (not including itself). If cells are given, return only visible
-        cells from houses in cells (Valid cells: "row", "column", "box")."""
+        one (not including itself). Can enter ."""
         if not args:
             houses = "row", "column", "box"
         else:

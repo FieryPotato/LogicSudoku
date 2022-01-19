@@ -24,7 +24,6 @@ class Application(tk.Tk):
             "load": tk.Button(self, text="Load", command=self.sudoku.new_sudoku),
             "solve": tk.Button(self, text="Solve", command=self.sudoku.solve),
             "step": tk.Button(self, text="Step", command=self.sudoku.step),
-            "update_pm": tk.Button(self, text="Update Pencil Marks", command=self.sudoku.update_pms),
             "quit": tk.Button(self, text="Quit", command=self.destroy)
         }
 
@@ -241,15 +240,16 @@ class tk_Digit(tk.Frame):
         super().__init__(parent, cnf, **kwargs)
         self.parent = parent
         self.controller = controller
-        self.text = tk.StringVar(master=self, value=self.digit(),
+        self.text = tk.StringVar(master=self, value=self.digit,
                                  name=f"{parent.coordinates} Digit")
         self.label = tk.Label(master=self, textvariable=self.text, font=DIGIT)
         self.label.pack()
         self.bind("<Enter>", lambda x: self.parent.raise_digit_entry(override=self.parent.started_empty))
 
     def update_values(self) -> None:
-        self.text.set(self.digit())
+        self.text.set(self.digit)
 
+    @property
     def digit(self) -> str:
         return self.parent.digit
 
@@ -274,7 +274,7 @@ class DigitEntry(tk.Entry):
         text = self.text.get()
         if text.isdigit():
             if int(text) in range(1, 10):
-                self.controller.sudoku[self.parent.coordinates].fill(text)
+                self.controller.sudoku.fill(*self.parent.coordinates, text)
                 self.controller.sudoku.update_frames()
         self.text.set("")
 

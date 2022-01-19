@@ -36,7 +36,6 @@ class TestSudokuMethods(unittest.TestCase):
         self.assertEqual(expected, actual)
         self.assertTrue(actual[7, 8].started_empty)
 
-
     def test_sudoku_from_text_file(self):
         expected = Sudoku()
         fills = {
@@ -64,6 +63,27 @@ class TestSudokuMethods(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
+    def test_sudoku_can_be_filled_with_digits_after_init(self):
+        sudoku = Sudoku()
+        x, y, digit = 4, 4, 4
+        sudoku.fill(x, y, digit)
+        self.assertEqual(digit, sudoku[x, y].digit)
+
+    def test_filling_illegal_digits_raises_value_error(self):
+        sudoku = Sudoku.from_string(
+            "1        "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+            "         "
+        )
+        x, y, digit = 1, 1, 1
+        sudoku.fill(x, y, digit)
+        self.assertNotEqual(digit, sudoku[x, y].digit)
 
 
 

@@ -512,3 +512,12 @@ class Sudoku:
             squares.append(self.single_vdw_square(v, h))
 
         return squares
+
+    def fill(self, x, y, digit) -> None:
+        target = self[x, y]
+        seen_cells = [self[key] for key in target.visible_cells()]
+        seen_digits = {cell.digit for cell in seen_cells}
+        if digit not in seen_digits:
+            target.fill(digit)
+            self.update_pencil_marks()
+
