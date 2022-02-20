@@ -3,7 +3,6 @@ import unittest
 from src.Solver import Solver
 from src.Sudoku import Sudoku
 
-
 ROW_JELLYFISH = " 3 8 5 7 " \
                 "  8 79  3" \
                 "7  34 2 8" \

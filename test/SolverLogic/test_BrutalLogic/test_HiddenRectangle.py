@@ -7,7 +7,6 @@ import unittest
 from src.Solver import Solver
 from src.Sudoku import Sudoku
 
-
 HIDDEN_ROW = "8394 6   " \
              "16   3   " \
              "25   16  " \

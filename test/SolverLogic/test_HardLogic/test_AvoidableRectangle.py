@@ -8,8 +8,8 @@ the empty cell's pencil marks.
 
 import unittest
 
-from src.Sudoku import Sudoku
 from src.Solver import Solver
+from src.Sudoku import Sudoku
 
 UNSOLVED = " 629   43" \
            "93 461 5 " \

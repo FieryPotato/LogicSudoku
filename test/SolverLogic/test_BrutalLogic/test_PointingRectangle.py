@@ -3,7 +3,6 @@ import unittest
 from src.Solver import Solver
 from src.Sudoku import Sudoku
 
-
 UNSOLVED_SAME = "92 743   " \
                 "65 129   " \
                 " 7 5682  " \

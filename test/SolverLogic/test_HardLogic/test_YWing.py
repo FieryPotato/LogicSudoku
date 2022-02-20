@@ -11,9 +11,8 @@ Then cells which see both B and C can have z cleared from their options.
 
 import unittest
 
-from src.Sudoku import Sudoku
 from src.Solver import Solver
-
+from src.Sudoku import Sudoku
 
 UNSOLVED = " 78 2  9 " \
              " 29 876  " \

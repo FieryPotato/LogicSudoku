@@ -13,7 +13,6 @@ import unittest
 from src.Solver import Solver
 from src.Sudoku import Sudoku
 
-
 UNSOLVED_ROW = "8    2 3 " \
                " 24 59   " \
                "       62" \

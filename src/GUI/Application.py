@@ -105,6 +105,7 @@ class tk_Sudoku(tk.Frame):
         return self.sudoku[item]
 
     def new_sudoku(self, init=False) -> None:
+        self.solver = None
         if init:
             self.sudoku = Sudoku()
             for k, v in self.sudoku.cell_dict.items():
@@ -131,7 +132,8 @@ class tk_Sudoku(tk.Frame):
 
     def solve(self):
         """Solves the current sudoku."""
-        self.solver = Solver(self.sudoku)
+        if self.solver is None:
+            self.solver = Solver(self.sudoku)
         result = self.solver.main()
         self.controller.solved_message(result)
         self.update_frames()
@@ -168,9 +170,9 @@ class tk_Cell(tk.Frame):
             frame.grid(row=0, column=0, sticky="nsew")
         self.update_frames()
 
-        self.bind("<Enter>", lambda x: self.raise_digit_entry(override=False))
-        self.bind("<Leave>", lambda x: self.update_frames())
-        self.bind("<Button-1>", lambda x: self.raise_digit_entry(override=True))
+        # self.bind("<Enter>", self.enter)
+        # self.bind("<Leave>", lambda x: self.update_frames())
+        # self.bind("<Button>", lambda x: self.raise_digit_entry(override=True))
 
     def __getattr__(self, item):
         """Allows us to treat these representations as the actual cells
@@ -193,8 +195,12 @@ class tk_Cell(tk.Frame):
         frame.update_values()
 
     def raise_digit_entry(self, override=False) -> None:
-        if self.is_empty or override is True:
+        if self.is_empty or (override is True):
             self.show_frame("DigitEntry")
+
+    def enter(self, event):
+        if self.is_empty:
+            self.raise_digit_entry()
 
     @property
     def cell(self) -> Cell:
@@ -223,6 +229,8 @@ class tk_PencilMarks(tk.Frame):
             y, x = coordinates
             self.pm_dict[i]["label"].grid(row=y, column=x)
 
+        self.bind("<Button>", lambda e: self.parent.raise_digit_entry(override=self.parent.started_empty))
+
     def text_var_value(self, digit) -> str:
         if digit in self.parent.pencil_marks:
             return digit
@@ -245,7 +253,7 @@ class tk_Digit(tk.Frame):
                                  name=f"{parent.coordinates} Digit")
         self.label = tk.Label(master=self, textvariable=self.text, font=DIGIT)
         self.label.pack()
-        self.bind("<Enter>", lambda x: self.parent.raise_digit_entry(override=self.parent.started_empty))
+        # self.bind("<Button>", lambda x: self.parent.raise_digit_entry(override=parent.started_empty))
 
     def update_values(self) -> None:
         self.text.set(self.digit)
@@ -264,7 +272,8 @@ class DigitEntry(tk.Entry):
         self.controller = controller
         self.text = tk.StringVar()
         self.bind("<Key>", self.key_press)
-        self.bind("<Enter>", self.raise_digit)
+        # self.bind("<Enter>", self.enter)
+        # self.bind("<Leave>", self.exit)
 
     def key_press(self, event) -> None:
         self.text.set(event.char)
@@ -277,13 +286,17 @@ class DigitEntry(tk.Entry):
             if int(text) in range(1, 10):
                 self.controller.sudoku.fill(*self.parent.coordinates, text)
                 self.controller.sudoku.update_frames()
-        elif text == "":
+        else:
             self.controller.sudoku.clear(*self.parent.coordinates)
         self.text.set("")
 
-    def raise_digit(self, event) -> None:
-        if not self.parent.started_empty:
-            self.tkraise()
+    # def enter(self, event) -> None:
+    #     if self.parent.started_empty and self.parent.is_empty:
+    #         self.tkraise()
+
+    # def exit(self, event) -> None:
+    #     if self.parent.is_empty:
+    #         self.parent.update_frames()
 
 
 def load_puzzle() -> Sudoku:

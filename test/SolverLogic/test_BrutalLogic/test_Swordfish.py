@@ -1,8 +1,7 @@
 import unittest
 
-from src.Sudoku import Sudoku
 from src.Solver import Solver
-
+from src.Sudoku import Sudoku
 
 COL_SWORDFISH = "7  5  894" \
                 "3     527" \
